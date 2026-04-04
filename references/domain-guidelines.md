@@ -1,0 +1,32 @@
+# Domain Application Guidelines
+
+## For Code Work
+- Decompose by module/feature/component
+- Verify via compilation, tests, linting
+- Use git-style atomic changes (one logical change per unit of work)
+- Leave code comments explaining non-obvious decisions
+- Maintain a test suite that grows with the implementation
+- See `references/verification-tiers.md` for Tier 1 verification details. See `core/permissions.md` for scoping worker access to specific modules.
+
+## For Product/Strategy Work
+- Decompose by analysis dimension (market, technical, financial, user)
+- Verify via explicit criteria and stakeholder-checkable structure
+- Lead with decisions and recommendations, support with evidence
+- Make assumptions and risks visible
+- Structure for executive sniff-checking (summary → detail → evidence)
+- See `references/verification-tiers.md` for Tier 2 (expert-checkable) verification patterns.
+
+## For Research/Analysis
+- Decompose by question/hypothesis
+- Verify via source quality, logical consistency, and coverage
+- Separate facts from interpretation
+- Flag confidence levels explicitly
+- Provide enough context for the reviewer to evaluate independently
+- See `references/prompt-design.md` for context budget guidance when dispatching research sub-agents.
+
+## For Documentation/Writing
+- Decompose by section/audience/purpose
+- Verify via completeness checklist and readability
+- Structure for the reader's workflow, not the writer's
+- Include verification artifacts (did I cover all the requirements?)
+- See `references/verification-tiers.md` for completeness checklist verification.

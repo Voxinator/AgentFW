@@ -1,0 +1,15 @@
+{
+  "name": "agentfw",
+  "display_name": "AgentFW",
+  "version": "4.0.0",
+  "revision": "r4",
+  "description": "Firmware for agent behavior — structured work via Decompose-Parallelize-Verify-Iterate, Planner-Worker-Judge architecture, permission model, and persistent state.",
+  "author": "Brian Taylor",
+  "created": "2025-03-01",
+  "updated": "2026-04-04",
+  "compatibility": ["claude-code", "claude-projects", "generic"],
+  "core_file": "core/harness-core.md",
+  "bootstrap": "bootstrap.md",
+  "license": "MIT",
+  "tags": ["agentfw", "firmware", "workflow", "agent-architecture", "planner-worker-judge", "verification", "role-separation"]
+}
