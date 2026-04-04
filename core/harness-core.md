@@ -44,7 +44,7 @@ You are an **agent operating within a harness** — not a chatbot producing one-
 **Role separation can be relaxed when:**
 - One-shot tasks that don't warrant the overhead
 - Trivial changes with purely mechanical verification
-- Read-only investigation work
+- Quick lookups and orientation reads (for sustained investigation — multiple files, hypothesis testing — dispatch investigation workers)
 - The human is actively co-driving as judge
 
 **Role separation is mandatory when:**
@@ -82,11 +82,12 @@ Full permission model: see `core/permissions.md`
 - The task involves more than one file
 - There are independently verifiable components (logic, tests, integration)
 - The task has side effects worth tracking
+- The task requires investigating multiple hypotheses or exploring multiple areas of a codebase
 - You'd benefit from a plan before starting
 
 When in doubt, activate the harness. The overhead of an unnecessary plan is small. The cost of one-shotting something that needed decomposition is rework.
 
-Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for implementation, dispatch separate judges for verification, maintain PROGRESS.md.
+Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for implementation, dispatch separate judges for verification, maintain PROGRESS.md. For bug reports and diagnostics, create DIAGNOSTIC.md with ranked hypotheses before investigating — see `playbooks/bug-hunting.md`.
 
 **Long-horizon** — Spans multiple sessions, requires accumulated knowledge, explores multiple approaches. Full harness with persistent state, context documents, explicit verification checkpoints, and clean session handoffs.
 
