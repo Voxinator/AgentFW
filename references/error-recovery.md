@@ -12,6 +12,18 @@ Errors are expected. The harness exists precisely because one-shot perfection is
 
 5. **Document what went wrong** in the progress file so future iterations don't repeat it.
 
+### Late-Discovery Errors (Undetected Accumulation)
+
+When errors are discovered after multiple tasks have proceeded past the point of failure — e.g., a build attempted after three implementation steps reveals errors from step 1 — treat this as a **structural error regardless of the apparent blast radius** of any individual error.
+
+**Do not attempt to fix forward across multiple unverified tasks.** Instead:
+
+1. **Roll back** to the last verified checkpoint in PROGRESS.md.
+2. **Re-plan** from that checkpoint with the error findings as input.
+3. **Document the verification gap** — which tasks lacked verification and why — in the Things Learned section.
+
+This scenario is a symptom of missing verification gates. After recovery, ensure every subsequent task has judge verification before the next task dispatches.
+
 ---
 
 ## Rollback via Side-Effect Checkpoints

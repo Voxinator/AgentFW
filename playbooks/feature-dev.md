@@ -18,6 +18,10 @@ See `templates/launch-prompts/autonomous-feature.md` for the standalone launch p
 
 **What happens after you send this:** Claude Code reads the codebase, produces PLAN.md, dispatches worker agents for implementation, dispatches separate judge agents for verification, and iterates until done. You check in when you want to — or wait until it's done. If it hits a domain question, it asks. Otherwise, it runs.
 
+**Verification gates in autonomous mode:** Every task that produces code MUST have judge verification complete before the next task begins. The planner MUST NOT evaluate its own workers' output as a substitute for judge dispatch — this is role collapse (see `references/anti-patterns.md`). For compiled languages (C++, Rust, Go, etc.), the judge MUST build the project as the first verification step. Reasoning-only review does not count as verification.
+
+Claude dispatches judges between tasks, not just at the end. A sequence of implement-implement-implement-verify-at-end is a verification gap — errors from early tasks compound invisibly through later ones.
+
 ---
 
 ## Option B: Guided Mode (Step-by-Step)

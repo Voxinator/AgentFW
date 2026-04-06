@@ -6,6 +6,10 @@ Not all work is verified the same way. Know which tier you're operating in and a
 
 The code compiles or it doesn't. Tests pass or fail. The output matches a schema or it doesn't. **For Tier 1 work, always run the check.** Don't assume correctness — verify it.
 
+**Enforcement:** A task **CANNOT** transition from `completed` to `verified` without machine-check output recorded in PROGRESS.md. A judge that reasons about compilation without compiling has **NOT** performed Tier 1 verification. The verification artifact (build log, test output, linter report) must be attached to the task entry.
+
+If machine-checkable verification is available for a task but was not performed, the task remains at `completed` regardless of any other review. No exceptions.
+
 Examples: code compilation, test suites, linting, schema validation, API contract checks, build pipelines.
 
 ## Tier 2: Expert-Checkable with Clear Criteria
