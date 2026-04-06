@@ -13,6 +13,7 @@ Two observed failures exposed that r4 relies on behavioral compliance rather tha
 - **Interpreted language verification** — Judge must run tests/linter or at minimum import the module. See `references/domain-guidelines.md`.
 - **Late-discovery error protocol** — Errors found after multiple unverified tasks are treated as structural; roll back to last verified checkpoint. See `references/error-recovery.md`.
 - **Autonomous mode verification gates** — Judge dispatched between every task, not just at the end. See `playbooks/feature-dev.md`.
+- **Long-running service restart rule** — Workers/judges must automatically restart services (web apps, gateways, daemons) after code changes. No manual restart steps. See `references/domain-guidelines.md`.
 
 ### Enhanced
 - **One-shot criteria tightened** — One-shot now requires: zero files modified, OR one file <20 lines with no cross-file deps. Relaxation requires explicit justification. See `core/harness-core.md`.
