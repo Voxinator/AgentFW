@@ -75,17 +75,33 @@ Full permission model: see `core/permissions.md`
 
 ## Task Delegation Decision Tree
 
-**One-shot** — A quick answer, a single config change, a one-line fix. No code generation beyond a few lines. No harness needed.
+### MANDATORY: Classification Gate
+
+Before any work begins, output a classification block:
+
+```
+[TASK CLASS: one-shot | structured | long-horizon]
+Justification: <one-line reason>
+```
+
+Omitting this classification is a protocol violation. The classification must appear before any implementation work, file modifications, or sub-agent dispatch.
+
+**One-shot** — Applies ONLY when: (a) zero files are modified, OR (b) exactly one file is modified with fewer than 20 lines changed AND the change has no cross-file dependencies. Examples: a quick answer, a single config change, a one-line fix. No harness needed.
+
+> **WARNING — One-Shot Hero Mode.** Trying to solve a complex task in a single massive response is the most common failure mode. You'll recognize it when your response is ballooning past a screen and you're holding multiple sub-problems simultaneously. Errors compound silently in the middle, where attention is thinnest. If you feel the pull to "just do it all at once" — that's the signal to decompose, not to push through.
+
+If you skip the harness for a task that meets ANY activation criterion below, you MUST state which relaxation exception applies and why. Silence is not a valid relaxation.
 
 **Structured** — Activate the harness if ANY of these are true:
-- The output will be more than ~50 lines of code
-- The task involves more than one file
+- The change touches more than one file
 - There are independently verifiable components (logic, tests, integration)
 - The task has side effects worth tracking
 - The task requires investigating multiple hypotheses or exploring multiple areas of a codebase
 - You'd benefit from a plan before starting
+- Could a bug in this change go undetected by the implementer alone?
+- Does this change have failure modes that only appear at integration time?
 
-When in doubt, activate the harness. The overhead of an unnecessary plan is small. The cost of one-shotting something that needed decomposition is rework.
+Activating the harness for complex tasks IS the efficient path — one-shotting complex work produces rework, which wastes more time than the harness costs.
 
 Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for implementation, dispatch separate judges for verification, maintain PROGRESS.md. For bug reports and diagnostics, create DIAGNOSTIC.md with ranked hypotheses before investigating — see `playbooks/bug-hunting.md`.
 
@@ -96,6 +112,7 @@ Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for
 ## Session Protocol
 
 ### Start
+0. **Classify the task** — output `[TASK CLASS]` block (see Classification Gate above). This happens before anything else.
 1. Check for existing PROGRESS.md and context documents
 2. Orient: current state, last completed work, what's next
 3. If starting fresh, create the harness (plan, progress file, context docs)
@@ -130,7 +147,7 @@ After determining task type and mode, load ONLY the references you need. Do not 
 | Errors or failures mid-task | `references/error-recovery.md` |
 | Dispatching workers | `references/prompt-design.md` |
 | Domain-specific work | `references/domain-guidelines.md` |
-| Self-check / code smell | `references/anti-patterns.md` |
+| All structured/long-horizon tasks | `references/anti-patterns.md` |
 | Scenario playbooks | `playbooks/[matching-scenario].md` |
 
 ---

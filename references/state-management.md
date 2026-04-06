@@ -17,7 +17,7 @@ planned → dispatched → in-progress → completed → verified → failed
 - **planned** — Task exists in the plan but no worker has been assigned.
 - **dispatched** — A worker has been assigned. Do not re-dispatch.
 - **in-progress** — Worker is actively executing. The Worker ID field identifies which sub-agent owns it.
-- **completed** — Worker has finished. Artifacts exist. Awaiting verification by a separate judge.
+- **completed** — Worker has finished. Artifacts exist. Awaiting verification by a separate judge. **Downstream tasks MUST NOT be dispatched until this task reaches `verified`.**
 - **verified** — A judge (separate context) has confirmed the work meets criteria.
 - **failed** — Verification failed or the worker could not complete the task. Create a new attempt entry.
 
@@ -44,6 +44,22 @@ Before dispatching a worker for a task, check PROGRESS.md:
 - If the task is `failed` — **create a new attempt entry** linked to the previous one. Increment the attempt number. The new worker gets the judge's findings from the failed attempt, but NOT the previous worker's implementation reasoning. Fresh context, informed by what went wrong.
 
 This is not bureaucracy. This is how you prevent the most common failure mode in autonomous sessions: the planner losing track of what's already been dispatched and spinning up duplicate workers that step on each other's changes.
+
+### Verification Gates
+
+A task whose dependencies include any task not yet at `verified` status **MUST NOT be dispatched.** The planner must either:
+1. Dispatch verification (a separate judge sub-agent) for the dependency first, OR
+2. Explicitly document why verification is deferred, with the risk accepted in the Risk Areas section of PLAN.md.
+
+This is a hard gate, not a suggestion. The state machine enforces this: `completed` does not mean correct — it means a worker claims to be done. Only `verified` means a separate judge has confirmed correctness.
+
+### Staleness Detection
+
+Any task at `completed` status for more than one planner cycle without a corresponding judge dispatch is a **verification gap.** The planner must:
+1. Acknowledge the gap explicitly.
+2. Either dispatch a judge immediately, or document why verification is deferred with the risk accepted.
+
+Verification gaps are the primary vector for the "silent accumulation" failure mode — errors compound invisibly across multiple unverified tasks until a late-stage check reveals cascading breakage.
 
 ### Side-Effect Checkpoints
 

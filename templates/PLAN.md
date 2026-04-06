@@ -5,13 +5,17 @@
 
 ## Sub-Tasks
 
-| ID | Description | Dependencies | Verification Criteria | Permission Scope | Status |
-|----|-------------|-------------|----------------------|-----------------|--------|
-| T1 | | none | | [allowed paths, allowed ops, forbidden ops] | planned |
-| T2 | | T1 | | [allowed paths, allowed ops, forbidden ops] | planned |
-| T3 | | none | | [allowed paths, allowed ops, forbidden ops] | planned |
+| ID | Description | Dependencies | Verification Method | Verification Criteria | Permission Scope | Status |
+|----|-------------|-------------|--------------------|-----------------------|-----------------|--------|
+| T1 | | none | build | | [allowed paths, allowed ops, forbidden ops] | planned |
+| T2 | | T1 | test:pytest | | [allowed paths, allowed ops, forbidden ops] | planned |
+| T3 | | none | lint:eslint | | [allowed paths, allowed ops, forbidden ops] | planned |
 
 **Permission Scope format:** List allowed read/write paths, allowed commands, and explicit denials. Example: `read+write: src/cache/, tests/cache/ | run: pytest tests/cache/ | deny: git commit, dependency changes`
+
+**Verification Method** must be one of: `build`, `test:<command>`, `lint:<command>`, `schema-check`, `human-review`, `expert-subagent`. Free-text criteria like "verify correctness" are not valid — the planner commits to a concrete verification method at planning time, before seeing implementation output.
+
+**Verification Method is locked at planning time.** Changing it after implementation requires an explicit plan amendment with stated justification.
 
 ## Sequencing
 [Which tasks can run in parallel? Which are sequential? Why?

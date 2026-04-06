@@ -1,5 +1,38 @@
 # AgentFW Changelog
 
+## r5 (2026-04-06) — Structural Enforcement Hardening
+
+### Context
+Two observed failures exposed that r4 relies on behavioral compliance rather than structural gates: (1) Claude Code skips the harness for tasks meeting activation criteria because the decision tree is advisory, and (2) in a UE5 C++ project, three planning steps "completed" without building code — errors accumulated invisibly. This release converts advisory instructions into procedural constraints.
+
+### Added
+- **Mandatory classification gate** — Agent must output `[TASK CLASS: one-shot | structured | long-horizon]` before any work. Omitting is a protocol violation. See `core/harness-core.md`.
+- **Verification gates** — Tasks with unverified dependencies cannot be dispatched. Hard gate, not advisory. See `references/state-management.md`.
+- **Staleness detection** — Tasks at `completed` without judge dispatch are flagged as verification gaps. See `references/state-management.md`.
+- **Compiled language verification** — Judge must build as first step for C++, Rust, Go, Java, C#, Swift. Reasoning-only review is not Tier 1. See `references/domain-guidelines.md`.
+- **Interpreted language verification** — Judge must run tests/linter or at minimum import the module. See `references/domain-guidelines.md`.
+- **Late-discovery error protocol** — Errors found after multiple unverified tasks are treated as structural; roll back to last verified checkpoint. See `references/error-recovery.md`.
+- **Autonomous mode verification gates** — Judge dispatched between every task, not just at the end. See `playbooks/feature-dev.md`.
+
+### Enhanced
+- **One-shot criteria tightened** — One-shot now requires: zero files modified, OR one file <20 lines with no cross-file deps. Relaxation requires explicit justification. See `core/harness-core.md`.
+- **Tier 1 enforcement** — Tasks cannot transition completed→verified without machine-check output in PROGRESS.md. See `references/verification-tiers.md`.
+- **PLAN.md template** — Added required `Verification Method` column (build, test:\<cmd\>, lint:\<cmd\>, schema-check, human-review, expert-subagent). Locked at planning time. See `templates/PLAN.md`.
+- **PROGRESS.md template** — Added `Verification Method` and `Verification Artifact` columns. `Verified By` = "planner" is flagged as role-collapse violation. Version bumped to r5. See `templates/PROGRESS.md`.
+- **Anti-patterns auto-loaded** — `references/anti-patterns.md` now loads for all structured/long-horizon tasks, not just self-check. One-Shot Hero Mode warning inlined into decision tree. See `core/harness-core.md`.
+
+### Files Modified
+- `core/harness-core.md` — Classification gate, tightened one-shot, WARNING callout, anti-patterns auto-load
+- `references/state-management.md` — Verification gates, staleness detection, strengthened `completed` state
+- `references/domain-guidelines.md` — Compiled and interpreted language verification subsections
+- `references/verification-tiers.md` — Tier 1 enforcement language
+- `references/error-recovery.md` — Late-discovery error protocol
+- `templates/PLAN.md` — Verification Method column and rules
+- `templates/PROGRESS.md` — Verification Method, Verification Artifact, role-collapse detection, r5 version
+- `playbooks/feature-dev.md` — Autonomous mode verification gates
+
+---
+
 ## r4 (2026-04-04) — Modular Restructure + Audit Fixes
 
 ### Breaking Changes
