@@ -107,16 +107,19 @@ agentfw/
 - **Fresh context as a design feature** — Context window limits are a feature, not a bug. A fresh agent with a summary of what was learned beats a stale agent drowning in accumulated errors. AgentFW is designed around this.
 - **Autonomous vs Guided modes** — Autonomous mode dispatches sub-agent judges. Guided mode uses the human as judge. Both enforce role separation.
 
-## What Changed in r4
+## What Changed in r5
 
-- Added permission model with trust tiers, worker scoping, and escalation protocol
-- Enhanced state management with task state machine, side-effect checkpoints, and dedupe rules
-- Added evaluation system with 5 golden tasks and eval protocol for regression testing
-- Added observability via SESSION_LOG.md with 10 structured event types
-- Managed context budget by splitting core (~150 lines always-load) from on-demand references
-- Fixed guided mode role separation — human-as-judge replaces self-review
-- Restructured from 3 flat files into modular installable toolset
-- Added bootstrap self-install mechanism with client auto-detection
+- **Mandatory classification gate** — Agent must output `[TASK CLASS: one-shot | structured | long-horizon]` before any work begins
+- **Verification gates** — Tasks with unverified dependencies cannot be dispatched; `completed` no longer unblocks downstream tasks
+- **Staleness detection** — Tasks stuck at `completed` without judge dispatch are flagged as verification gaps
+- **Domain-specific verification** — Compiled languages require build-first; interpreted languages require test/linter execution
+- **Tier 1 enforcement** — Tasks cannot transition `completed`→`verified` without machine-check output recorded
+- **Late-discovery error protocol** — Errors found after multiple unverified steps trigger structural rollback
+- **Autonomous mode gates** — Judge verification required between every task, not just at the end
+- **One-shot criteria tightened** — Zero files modified, or one file <20 lines with no cross-file deps
+- **Anti-patterns auto-loaded** for all structured/long-horizon tasks with inline warning
+- **Template enforcement** — `Verification Method` column required in PLAN.md and PROGRESS.md; role-collapse detection in `Verified By`
+- **Golden task runner** updated with selective test execution (run individual tests by number)
 
 ## Version History
 
@@ -124,3 +127,4 @@ agentfw/
 - **r2** (2025-05-15): Added scenario playbooks for feature dev, bug hunting, and maker projects
 - **r3** (2025-09-01): Refined role separation, added PM investigation playbook
 - **r4** (2026-04-04): Modular restructure, permission model, evaluation system, observability, self-install
+- **r5** (2026-04-06): Structural enforcement hardening — classification gate, verification gates, domain-specific build requirements, Tier 1 enforcement

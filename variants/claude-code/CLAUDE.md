@@ -1,4 +1,4 @@
-<!-- AgentFW r4 — Claude Code variant. Source: github.com/Voxinator/AgentFW -->
+<!-- AgentFW r5 — Claude Code variant. Source: github.com/Voxinator/AgentFW -->
 
 # AgentFW — Core Instructions
 

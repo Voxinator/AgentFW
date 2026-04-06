@@ -74,4 +74,4 @@ The agent should:
 
 ## Upgrading from r3
 
-If your project has the r3 framework in custom instructions, replace it entirely with the r4 `custom-instructions.md` content. The core principles are unchanged — r4 restructures and extends with permissions, observability, and evaluation.
+If your project has the r3 framework in custom instructions, replace it entirely with the r5 `custom-instructions.md` content. The core principles are unchanged — r5 restructures and extends with permissions, observability, evaluation, and structural enforcement gates.

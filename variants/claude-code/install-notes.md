@@ -57,12 +57,13 @@ If it doesn't reference these concepts, the CLAUDE.md may not have loaded. Check
 
 ## Upgrading from r3
 
-If you have the r3 version installed (the original `agentic-harness-project-instructions_r3.md` content in your CLAUDE.md), simply replace it with the r4 variant. The r3 originals are preserved in the `archive/` directory. Key changes in r4:
+If you have the r3 version installed (the original `agentic-harness-project-instructions_r3.md` content in your CLAUDE.md), simply replace it with the r5 variant. The r3 originals are preserved in the `archive/` directory. Key changes since r3:
 
-- Permission model added
-- State management enhanced with task state machine
-- Context budget management
-- Guided mode role separation fixed
-- Evaluation system added
-- Observability (SESSION_LOG) added
-- Core principles unchanged — r4 restructures and extends, it doesn't rewrite
+- Permission model added (r4)
+- State management enhanced with task state machine (r4)
+- Context budget management (r4)
+- Guided mode role separation fixed (r4)
+- Evaluation system added (r4)
+- Observability (SESSION_LOG) added (r4)
+- Structural enforcement hardening — classification gate, verification gates, domain-specific build requirements, Tier 1 enforcement (r5)
+- Core principles unchanged — r5 restructures and extends, it doesn't rewrite
