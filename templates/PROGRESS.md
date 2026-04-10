@@ -1,7 +1,7 @@
 # Progress — [Task Name]
 
 ## AgentFW Version
-r5
+r6
 
 ## Current Status
 [One-line summary of where things stand]
@@ -30,3 +30,8 @@ r5
 
 ## Things Learned
 - [Insight that should inform future work]
+
+## Context Health Checks
+| Check # | After Task | Result | Evidence |
+|---------|-----------|--------|----------|
+| 1 | T3 | OK | W1-W3 dispatched, J1-J2 verified, no gaps |

@@ -107,6 +107,19 @@ agentfw/
 - **Fresh context as a design feature** — Context window limits are a feature, not a bug. A fresh agent with a summary of what was learned beats a stale agent drowning in accumulated errors. AgentFW is designed around this.
 - **Autonomous vs Guided modes** — Autonomous mode dispatches sub-agent judges. Guided mode uses the human as judge. Both enforce role separation.
 
+## What Changed in r6
+
+- **Critical Rules preamble** — Five numbered rules at the top of the core document that survive attention deprioritization in long contexts
+- **Context Health Gate** — State-driven check after every 3 tasks reach completed/verified; requires re-reading PROGRESS.md and self-assessing against Critical Rules
+- **Delegation Self-Check** — Procedural gate before any implementation code in the main session
+- **Context degradation as structural error** — Health check failures trigger session restart and re-verification
+- **Rubber-Stamp Compliance anti-pattern** — Named failure mode for emitting protocol markers without genuine assessment
+- **CONTEXT_HEALTH_CHECK event type** — Observability event for health gate assessments
+- **PROGRESS.md health check tracking** — Context Health Checks table in progress template
+- **Golden Tasks 6 & 7** — Late-session delegation resistance and health gate activation tests
+- **Reference Index compressed** — Single-line-per-entry format reclaims space for Critical Rules
+- **Claude Code variant synced** — All r5 structural enforcement gates now present; redundant Extended References section removed
+
 ## What Changed in r5
 
 - **Mandatory classification gate** — Agent must output `[TASK CLASS: one-shot | structured | long-horizon]` before any work begins
@@ -128,3 +141,4 @@ agentfw/
 - **r3** (2025-09-01): Refined role separation, added PM investigation playbook
 - **r4** (2026-04-04): Modular restructure, permission model, evaluation system, observability, self-install
 - **r5** (2026-04-06): Structural enforcement hardening — classification gate, verification gates, domain-specific build requirements, Tier 1 enforcement
+- **r6** (2026-04-10): Context degradation resistance — Critical Rules preamble, state-driven health gate, delegation self-check
