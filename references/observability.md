@@ -19,7 +19,7 @@ Logged once at the beginning of every session.
 
 Required fields:
 - Timestamp
-- AgentFW version (e.g., r5)
+- AgentFW version (e.g., r6)
 - Task summary (one line — what are we here to do?)
 - Operating mode: Autonomous or Guided
 - Client: Claude Code, Claude Projects, or other
@@ -104,6 +104,15 @@ Required fields:
 
 You don't need to log `always-allow` operations — that would be noise. Log the boundaries, not the routine.
 
+### CONTEXT_HEALTH_CHECK
+Logged when the planner performs a context health gate.
+
+Required fields:
+- Timestamp
+- Task count at time of check
+- Result: OK / DEGRADED
+- If DEGRADED: which Critical Rule was violated, corrective action taken
+
 ### SESSION_END
 Logged once at session close.
 
@@ -123,7 +132,7 @@ The log lives in SESSION_LOG.md at the project root (or harness directory). It's
 ```markdown
 | Timestamp | Event | Task ID | Details |
 |-----------|-------|---------|---------|
-| 09:15 | SESSION_START | — | r5, autonomous, "Add caching layer to API" |
+| 09:15 | SESSION_START | — | r6, autonomous, "Add caching layer to API" |
 | 09:17 | PLAN_CREATED | — | 4 tasks, structured complexity |
 | 09:18 | WORKER_DISPATCHED | T1 | W1, scope: src/cache/, tests/cache/, read+write |
 | 09:25 | WORKER_COMPLETED | T1 | W1, success, created 2 files, modified 1 |

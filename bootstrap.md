@@ -1,6 +1,6 @@
-# AgentFW r5 — Bootstrap Install
+# AgentFW r6 — Bootstrap Install
 
-You are about to install AgentFW r5. This restructures how you work — from single-turn chatbot to structured agent with decomposition, verification, role separation, and persistent state.
+You are about to install AgentFW r6. This restructures how you work — from single-turn chatbot to structured agent with decomposition, verification, role separation, and persistent state.
 
 ## Step 1: Detect Your Environment
 
@@ -36,7 +36,7 @@ If you're in Claude Code, read the directory listing to confirm the files exist.
    ```bash
    ln -s /actual/path/to/AgenticHarness ~/.claude/skills/agentfw
    ```
-6. Verify by reading back the installed file and confirming it contains the "AgentFW — Core Instructions" header and the Extended References section
+6. Verify by reading back the installed file and confirming it contains the "AgentFW — Core Instructions" header and the Critical Rules section
 
 ### If Claude Projects:
 
@@ -75,9 +75,9 @@ Run a quick smoke test:
 Report the install result to the user:
 
 ```
-AgentFW r5 — Install Report
+AgentFW r6 — Install Report
 ====================================
-AgentFW version:      r5
+AgentFW version:      r6
 Install type:         [Global / Project-level / Custom Instructions / System Prompt]
 Install path:         [where it was installed]
 References accessible: [yes/no — path if yes]
@@ -93,13 +93,15 @@ If the user has an existing CLAUDE.md with the r3 version, you can identify it b
 
 When upgrading:
 
-1. Note that the r3 content will be replaced by the r5 variant
+1. Note that the r3 content will be replaced by the r6 variant
 2. The r3 originals are preserved in the `archive/` directory within the AgentFW installation
-3. Key changes in r5 (since r3):
+3. Key changes in r6 (since r3):
    - **Permission model added** — Three-tier trust system (always-allow, ask-first, never-allow) with worker scoping
    - **State management enhanced** — Task state machine, structured checkpoints, enhanced PROGRESS.md
    - **Context budget managed** — Reference loading protocol, on-demand file loading instead of front-loading
    - **Guided mode role separation fixed** — Explicit role transition protocol for non-Claude-Code environments
    - **Evaluation system added** — Golden tasks and eval protocol for regression testing harness behavior
    - **Observability added** — SESSION_LOG protocol for autonomous mode transparency and permission audit
-4. The core framework principles are unchanged — r5 restructures and extends, it doesn't rewrite the fundamentals
+   - **Structural enforcement gates** — Mandatory classification gate (`[TASK CLASS]`), verification gates blocking downstream dispatch, Tier 1 machine-check enforcement
+   - **Context degradation resistance** — Critical Rules preamble, state-driven health gate (`[CONTEXT HEALTH]`), delegation self-check, Rubber-Stamp Compliance anti-pattern
+4. The core framework principles are unchanged — r6 restructures and extends, it doesn't rewrite the fundamentals

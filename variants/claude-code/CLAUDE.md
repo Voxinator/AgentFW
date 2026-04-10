@@ -1,8 +1,20 @@
-<!-- AgentFW r5 — Claude Code variant. Source: github.com/Voxinator/AgentFW -->
+<!-- AgentFW r6 — Claude Code variant. Source: github.com/Voxinator/AgentFW -->
 
 # AgentFW — Core Instructions
 
 AI capabilities appear "jagged" when we ask for one-shot answers. Apply the same organizational structures that make human teams effective — decomposition, parallelization, verification, iteration — and the surface smooths out. These instructions encode that lesson. **The firmware is the product. Build it well.**
+
+---
+
+## CRITICAL RULES — These override all other guidance
+
+These five rules apply at ALL times, regardless of how much context has been consumed. They are structural, not advisory. Violating any of them is a protocol failure.
+
+1. **CLASSIFY BEFORE ACTING.** Output `[TASK CLASS: one-shot | structured | long-horizon]` before any work. No exceptions. No silent skipping.
+2. **DO NOT COLLAPSE ROLES.** The main session plans and dispatches. Sub-agents implement. Different sub-agents verify. If you are about to write implementation code in the main session for a structured task, STOP — dispatch a worker.
+3. **DO NOT SELF-VERIFY.** The context that wrote the code cannot verify the code. Dispatch a separate judge.
+4. **CHECK PROGRESS.md BEFORE EVERY DISPATCH.** Read the task states. Do not re-dispatch completed or in-progress tasks. Do not dispatch tasks with unverified dependencies. The state file is ground truth, not your memory.
+5. **WHEN IN DOUBT, DECOMPOSE.** The pull to "just do it all at once" is the signal to decompose, not to push through.
 
 ---
 
@@ -77,17 +89,33 @@ Full permission model: see `core/permissions.md`
 
 ## Task Delegation Decision Tree
 
-**One-shot** — A quick answer, a single config change, a one-line fix. No code generation beyond a few lines. No harness needed.
+### MANDATORY: Classification Gate
+
+Before any work begins, output a classification block:
+
+```
+[TASK CLASS: one-shot | structured | long-horizon]
+Justification: <one-line reason>
+```
+
+Omitting this classification is a protocol violation. The classification must appear before any implementation work, file modifications, or sub-agent dispatch.
+
+**One-shot** — Applies ONLY when: (a) zero files are modified, OR (b) exactly one file is modified with fewer than 20 lines changed AND the change has no cross-file dependencies. Examples: a quick answer, a single config change, a one-line fix. No harness needed.
+
+> **WARNING — One-Shot Hero Mode.** Trying to solve a complex task in a single massive response is the most common failure mode. You'll recognize it when your response is ballooning past a screen and you're holding multiple sub-problems simultaneously. Errors compound silently in the middle, where attention is thinnest. If you feel the pull to "just do it all at once" — that's the signal to decompose, not to push through.
+
+If you skip the harness for a task that meets ANY activation criterion below, you MUST state which relaxation exception applies and why. Silence is not a valid relaxation.
 
 **Structured** — Activate the harness if ANY of these are true:
-- The output will be more than ~50 lines of code
-- The task involves more than one file
+- The change touches more than one file
 - There are independently verifiable components (logic, tests, integration)
 - The task has side effects worth tracking
 - The task requires investigating multiple hypotheses or exploring multiple areas of a codebase
 - You'd benefit from a plan before starting
+- Could a bug in this change go undetected by the implementer alone?
+- Does this change have failure modes that only appear at integration time?
 
-When in doubt, activate the harness. The overhead of an unnecessary plan is small. The cost of one-shotting something that needed decomposition is rework.
+Activating the harness for complex tasks IS the efficient path — one-shotting complex work produces rework, which wastes more time than the harness costs.
 
 Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for implementation, dispatch separate judges for verification, maintain PROGRESS.md. For bug reports and diagnostics, create DIAGNOSTIC.md with ranked hypotheses before investigating — see `playbooks/bug-hunting.md`.
 
@@ -98,6 +126,7 @@ Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for
 ## Session Protocol
 
 ### Start
+0. **Classify the task** — output `[TASK CLASS]` block (see Classification Gate above). This happens before anything else.
 1. Check for existing PROGRESS.md and context documents
 2. Orient: current state, last completed work, what's next
 3. If starting fresh, create the harness (plan, progress file, context docs)
@@ -110,7 +139,8 @@ Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for
 4. Evaluate results from workers and judges; decide next steps
 5. Update progress after each sub-task
 6. In autonomous mode, maintain SESSION_LOG.md with all permission-relevant events
-7. Flag when hitting context limits — summarize and restart rather than accumulate
+7. **Context health gate:** After every 3 tasks reach completed/verified, re-read PROGRESS.md and self-assess against Critical Rules. Output `[CONTEXT HEALTH: OK/DEGRADED]`. See `references/state-management.md`.
+8. If context is degraded — summarize, update PROGRESS.md, and restart with fresh context rather than accumulate.
 
 ### End
 1. Update PROGRESS.md with current status
@@ -132,67 +162,31 @@ After determining task type and mode, load ONLY the references you need. Do not 
 | Errors or failures mid-task | `references/error-recovery.md` |
 | Dispatching workers | `references/prompt-design.md` |
 | Domain-specific work | `references/domain-guidelines.md` |
-| Self-check / code smell | `references/anti-patterns.md` |
+| All structured/long-horizon tasks | `references/anti-patterns.md` |
 | Scenario playbooks | `playbooks/[matching-scenario].md` |
 
 ---
 
 ## Reference Index
 
-**Core**
-- `core/harness-core.md` — This file (AgentFW core). Always loaded.
-- `core/permissions.md` — Full permission model, trust tiers, worker scoping, escalation protocol, audit requirements.
-
-**References**
-- `references/state-management.md` — PROGRESS.md protocol, memory/context documents, persistent state across sessions.
-- `references/verification-tiers.md` — Machine-checkable vs. expert-checkable verification, sniff-check enablement.
-- `references/error-recovery.md` — Blast radius assessment, local vs. structural errors, restart protocol.
-- `references/prompt-design.md` — How to write effective sub-agent prompts, scope declarations, context packaging.
-- `references/domain-guidelines.md` — Domain-specific decomposition and verification: code, product/strategy, research, documentation.
-- `references/anti-patterns.md` — Role collapse, one-shot hero mode, context stuffing, self-review, and other failure modes.
-- `references/observability.md` — SESSION_LOG protocol, autonomous mode transparency, permission audit.
-
-**Playbooks**
-- `playbooks/feature-dev.md` — New feature development (autonomous + guided modes).
-- `playbooks/bug-hunting.md` — Troubleshooting and bug investigation.
-- `playbooks/maker-project.md` — Personal build projects.
-- `playbooks/pm-investigation.md` — Product/market investigation and analysis.
-- `playbooks/cross-scenario-patterns.md` — Patterns that recur across scenarios.
-
----
-
-## Extended References
-
-References are relative to the AgentFW installation directory. If installed globally, the default location is `~/.claude/skills/agentfw/` or wherever you placed the AgentFW directory.
-
-When the task requires deeper guidance, read these files from the AgentFW installation directory. Do not load all of them — load only what applies.
-
-### Core
-- `core/permissions.md` — Full permission model, worker scoping, escalation protocol
-
-### References
-- `references/state-management.md` — PROGRESS.md protocol, task state machine, checkpoints
-- `references/verification-tiers.md` — Machine-checkable vs expert-checkable, sniff-check enablement
-- `references/error-recovery.md` — Blast radius, restart protocol
-- `references/prompt-design.md` — Sub-agent prompts, context budget
-- `references/domain-guidelines.md` — Code, product, research, docs guidelines
-- `references/anti-patterns.md` — Failure mode catalog
+- `core/harness-core.md` — This file (always loaded)
+- `core/permissions.md` — Permission model, trust tiers, worker scoping, escalation
+- `references/state-management.md` — PROGRESS.md protocol, task state machine, verification gates
+- `references/verification-tiers.md` — Machine vs. expert verification, Tier 1 enforcement
+- `references/error-recovery.md` — Blast radius, restart protocol, late-discovery errors
+- `references/prompt-design.md` — Sub-agent prompts, context budget, judge shielding
+- `references/domain-guidelines.md` — Code, product, research, docs verification rules
+- `references/anti-patterns.md` — Failure mode catalog (9 named anti-patterns)
 - `references/observability.md` — SESSION_LOG protocol, event types
-
-### Playbooks
 - `playbooks/feature-dev.md` — Feature development (autonomous + guided)
-- `playbooks/bug-hunting.md` — Bug investigation
+- `playbooks/bug-hunting.md` — Bug investigation and diagnostics
 - `playbooks/maker-project.md` — Personal build projects
 - `playbooks/pm-investigation.md` — Product/market investigation
 - `playbooks/cross-scenario-patterns.md` — Cross-scenario patterns, mode selection
-
-### Templates
 - `templates/PROGRESS.md` — Enhanced progress tracking template
 - `templates/PLAN.md` — Task plan template with permission scopes
 - `templates/SESSION_LOG.md` — Structured event log template
 - `templates/DIAGNOSTIC.md` — Bug hunting state file template
 - `templates/launch-prompts/` — Copy-paste autonomous launch prompts
-
-### Evaluation
 - `evaluation/golden-tasks.md` — 5 regression tests for AgentFW behavior
 - `evaluation/eval-protocol.md` — How to run AgentFW evaluations

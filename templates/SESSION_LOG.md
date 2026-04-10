@@ -1,7 +1,7 @@
 # Session Log — [Date] — [Task Name]
 
 ## Session Metadata
-- **AgentFW version:** r5
+- **AgentFW version:** r6
 - **Client:** [Claude Code / Claude Projects / Other]
 - **Mode:** [Autonomous / Guided]
 - **Task summary:** [one-line description of what this session is doing]

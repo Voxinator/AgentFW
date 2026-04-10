@@ -24,6 +24,15 @@ When errors are discovered after multiple tasks have proceeded past the point of
 
 This scenario is a symptom of missing verification gates. After recovery, ensure every subsequent task has judge verification before the next task dispatches.
 
+### Context Degradation as Structural Error
+
+When a context health check reveals degradation — the planner has been implementing directly, self-verifying, or skipping classification — treat this as a **structural error** even if the work product appears correct. The agent's judgment is compromised by the same context accumulation that caused the degradation. Recovery:
+
+1. Update PROGRESS.md with current state and health check findings.
+2. Summarize decisions, learnings, and current plan state.
+3. Start a new session from the PROGRESS.md handoff.
+4. The new session re-verifies any work completed after the last clean `[CONTEXT HEALTH: OK]`.
+
 ---
 
 ## Rollback via Side-Effect Checkpoints

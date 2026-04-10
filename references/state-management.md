@@ -61,6 +61,34 @@ Any task at `completed` status for more than one planner cycle without a corresp
 
 Verification gaps are the primary vector for the "silent accumulation" failure mode — errors compound invisibly across multiple unverified tasks until a late-stage check reveals cascading breakage.
 
+### Context Health Gate
+
+After every 3 tasks reach `completed` or `verified` status in PROGRESS.md, the planner MUST perform a context health check before dispatching the next worker:
+
+1. **Read PROGRESS.md from disk** (do not rely on memory of its contents).
+2. **Count completed + verified tasks.** If the count has crossed a multiple of 3 since the last check, proceed. Otherwise, continue normally.
+3. **Self-assess against the Critical Rules:**
+   - Am I still dispatching sub-agents for implementation, or have I started implementing directly? (Rule 2)
+   - Am I dispatching separate judges, or have I started self-verifying? (Rule 3)
+   - Have I skipped any task classifications? (Rule 1)
+   - Are there verification gaps — tasks at `completed` without judge dispatch? (Staleness Detection)
+4. **If any answer reveals degradation:** Output `[CONTEXT HEALTH: DEGRADED — <which rule violated>]` and take corrective action before proceeding. Corrective actions: dispatch the missing judge, re-classify the current task, or summarize context and restart the session with a PROGRESS.md handoff.
+5. **If all answers are clean:** Output `[CONTEXT HEALTH: OK — <brief evidence>]` and proceed.
+
+The trigger is the task count in PROGRESS.md, not the agent's memory. Even if the agent has forgotten the Critical Rules, reading PROGRESS.md and seeing the task count forces the check.
+
+The `<brief evidence>` in the OK output must reference specific session behavior (e.g., "dispatched W1-W3 for implementation, J1-J2 for verification, no gaps"). A bare `[CONTEXT HEALTH: OK]` without evidence is Rubber-Stamp Compliance (see `references/anti-patterns.md`).
+
+### Delegation Self-Check
+
+Before writing ANY implementation code (file modifications, code generation) in the main session for a structured or long-horizon task, check:
+
+1. **What is my role?** If the task is classified structured or long-horizon, the main session is the planner. Planners dispatch — they do not implement.
+2. **Is there a worker for this?** Check PROGRESS.md. If a worker is dispatched or in-progress, wait. If no worker exists, dispatch one.
+3. **Why am I not delegating?** If you have a reason (one-shot task, relaxation exception), state it explicitly. If you have no reason, you are in role collapse — STOP and dispatch.
+
+This check is triggered by the action (about to write code), not by recalled instructions.
+
 ### Side-Effect Checkpoints
 
 After each worker completes, record what changed. This is your rollback point if the next step fails.

@@ -23,3 +23,6 @@ The main session drops from planner/judge into worker mode because it "already h
 
 ### Self-Review
 The same context that wrote code or made changes then runs verification checks on its own work. It will check for what it intended, not what happened. It will miss the same edge cases in both passes. Verification must come from a fresh context that evaluates artifacts cold, without access to the implementer's reasoning or intent.
+
+### Rubber-Stamp Compliance
+Mechanically outputting protocol markers (`[TASK CLASS]`, `[CONTEXT HEALTH: OK]`) without performing the actual assessment. The marker appears but doesn't match reality — the classification doesn't fit the task complexity, or the health check says OK while the agent has been implementing directly for three tasks. Protocol markers are only useful if they reflect real decisions. The tell: the marker appears but the behavior it gates doesn't change.

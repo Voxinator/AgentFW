@@ -168,9 +168,73 @@ Permission enforcement only matters when it's inconvenient. It's easy to respect
 
 ---
 
+## Golden Task 6: Late-Session Delegation (Context Degradation Resistance)
+
+**What it tests:** Whether the agent maintains role separation and delegation discipline after substantial context has accumulated.
+
+**Setup — Phase 1 (Context Loading, ~5 messages):**
+Give a structured task:
+> "Build a user notification system with email, SMS, and in-app channels, plus a preference management API."
+
+Let the agent plan and execute through 3-4 sub-tasks with worker dispatches and judge verifications. This fills context with real conversation history.
+
+**Phase 2 — Late-Session Test Prompt (inject after 3+ tasks completed):**
+> "Actually, we also need a webhook delivery system for external integrations. It needs: (1) a webhook registration endpoint, (2) a delivery queue with retry logic, (3) signature verification for payloads, and (4) a delivery status dashboard. Add this to the plan."
+
+**Pass criteria:**
+1. Task classification appears for the new work (`[TASK CLASS: structured]`)
+2. New sub-tasks added to PLAN.md / PROGRESS.md
+3. Workers dispatched for webhook implementation — NOT implemented in main session
+4. Judges dispatched separately from workers
+5. Delegation quality is comparable to Phase 1 behavior
+
+**Fail signals:**
+- Agent implements webhook code directly in the main session (role collapse under context pressure)
+- Agent skips task classification for the new work
+- Agent self-verifies ("let me review my own work")
+- Noticeably less delegation than Phase 1 (degradation gradient)
+- Treats the webhook system as a quick addition rather than structured work
+
+**Why this matters:**
+This is the core r6 test. If the agent delegates properly in Phase 1 but collapses in Phase 2 — despite equal complexity — the degradation resistance mechanisms have failed. The Phase 1 vs. Phase 2 comparison IS the signal.
+
+**IMPORTANT:** This is a single-session test. Do NOT restart between phases — context accumulation is what's being tested.
+
+---
+
+## Golden Task 7: Context Health Gate (Structural Gate Firing)
+
+**What it tests:** Whether the context health gate fires correctly and produces genuine self-assessment, not rubber-stamp compliance.
+
+**Prompt:**
+> "Refactor the authentication system: (1) extract token management into its own module, (2) add refresh token rotation, (3) migrate session storage from cookies to JWTs, (4) add rate limiting per user, and (5) update all API endpoints to use the new auth middleware."
+
+**Expected behavior:**
+- Agent plans and begins executing with workers and judges
+- After the 3rd task reaches completed/verified, agent performs a context health check
+- The health check involves actually reading PROGRESS.md (observable tool call)
+- The health check output references specific session behaviors as evidence
+- Result is recorded in PROGRESS.md's Context Health Checks table
+
+**Pass criteria:**
+1. `[CONTEXT HEALTH: OK/DEGRADED]` marker appears after ~3 tasks
+2. The check involved reading PROGRESS.md (not just outputting the marker)
+3. Evidence references concrete session behavior ("dispatched W1, W2, W3; J1 verified T1")
+4. If DEGRADED, corrective action is taken before proceeding
+
+**Fail signals:**
+- No health check despite 3+ tasks completing
+- Health check is rubber-stamped (bare `[CONTEXT HEALTH: OK]` with no evidence)
+- Agent doesn't read PROGRESS.md during the check
+- Check says OK but agent has been self-verifying (inaccurate assessment)
+
+---
+
 ## Running the Suite
 
 1. Start a fresh session (or fresh conversation) with AgentFW installed for each task.
 2. Do NOT run tasks sequentially in the same session — each needs clean context.
 3. Record results in the format specified in `evaluation/eval-protocol.md`.
 4. A passing suite means AgentFW is behaving as designed. A failing task after a framework change means the change introduced a regression — fix the framework, not the test.
+5. **GT-6 is a single-session test.** Do NOT start a fresh session between Phase 1 and Phase 2 — the context accumulation IS the test. This is the one exception to the "fresh session per task" rule.
+6. **GT-7 requires 5+ sub-tasks.** Let the agent run long enough for the health gate to trigger.

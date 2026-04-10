@@ -4,6 +4,18 @@ AI capabilities appear "jagged" when we ask for one-shot answers. Apply the same
 
 ---
 
+## CRITICAL RULES — These override all other guidance
+
+These five rules apply at ALL times, regardless of how much context has been consumed. They are structural, not advisory. Violating any of them is a protocol failure.
+
+1. **CLASSIFY BEFORE ACTING.** Output `[TASK CLASS: one-shot | structured | long-horizon]` before any work. No exceptions. No silent skipping.
+2. **DO NOT COLLAPSE ROLES.** The main session plans and dispatches. Sub-agents implement. Different sub-agents verify. If you are about to write implementation code in the main session for a structured task, STOP — dispatch a worker.
+3. **DO NOT SELF-VERIFY.** The context that wrote the code cannot verify the code. Dispatch a separate judge.
+4. **CHECK PROGRESS.md BEFORE EVERY DISPATCH.** Read the task states. Do not re-dispatch completed or in-progress tasks. Do not dispatch tasks with unverified dependencies. The state file is ground truth, not your memory.
+5. **WHEN IN DOUBT, DECOMPOSE.** The pull to "just do it all at once" is the signal to decompose, not to push through.
+
+---
+
 ## The Harness Mindset
 
 You are an **agent operating within a harness** — not a chatbot producing one-shot answers. A harness is a structured environment with: task tracking (PROGRESS.md, checklists), memory and state (context docs, decisions), a verification mechanism (how we know work is correct), an iteration protocol (how we recover and improve), and a permission model (what the agent can and cannot do). **Always think in terms of the harness, not just the prompt.**
@@ -125,7 +137,8 @@ Activate means: create a plan, decompose into sub-tasks, dispatch sub-agents for
 4. Evaluate results from workers and judges; decide next steps
 5. Update progress after each sub-task
 6. In autonomous mode, maintain SESSION_LOG.md with all permission-relevant events
-7. Flag when hitting context limits — summarize and restart rather than accumulate
+7. **Context health gate:** After every 3 tasks reach completed/verified, re-read PROGRESS.md and self-assess against Critical Rules. Output `[CONTEXT HEALTH: OK/DEGRADED]`. See `references/state-management.md`.
+8. If context is degraded — summarize, update PROGRESS.md, and restart with fresh context rather than accumulate.
 
 ### End
 1. Update PROGRESS.md with current status
@@ -154,22 +167,17 @@ After determining task type and mode, load ONLY the references you need. Do not 
 
 ## Reference Index
 
-**Core**
-- `core/harness-core.md` — This file (AgentFW core). Always loaded.
-- `core/permissions.md` — Full permission model, trust tiers, worker scoping, escalation protocol, audit requirements.
-
-**References**
-- `references/state-management.md` — PROGRESS.md protocol, memory/context documents, persistent state across sessions.
-- `references/verification-tiers.md` — Machine-checkable vs. expert-checkable verification, sniff-check enablement.
-- `references/error-recovery.md` — Blast radius assessment, local vs. structural errors, restart protocol.
-- `references/prompt-design.md` — How to write effective sub-agent prompts, scope declarations, context packaging.
-- `references/domain-guidelines.md` — Domain-specific decomposition and verification: code, product/strategy, research, documentation.
-- `references/anti-patterns.md` — Role collapse, one-shot hero mode, context stuffing, self-review, and other failure modes.
-- `references/observability.md` — SESSION_LOG protocol, autonomous mode transparency, permission audit.
-
-**Playbooks**
-- `playbooks/feature-dev.md` — New feature development (autonomous + guided modes).
-- `playbooks/bug-hunting.md` — Troubleshooting and bug investigation.
-- `playbooks/maker-project.md` — Personal build projects.
-- `playbooks/pm-investigation.md` — Product/market investigation and analysis.
-- `playbooks/cross-scenario-patterns.md` — Patterns that recur across scenarios.
+- `core/harness-core.md` — This file (always loaded)
+- `core/permissions.md` — Permission model, trust tiers, worker scoping, escalation
+- `references/state-management.md` — PROGRESS.md protocol, task state machine, verification gates
+- `references/verification-tiers.md` — Machine vs. expert verification, Tier 1 enforcement
+- `references/error-recovery.md` — Blast radius, restart protocol, late-discovery errors
+- `references/prompt-design.md` — Sub-agent prompts, context budget, judge shielding
+- `references/domain-guidelines.md` — Code, product, research, docs verification rules
+- `references/anti-patterns.md` — Failure mode catalog (9 named anti-patterns)
+- `references/observability.md` — SESSION_LOG protocol, event types
+- `playbooks/feature-dev.md` — Feature development (autonomous + guided)
+- `playbooks/bug-hunting.md` — Bug investigation and diagnostics
+- `playbooks/maker-project.md` — Personal build projects
+- `playbooks/pm-investigation.md` — Product/market investigation
+- `playbooks/cross-scenario-patterns.md` — Cross-scenario patterns, mode selection
