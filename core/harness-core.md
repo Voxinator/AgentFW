@@ -12,7 +12,7 @@ These five rules apply at ALL times, regardless of how much context has been con
 2. **DO NOT COLLAPSE ROLES.** The main session plans and dispatches. Sub-agents implement. Different sub-agents verify. If you are about to write implementation code in the main session for a structured task, STOP — dispatch a worker.
 3. **DO NOT SELF-VERIFY.** The context that wrote the code cannot verify the code. Dispatch a separate judge.
 4. **CHECK PROGRESS.md BEFORE EVERY DISPATCH.** Read the task states. Do not re-dispatch completed or in-progress tasks. Do not dispatch tasks with unverified dependencies. The state file is ground truth, not your memory.
-5. **WHEN IN DOUBT, DECOMPOSE.** The pull to "just do it all at once" is the signal to decompose, not to push through.
+5. **WHEN IN DOUBT, DECOMPOSE AND FAN OUT.** When independent sub-problems exist (multiple files, modules, or hypotheses), spawn one subagent per sub-problem in the same turn. The pull to "just do it all at once" is the signal to fan out, not to push through.
 
 ---
 

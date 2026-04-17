@@ -1,8 +1,8 @@
 # AgentFW — Design Specification
 
-**Version:** r6
+**Version:** r7
 **Author:** Brian Taylor
-**Last updated:** 2026-04-10
+**Last updated:** 2026-04-17
 
 ---
 
@@ -87,7 +87,7 @@ AgentFW ships pre-built instruction sets for three deployment targets:
 | Generic | `variants/generic/system-prompt.md` | Use as system prompt in any client |
 | Hermes | `variants/hermes/HERMES.md` | Uses `delegate_task()` API dispatch |
 
-Variants adapt the core to client-specific capabilities (file system access, sub-agent dispatch mechanisms, custom instruction fields) while preserving the same behavioral rules. The canonical source is `core/harness-core.md`; variants must track it. Drift between core and variants is a regression (see r6 planning — the Claude Code variant drifted from r5 core).
+Variants adapt the core to client-specific capabilities (file system access, sub-agent dispatch mechanisms, custom instruction fields) while preserving the same behavioral rules. The canonical source is `core/harness-core.md`; variants must track it. Drift between core and variants is a regression (see r6 planning — the Claude Code variant drifted from r5 core). Model-family handling (reasoning-effort tiers, adaptive thinking, token budgets) is kept out of the core and variants; see the non-binding subsection at the end of `references/prompt-design.md`.
 
 ### 3.3 Bootstrap Installer
 
@@ -520,6 +520,7 @@ Seven regression tests that test AgentFW's behavioral correctness:
 - **Exact prompts** — Enter the golden task prompt as written. No priming.
 - **Partial passes allowed** — Record what was missed; consistent partials on the same task indicate framework weakness.
 - **Fix the framework, not the golden task** — If a task fails after a change, the change is suspect.
+- **Multi-model probe (r7)** — Phase 0 multi-model probe for r7 was run at reduced scope on 2026-04-17 (Opus 4.7 and Sonnet 4.6 across GT-1/3/5 only — 6 of 28 cells); full-scope coverage requires a multi-turn runner for GT-2/4/6/7 and access to Opus 4.6 and GPT-5.4-Pro.
 
 ### 17.3 Result Tracking
 
@@ -601,3 +602,4 @@ The harness adds overhead that simple tasks don't need. The classification gate 
 | r4 | 2026-04-04 | Modular restructure, permission model, evaluation system, observability, bootstrap |
 | r5 | 2026-04-06 | Structural enforcement hardening — classification gate, verification gates, Tier 1 enforcement |
 | r6 | 2026-04-10 | Context degradation resistance — Critical Rules preamble, state-driven health gate, delegation self-check |
+| r7 | 2026-04-17 | Cross-model tuning pass — model-agnostic edits for Opus 4.7 without non-target regression, bounded model-family knobs subsection, reduced-scope Phase 0 multi-model probe |

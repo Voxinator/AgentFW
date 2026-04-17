@@ -105,7 +105,7 @@ Required fields:
 You don't need to log `always-allow` operations — that would be noise. Log the boundaries, not the routine.
 
 ### CONTEXT_HEALTH_CHECK
-Logged when the planner performs a context health gate.
+Logged when the planner performs a context health gate. Task-state-triggered (fires on PROGRESS.md task count), not tool-call-interval-triggered — see `references/state-management.md` Context Health Gate.
 
 Required fields:
 - Timestamp
