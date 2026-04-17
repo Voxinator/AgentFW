@@ -45,6 +45,10 @@ Before dispatching a worker for a task, check PROGRESS.md:
 
 This is not bureaucracy. This is how you prevent the most common failure mode in autonomous sessions: the planner losing track of what's already been dispatched and spinning up duplicate workers that step on each other's changes.
 
+### Quoting State Files in Worker Prompts
+
+When dispatching a worker or judge against a task in PROGRESS.md, include the exact PROGRESS.md line(s) the agent is acting on, and require the agent to echo those lines verbatim in its returned artifact. Applies to workers and judges equally. Explicit quotation beats implicit reference: it anchors the agent to the ground-truth state file and makes drift visible on return.
+
 ### Verification Gates
 
 A task whose dependencies include any task not yet at `verified` status **MUST NOT be dispatched.** The planner must either:
@@ -74,6 +78,10 @@ After every 3 tasks reach `completed` or `verified` status in PROGRESS.md, the p
    - Are there verification gaps — tasks at `completed` without judge dispatch? (Staleness Detection)
 4. **If any answer reveals degradation:** Output `[CONTEXT HEALTH: DEGRADED — <which rule violated>]` and take corrective action before proceeding. Corrective actions: dispatch the missing judge, re-classify the current task, or summarize context and restart the session with a PROGRESS.md handoff.
 5. **If all answers are clean:** Output `[CONTEXT HEALTH: OK — <brief evidence>]` and proceed.
+
+Cadence held at 3 pending empirical degradation-curve data. Retrieval accuracy on long contexts does not imply agentic rule-adherence stability; do not loosen based on needle-in-haystack scores or long-context marketing from any vendor.
+
+This reflection is task-state-triggered (observable PROGRESS.md task count), not tool-call-interval-triggered — it survives any "remove every-N-tool-calls scaffolding" advice. See `references/observability.md` CONTEXT_HEALTH_CHECK.
 
 The trigger is the task count in PROGRESS.md, not the agent's memory. Even if the agent has forgotten the Critical Rules, reading PROGRESS.md and seeing the task count forces the check.
 

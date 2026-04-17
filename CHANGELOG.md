@@ -1,5 +1,55 @@
 # AgentFW Changelog
 
+## r7 (2026-04-17) — Cross-Model Tuning Pass
+
+### Context
+Claude Opus 4.7 landed with behavior deltas — fewer sub-agents dispatched by default, adaptive thinking off by default, stronger intrinsic self-verification, and coding-benchmark gains that tempt loosening structural gates. A tuning pass was needed to keep AgentFW aligned with 4.7 without regressing Opus 4.6, Sonnet 4.6, or GPT-5-tier models. The core firmware stays model-agnostic; 4.7-specific knobs live in a single short appendix with inline `(Anthropic: …)` sidenotes. Ten proposals from the r7 judge artifact were triaged: six shipped as model-agnostic edits, three shipped as reframed principles in a bounded model-family subsection, and four were rejected or deferred. See `PLAN-r7.md` §2–§4.
+
+### Added
+- **Self-verification vs. self-review clarifier** — Appended a single sentence to the Self-Review anti-pattern distinguishing in-context intrinsic pre-flight verification (fine, model-provided) from self-review-as-judge (prohibited by Rule 3). Prevents future tuners from weakening Rule 3 on the back of any model's self-verification marketing. See `references/anti-patterns.md`. (PLAN-r7 §2.1.)
+- **Explicit fan-out instruction in worker dispatch** — Added a paragraph above `### Include` in the Context Budget for Sub-Agents subsection instructing planners to say "spawn N workers in parallel" literally when decomposing across independent items, not "decompose" alone. Counters 4.7's "fewer subagents by default" tendency; helps every model that takes literal phrasing better than advisory phrasing. See `references/prompt-design.md`. (PLAN-r7 §2.2.)
+- **Quote-before-act on state files** — New subsection in state-management.md: worker prompts should include the exact PROGRESS.md line(s) being acted on, and workers are expected to echo them in returned artifacts. Applies to workers and judges equally. See `references/state-management.md`. (PLAN-r7 §2.4.)
+- **Cadence annotation for the 3-task health gate** — One-line note after the numbered health-gate steps explaining the cadence is held pending empirical degradation-curve data; long-context retrieval scores do not imply agentic rule-adherence stability. Immunizes the cadence against well-meaning loosening on any vendor's long-context claims. See `references/state-management.md`. (PLAN-r7 §2.5.)
+- **Task-state-triggered reflection note** — One-line cross-reference in state-management.md and observability.md clarifying the health gate fires on PROGRESS.md task count, not on a tool-call clock. Pre-empts deletion of the gate by any future tuner reading "remove every-N-tool-calls summarization" advice. See `references/state-management.md` and `references/observability.md`. (PLAN-r7 §2.6.)
+- **Model-family knobs (non-binding) subsection** — New ≤25-line subsection at the end of `references/prompt-design.md` covering three reframed principles with inline sidenotes: reasoning effort by role, judges need guaranteed deliberation, token budget as a worker-scope component. Principles are model-agnostic; Anthropic-specific invocations appear only as `(Anthropic Opus 4.7: …)` sidenotes. See `references/prompt-design.md`. (PLAN-r7 §3.)
+
+### Enhanced
+- **Reference-file audit for vague generalizations** — Single-pass read of state-management, prompt-design, domain-guidelines, error-recovery, and anti-patterns for "and similar," "etc.," "or equivalent," and abstract generalizations in rule-bearing text. Where found, replaced with explicit enumerations or concrete triggers. Net-neutral or slightly negative on line count. (PLAN-r7 §2.3.)
+
+### Rejected / Deferred
+- **P5 — Recalibrate line-count heuristics to tokens for the 4.7 tokenizer.** Rejected. Line counts are more portable across tokenizers than any token-based heuristic; the current "500 lines" / "~175 lines" guidance is directionally correct for all models. (PLAN-r7 §4.)
+- **P11 — Route web-research-heavy tasks away from 4.7 (BrowseComp regression).** Deferred. No Artifact A surface quote exists for the specific playbook content; re-evaluate when BrowseComp regression is reproduced in-house. (PLAN-r7 §4.)
+- **P12 — Loosen `<20-line` one-shot threshold based on 4.7 coding gains.** Rejected. The clause is a role-separation gate, not a capability gate; benchmark strength does not change whether the main session should implement vs. delegate. (PLAN-r7 §4.)
+- **P13 — Weaken Rule 3 (NO SELF-VERIFY) because 4.7 self-verifies.** Rejected. Anthropic does not claim 4.7's built-in self-verification replaces an independent-context judge; loosening rests on a misreading of the source. (PLAN-r7 §4.)
+
+### Baseline Probe
+Phase 0 multi-model empirical probe was run at reduced scope on 2026-04-17: Opus 4.7 and Sonnet 4.6 across GT-1, GT-3, and GT-5 only — 6 of 28 cells filled. Opus 4.6 could not be version-pinned via the Claude Code Agent tool model enum; GPT-5.4-Pro was not accessible from the probe tooling; GT-2/4/6/7 require true multi-turn sessions or mid-task event injection that single-dispatch subagents cannot reproduce. Directional signal: Opus 4.7 emitted classification gates correctly on all 3 probed tasks; Sonnet 4.6 missed the marker on GT-5 and was unclear on GT-3. Full-scope baseline deferred. See `evaluation/results-r6-baseline-multimodel-2026-04-17.md`.
+
+### Known Gaps
+- Opus 4.6 version-pinning not available in current tooling; non-regression on 4.6 could not be empirically confirmed for r7.
+- GPT-5.4-Pro not accessible from probe tooling; cross-vendor non-regression claim is asserted on design grounds, not measured.
+- GT-2, GT-4, GT-6, and GT-7 require a multi-turn runner and were not covered in the Phase 0 probe; human-driven runs needed to close the matrix.
+- Sonnet-4.6-specific tuning (addressing the classification-gate miss and the DIAGNOSTIC.md classification-marker ambiguity observed in probe transcripts) is documented separately in `ADDENDUM-sonnet-4-6.md` for future revision.
+
+### Migration
+Claude Code users should re-sync their global CLAUDE.md from `variants/claude-code/CLAUDE.md`. Other variants (Claude Projects, Generic, Hermes) are deferred to a follow-up sync per PLAN-r7 §7 and will inherit the r7 edits after the Claude-Code variant clears the regression gate on full-scope runs.
+
+### Line Delta
+Firmware line-delta budget: ≤70 added lines across `core/`, `references/`, and variants combined, excluding CHANGELOG. Actual delta tracked in PLAN-r7 §5 accounting table.
+
+### Files Modified
+- `references/anti-patterns.md` — Self-review clarifier sentence
+- `references/prompt-design.md` — Fan-out dispatch paragraph, Model-family knobs (non-binding) subsection
+- `references/state-management.md` — Quote-before-act subsection, cadence annotation, task-state-triggered reflection note, vague-generalization audit
+- `references/observability.md` — Task-state-triggered reflection cross-reference
+- `variants/claude-code/CLAUDE.md` — r7 edits synced from canonical core + references
+- `metadata.json` — Version bump to r7, date to 2026-04-17, description updated
+- `README.md` — r7 revision references, what's-new section
+- `DESIGN.md` — r7 revision references, reduced-scope probe note, model-family posture pointer
+- `CHANGELOG.md` — This entry
+
+---
+
 ## r6 (2026-04-10) — Context Degradation Resistance
 
 ### Context

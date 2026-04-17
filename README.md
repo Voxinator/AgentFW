@@ -107,6 +107,17 @@ agentfw/
 - **Fresh context as a design feature** — Context window limits are a feature, not a bug. A fresh agent with a summary of what was learned beats a stale agent drowning in accumulated errors. AgentFW is designed around this.
 - **Autonomous vs Guided modes** — Autonomous mode dispatches sub-agent judges. Guided mode uses the human as judge. Both enforce role separation.
 
+## What Changed in r7
+
+- **Cross-model tuning pass** — Applied six model-agnostic edits and three reframed principles from `PLAN-r7.md` to keep AgentFW aligned with Claude Opus 4.7 without regressing Opus 4.6, Sonnet 4.6, or GPT-5-tier models
+- **Self-verification vs. self-review clarifier** — Clarifier sentence in the Self-Review anti-pattern distinguishing model-provided intrinsic pre-flight checks from prohibited self-review-as-judge
+- **Explicit fan-out instruction** — Worker-dispatch guidance now says "spawn N workers in parallel" literally when decomposing across independent items, counters "fewer subagents by default" tendencies
+- **Quote-before-act on state files** — Worker prompts include the exact PROGRESS.md line(s) being acted on; workers echo them in returned artifacts
+- **Cadence annotation for the 3-task health gate** — Documents why cadence is held pending empirical degradation-curve data rather than loosened on long-context retrieval scores
+- **Model-family knobs (non-binding) subsection** — Bounded ≤25-line subsection at the end of `references/prompt-design.md` with three reframed principles and inline `(Anthropic Opus 4.7: …)` sidenotes for reasoning effort, judge deliberation, and token budgets
+- **Reference-file audit** — Removed vague generalizations ("and similar," "etc.," "or equivalent") from rule-bearing text across references
+- **Known gaps** — Phase 0 multi-model probe was run at reduced scope (6 of 28 cells); full-scope baseline pending human-driven runs for GT-2/4/6/7 and access to Opus 4.6 and GPT-5.4-Pro. Sonnet-4.6-specific tuning notes parked in `ADDENDUM-sonnet-4-6.md`
+
 ## What Changed in r6
 
 - **Critical Rules preamble** — Five numbered rules at the top of the core document that survive attention deprioritization in long contexts
@@ -142,3 +153,4 @@ agentfw/
 - **r4** (2026-04-04): Modular restructure, permission model, evaluation system, observability, self-install
 - **r5** (2026-04-06): Structural enforcement hardening — classification gate, verification gates, domain-specific build requirements, Tier 1 enforcement
 - **r6** (2026-04-10): Context degradation resistance — Critical Rules preamble, state-driven health gate, delegation self-check
+- **r7** (2026-04-17): Cross-model tuning pass — model-agnostic edits for Opus 4.7 without non-target regression, bounded model-family knobs subsection, reduced-scope Phase 0 multi-model probe
