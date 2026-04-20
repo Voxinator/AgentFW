@@ -6,6 +6,12 @@ AI capabilities look jagged when you ask for one-shot answers. The same model th
 
 AgentFW encodes that lesson as standing instructions for AI agents. It is not a framework, library, or SDK. It's a set of structured Markdown documents that teach agents how to plan work, delegate to sub-agents, verify results with role separation, manage persistent state across sessions, and recover from errors. You install it by giving it to your agent as instructions.
 
+## Hermes variant status (pre-release)
+
+The Hermes variant — Gemma-4 running AgentFW as a local orchestrator on Hermes Agent — is at **`r7.5-hermes-prerelease`**. The β-fuse dispatch architecture is validated (MoE 17/20 strict first-attempt on r7.4; 11.5×–17× lift over pre-intervention baselines). The worker-quality ship gate is **not yet met** (r7.5: 3/20 PASS vs ≥15/20 floor). Production-ready: not yet. Worker-quality work is r7.6 scope. See `/RELEASE-NOTES-r7.5-hermes-prerelease.md` and `variants/hermes/INSTALL.md`.
+
+Non-Hermes variants (claude-code, claude-projects, generic) are byte-identical to r7 and unaffected by the r7.x Hermes probe campaign.
+
 ## Quick Install
 
 **Claude Code (recommended)**
@@ -88,14 +94,30 @@ agentfw/
 │   ├── claude-projects/
 │   │   ├── custom-instructions.md         # Ready-to-paste custom instructions
 │   │   └── install-notes.md              # Claude Projects-specific install instructions
-│   └── generic/
-│       ├── system-prompt.md               # Ready-to-use system prompt for any client
-│       └── install-notes.md              # Generic client install instructions
+│   ├── generic/
+│   │   ├── system-prompt.md               # Ready-to-use system prompt for any client
+│   │   └── install-notes.md              # Generic client install instructions
+│   └── hermes/                            # Hermes Agent variant (Gemma-4 local orchestration) — PRE-RELEASE
+│       ├── HERMES.md                      # Canonical base system prompt (upstream, unchanged)
+│       ├── HERMES-variantB.md             # Historical probe sibling: hard output contract (r7)
+│       ├── HERMES-variantD.md             # Historical r7 ship candidate (superseded by variantF)
+│       ├── HERMES-variantE.md             # Historical r7.3 sibling (superseded by variantF)
+│       ├── HERMES-variantF.md             # r7.4 β-fuse harness prompt — current pre-release
+│       ├── delegate_worker.py             # Legacy v1 dispatch tool (retained; emits deprecation notice)
+│       ├── delegate_worker_v2.py          # β-fuse dispatch tool — required classification + justification
+│       ├── DESIGN.md                      # Architecture and rationale (refreshed for r7.5)
+│       ├── INSTALL.md                     # Authoritative install procedure (r7.5)
+│       ├── DEPENDENCIES.md                # Tested versions, hardware notes, Hermes requirements
+│       ├── IMPLEMENTATION.md              # Historical r7 install doc (frozen)
+│       ├── PROBE-RESULTS-r7.md            # Consolidated r7 probe sweep results (historical)
+│       ├── NEXT-STEPS.md                  # Follow-up work: r7.6 agenda + operator decision tree
+│       └── install-notes.md              # Hermes-specific install instructions
 │
 └── archive/
     ├── agentic-harness-project-instructions_r3.md
     ├── agentic-harness-playbook_r3.md
-    └── agentic-harness-playbook-pm_r3.md
+    ├── agentic-harness-playbook-pm_r3.md
+    └── hermes-probe-r7-2026-04-18/        # Raw artifacts from the r7.1 Hermes probe sweep (19 files)
 ```
 
 ## Key Concepts
@@ -106,6 +128,35 @@ agentfw/
 - **PROGRESS.md as state machine** — Tasks track status (planned, in-progress, blocked, done, verified, failed), worker ID, attempt number, side-effects, and checkpoints. Not just a checklist.
 - **Fresh context as a design feature** — Context window limits are a feature, not a bug. A fresh agent with a summary of what was learned beats a stale agent drowning in accumulated errors. AgentFW is designed around this.
 - **Autonomous vs Guided modes** — Autonomous mode dispatches sub-agent judges. Guided mode uses the human as judge. Both enforce role separation.
+
+## What Changed in r7.5 (Hermes pre-release)
+
+- **Hermes variant reaches pre-release status** — tagged `r7.5-hermes-prerelease`. See `/RELEASE-NOTES-r7.5-hermes-prerelease.md`.
+- **β-fuse dispatch architecture validated (r7.4).** `delegate_worker_v2` required-argument tool moved MoE first-attempt dispatch to 17/20 strict (85%), dense to 77% measured — 11.5×–17× lift over r7.3 pre-intervention baselines. v2-adoption 100% on compliant trials. Ship verdict: SHIP-WITH-CAVEAT for the dispatch layer (see `ARTIFACT-r7.4-ship-judge-verdict-v2.md`).
+- **r7.5 turn-0 toolset restriction hook** — closes the dense `todo`/`search_files` escape at the mechanism layer (tools filtered to `{delegate_worker_v2, clarify}` at turn 0 under the exact β-fuse toolset composition). Composition-scoped: canonical flows unaffected.
+- **Worker-quality ship gate measured for the first time — FAILED.** r7.5 20-trial MoE probe: 3/20 PASS vs 15/20 floor. Root causes identified and reproducible: search_files thrash, SIGTERM truncation, pseudo-tool-call text emission, fabricated completions. Tracked as r7.6 scope. β-fuse dispatch thesis remains intact; dispatch and worker-quality are independent axes.
+- **Probe-fidelity hardening** — r7.4 P1 analyzer fix (filter hallucinated tool names), r7.5 Tier-1 SIGTERM content-match recovery (`--expected-prompt-prefix-b64`), `ERROR:WRONG_SESSION` verdict for mis-attached child sessions, oMLX health-check probe.
+- **Measurement caveat on r7.1 numbers** — the original r7.1 "60% first-attempt / 80% final" headline was inflated by a wrapper counting stdout markers as dispatches. Strict on-disk re-tally (`ARTIFACT-drift-step-a-retally.md`) showed r7.1 true first-attempt was 0/5. All numbers from r7.2 forward use strict on-disk criteria; cross-version comparisons must use the strict metric.
+- **Documentation refresh** — new `variants/hermes/INSTALL.md` (authoritative; supersedes `IMPLEMENTATION.md`), `variants/hermes/DEPENDENCIES.md`, refreshed `variants/hermes/DESIGN.md`, extended `variants/hermes/NEXT-STEPS.md` with r7.6 agenda + operator decision tree.
+- **Cross-model integrity preserved** — `core/`, `references/`, `playbooks/`, `templates/`, and non-Hermes variants byte-identical throughout the r7.x Hermes probe campaign.
+
+## What Changed in r7.4 (Hermes — β-fuse)
+
+- **β-fuse structural dispatch (`delegate_worker_v2`)** — classification moved from a text marker to a required tool-call argument. `HERMES-variantF.md` teaches v2 exclusively. SHIP-WITH-CAVEAT ship verdict for the dispatch layer. Dense 77% measured / MoE 85% first-attempt strict. See CHANGELOG §r7.4.
+
+## What Changed in r7.3 (Hermes — L1+L2 attempt, FAILED)
+
+- **Layer 1 + 2 stacked remediation** — new `file_readonly` toolset bundle, escape-hatch-stripped `HERMES-variantE.md`, toolset restriction. Dispatch dropped below baseline on both models (1/15 each). Diagnosis: language-only remediation displaces escape behavior rather than eliminating it. Led directly to the β-fuse design that landed in r7.4. See CHANGELOG §r7.3.
+
+## What Changed in r7.2 (Hermes — dense vs MoE + measurement correction)
+
+- **Strict on-disk re-tally** inverted r7's headline ordering — the 60%/80% numbers were wrapper-counted artifacts, not dispatches. Dense strict first-attempt was 1/5; MoE was 0/5 first / 5/5 final (wrapper-retry-rescued). Variant E ship-candidate status formally withdrawn. See CHANGELOG §r7.2.
+
+## What Changed in r7.1 (Hermes — initial probe sweep, numbers later corrected)
+
+- **Hermes-variant probe sweep** — original 5-variant sweep (A/B/C/D/E) on `gemma-4-31b-it-4bit`. Original headline claim was 60% first-attempt / 80% final dispatch on structured/long-horizon. **These numbers were inflated** per the r7.2 strict re-tally: true first-attempt was 0/5 strict on-disk. The architectural thesis ("Gemma as orchestrator, local inference only") was partially validated — dispatches do occur — at much lower reliability than originally reported. See `variants/hermes/PROBE-RESULTS-r7.md` for the corrected history.
+- **Hermes variant design artifacts** — initial `DESIGN.md`, `IMPLEMENTATION.md`, `PROBE-RESULTS-r7.md`, `NEXT-STEPS.md`. DESIGN.md refreshed in r7.5; IMPLEMENTATION.md frozen, superseded by `INSTALL.md`.
+- **Variant D ship candidate** — `HERMES-variantD.md` + `delegate_worker.py`. Superseded by r7.4's variantF / `delegate_worker_v2.py`.
 
 ## What Changed in r7
 
@@ -154,3 +205,8 @@ agentfw/
 - **r5** (2026-04-06): Structural enforcement hardening — classification gate, verification gates, domain-specific build requirements, Tier 1 enforcement
 - **r6** (2026-04-10): Context degradation resistance — Critical Rules preamble, state-driven health gate, delegation self-check
 - **r7** (2026-04-17): Cross-model tuning pass — model-agnostic edits for Opus 4.7 without non-target regression, bounded model-family knobs subsection, reduced-scope Phase 0 multi-model probe
+- **r7.1** (2026-04-18): Hermes-variant initial probe sweep (numbers later corrected by r7.2 strict re-tally)
+- **r7.2** (2026-04-18): Dense vs MoE A/B + strict on-disk re-tally that corrected r7.1's inflated headline; Variant E ship-candidate status withdrawn
+- **r7.3** (2026-04-18/19): Layer 1+2 remediation attempt (toolset restriction + escape-hatch removal) — FAILED dispatch thresholds (1/15 both models); diagnosis led to β-fuse design
+- **r7.4** (2026-04-19): β-fuse structural dispatch (`delegate_worker_v2` with classification as a required argument) — SHIP-WITH-CAVEAT for dispatch layer; MoE 17/20, dense 77% measured, 11.5×–17× lift over r7.3 baseline
+- **r7.5** (2026-04-19): Hermes pre-release — turn-0 toolset restriction + SIGTERM mitigation + worker-quality ship gate measurement. HOLD-narrow verdict: dispatch thesis intact, worker-quality gate failed (3/20 vs 15/20 floor), tracked as r7.6 scope
