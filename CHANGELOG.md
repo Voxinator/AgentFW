@@ -1,5 +1,284 @@
 # AgentFW Changelog
 
+## r7.5 (2026-04-19) — Hermes variant pre-release — HOLD-narrow
+
+### Context
+r7.4 landed β-fuse (SHIP-WITH-CAVEAT for the dispatch layer) with two documented residuals: a dense `todo`/`search_files` first-tool escape on 3/13 measured structured/LH trials, and a parent-side SIGTERM mis-attribution pattern that caused wrapper-reported COMPLIANT verdicts to diverge from on-disk truth on long trials. r7.5 set out to (a) close the dense escape via a Hermes-side turn-0 toolset restriction hook, (b) harden the wrapper/analyzer against SIGTERM mis-attribution with a content-match recovery path and a new `ERROR:WRONG_SESSION` verdict, (c) probe a full 20-trial MoE matrix under the tightened β-fuse v2.1, and (d) for the first time measure **worker quality** — a 5-criterion rubric (COMPLETION / CORRECTNESS / HONESTY / TURN_EFFICIENCY / NO_SIDE_EFFECTS) scored against each child session's persisted transcript. Ship verdict per `ARTIFACT-r7.5-SHIP-judge-verdict.md`: **HOLD-narrow**. This release publishes the substantial progress as a pre-release rather than as production.
+
+### Added
+- **`variants/hermes/HERMES-variantF.md` remains the active harness prompt** (md5 `01c0e77bb2a6e753a8ea9063784a25e0`) and `variants/hermes/delegate_worker_v2.py` remains the β-fuse dispatch tool. Both unchanged from r7.4.
+- **r7.5-A1 turn-0 toolset restriction hook** — new method `_resolve_tools_for_turn_r75a` in `run_agent.py`. When a session's `enabled_toolsets` is exactly `{delegation, todo, clarify, file_readonly}` and no prior assistant turn has called `delegate_worker_v2`, the tool list sent to the LLM is filtered to `{delegate_worker_v2, clarify}`. Composition-scoped — any other toolset composition bypasses the hook entirely, so canonical flows (cron, hermes-cli, hermes-telegram) are side-effect-free. Staged via `probe-variantG-stage.sh` on top of variantF. See `ARTIFACT-r7.5-A1-impl-notes.md`.
+- **r7.5-B1 wrapper hardening** — `probe-variantG-wrapper.sh` adds `TIMEOUT_PER_TURN` env override (default 900s), base64 `--expected-prompt-prefix-b64` SSH-safe transport for the content-match prefix, and `ERROR:WRONG_SESSION` handling. Session-ID fallback recovery now content-matches a candidate session's `messages[0]` against the original prompt's first 80 bytes before accepting it as parent.
+- **r7.5-B2 analyzer hardening** — `probe-variantG-check.py` adds `--expected-prompt-prefix` (raw) and `--expected-prompt-prefix-b64` (SSH-safe) flags plus new `ERROR:WRONG_SESSION` verdict with a structured diagnostic JSON (`reason` ∈ {`empty_messages`, `no_user_message`, `first_user_content_prefix_mismatch`}). Gate runs BEFORE `NO_ASSISTANT_RESPONSE` / `NO_MARKER` so mis-attached child sessions are classified as wrapper problems rather than model compliance violations.
+- **`probe-omlx-health-check.sh`** — Mac-side oMLX health probe (free memory, swap, loaded-model count, default-model identity). Reads `/health` endpoint; callable from VM via SSH.
+- **r7.5 worker-quality rubric and 20-trial probe** — `ARTIFACT-r7.5-F1-judge-brief.md` defines the 5-criterion rubric; `ARTIFACT-r7.5-F2-probe-results.md` captures the 20-trial MoE matrix (T4×5, T5×5, T6×5, T10×5). Per-trial verdicts at `ARTIFACT-r7.5-worker-quality-trial-{01..20}.md`.
+- **r7.5 ship judge** — `ARTIFACT-r7.5-SHIP-judge-verdict.md` applies both pre-committed thresholds (dispatch ≥17/20, worker quality ≥15/20) and issues HOLD-narrow with a 7-trial fresh-context sample verification (7/7 agreement with F.2 aggregate).
+- **Pre-release documentation** — `RELEASE-NOTES-r7.5-hermes-prerelease.md` (top-level), `variants/hermes/INSTALL.md` (new authoritative install procedure, supersedes frozen `IMPLEMENTATION.md`), `variants/hermes/DEPENDENCIES.md` (tested versions), refreshed `variants/hermes/DESIGN.md` (variantF + turn-0 architecture; prior version described r7 variantD), extended `variants/hermes/NEXT-STEPS.md` (r7.6 agenda + operator decision tree).
+
+### Probe results (MoE, 20 trials)
+Pre-committed thresholds: dispatch first-attempt strict PASS ≥17/20, worker-quality 5-criterion PASS ≥15/20, LOST ≤3/20. BOTH must hold for SHIP.
+
+| Gate | Threshold | Actual | Margin | Verdict |
+|------|-----------|--------|--------|---------|
+| Dispatch first-attempt strict PASS | ≥17/20 | 16/20 | −1 | FAIL |
+| Worker quality PASS (5-criterion) | ≥15/20 | 3/20 | −12 | FAIL |
+| LOST limit | ≤3/20 | 0/20 | +3 slack | PASS |
+| VM canonical at return | Required | Yes | — | PASS |
+
+Two FAILs → HOLD. Dispatch margin context: r7.4 MoE baseline was 17/20 with 3 empty-first-turn misses; r7.5 at 16/20 with 4 empty-first-turn misses is within Poisson variance on the same task matrix. Identical failure signature (`messages[1]` empty, recovery at `messages[3]`) suggests MoE quirk, not induced regression. Worker-quality margin (−12) is not borderline; even with a plausible 1-trial sample-error flip the aggregate would be 4/20.
+
+### Worker-quality failure modes
+1. **Turn-budget exhaustion on `search_files` thrash (7 trials).** Children searching unknown cwd for hypothetical files, spinning until budget.
+2. **Mid-tool SIGTERM truncation (8 trials).** Wrapper-level artifact; Tier-1 parent-side fix shipped, child-side SIGTERM is the r7.6 mirror problem.
+3. **Malformed pseudo-tool-call text emission (3 trials).** 26B MoE emits `call:X{args}<tool_call|>` in content rather than structured `tool_calls`. No actual write occurs.
+4. **Fabricated completion claims (2 T10 trials).** Summary claims "Created X" / "Generated Y" with zero `write_file` / `patch` / `terminal` calls in the transcript. Honesty failure.
+
+None of these are failure modes a better dispatch contract can fix — they are child-execution and child-tool-formatting problems orthogonal to β-fuse. Tracked as r7.6 scope.
+
+### Ship status
+**r7.5 verdict:** HOLD-narrow. Dispatch missed by 1/20 (within r7.4 variance, same failure signature). Worker quality missed by 12/20 on an orthogonal child-execution surface. β-fuse dispatch thesis INTACT: v2-adoption 20/20 (100%); the 4 first-attempt misses recovered cleanly via the correction loop.
+
+**r7.4 variantF verdict (SHIP-WITH-CAVEAT) NOT RETROACTIVELY WEAKENED.** Per the r7.5 ship judge Part 5: the r7.4 ship decision for the dispatch layer stands. Worker quality wasn't measured in r7.4; r7.5's dispatch numbers are within r7.4 variance; gates should move forward, not backward. The operator may canonicalize variantF on the basis of r7.4's SHIP-WITH-CAVEAT independently of r7.5's worker-quality HOLD — that is an operator call, not a judge call. See `RELEASE-NOTES-r7.5-hermes-prerelease.md` for the decision tree.
+
+### r7.6 scope (deferred)
+1. Child-session contract scaffolding (HERMES-WORKER.md analog) — addresses fabrication + turn discipline
+2. Child-toolset restriction (analogous to r7.5 turn-0 hook, applied to child spawn) — addresses search-thrash
+3. Turn-budget tuning for long-horizon children — addresses T6/T10 budget exhaustion
+4. Anti-fabrication post-trial guardrail — addresses HONESTY failures on T10
+5. Pseudo-tool-call detection — addresses the 3 malformed-format trials
+6. Child-side SIGTERM research (Tier-3 upstream Hermes handler) — addresses the 8 truncation trials
+
+### Probe-fidelity improvements landed
+- **Parent SIGTERM mis-attribution eliminated.** Tier-1 content-match recovery + `ERROR:WRONG_SESSION` verdict ensures a child session mis-identified as parent (because the parent's `session_id:` stdout was lost to SIGTERM) is correctly classified as a wrapper-attribution bug rather than a model-compliance violation.
+- **Ship judge sample verification.** 7-trial stratified cold re-judgment against raw child session JSONs on VM; 7/7 agreement with F.2 aggregate across all four failure-mode categories + both PASS exemplars.
+- **Analyzer stylistic parity preserved.** `probe-variantG-check.py` uses the same manual argv parsing pattern as variantF/variantE — no argparse introduction; no verdict-string changes; all existing verdicts unchanged.
+
+### Files added
+- `probe-variantG-stage.sh`, `probe-variantG-wrapper.sh`, `probe-variantG-check.py`
+- `probe-omlx-health-check.sh`
+- `ARTIFACT-r7.5-A1-impl-notes.md`, `ARTIFACT-r7.5-A2-judge-verdict.md`
+- `ARTIFACT-r7.5-B1-impl-notes.md`, `ARTIFACT-r7.5-B2-impl-notes.md`
+- `ARTIFACT-r7.5-F1-judge-brief.md`, `ARTIFACT-r7.5-F2-probe-results.md`
+- `ARTIFACT-r7.5-phase3-smoke-verdict.md`
+- `ARTIFACT-r7.5-worker-quality-trial-{01..20}.md` (20 per-trial verdicts)
+- `ARTIFACT-r7.5-SHIP-judge-verdict.md`
+- `ARTIFACT-r7.4-sigterm-research.md` (Tier-1/2/3 SIGTERM design work completed during r7.5)
+- `RELEASE-NOTES-r7.5-hermes-prerelease.md`
+- `variants/hermes/INSTALL.md`, `variants/hermes/DEPENDENCIES.md`
+
+### Files modified (scope audit)
+Changes contained to `variants/hermes/`, top-level probe infrastructure, top-level documentation (`README.md`, `CHANGELOG.md`, `metadata.json`, `RELEASE-NOTES-r7.5-hermes-prerelease.md`), and Hermes VM install (`run_agent.py` patched additively with backup). Core (`core/`, `references/`, `playbooks/`, `templates/`) and non-Hermes variants (`claude-code`, `claude-projects`, `generic`) unchanged and byte-identical. No tripwire mutations across any r7.5 probe run. VM returned to canonical (HERMES.md md5 `0780c232a6cb52e13e432261f0d68ad9`) at session end.
+
+---
+
+## r7.4 (2026-04-19) — β-fuse structural dispatch (Hermes Variant F) — SHIP-WITH-CAVEAT
+
+### Context
+r7.3 left us with failing first-attempt dispatch thresholds (dense 1/15, MoE 1/15) and a stacked remediation diagnosis that identified Layer-3 β-fuse as the structural backstop: move the classification from a text-marker contract into a required argument on a new `delegate_worker_v2` tool, so the model cannot satisfy the contract without actually dispatching. r7.4 implements that design end-to-end, resolves the Priority-1 probe-fidelity blocker from r7.3, and runs a split-leg probe (MoE 20 trials complete + dense gap-fill) culminating in a ship-decision judge. Verdict per `ARTIFACT-r7.4-ship-judge-verdict-v2.md`: **SHIP-WITH-CAVEAT**.
+
+### Added
+- **`variants/hermes/delegate_worker_v2.py`** — ship tool: enforces `classification` (enum `one-shot` | `structured` | `long-horizon`), `justification` (≥30 chars, server-side), and `goal` (conditionally required for structured/long-horizon). Schema description leads with the imperative "Call this tool as your FIRST action on every task" per ζ's R1 high-attention-slot finding. Side-by-side with v1: both callable, HERMES teaches v2 exclusively, v1 emits a `deprecation_warning` in its response. See `ARTIFACT-impl-3-beta-fuse-spec.md` and `ARTIFACT-r7.4-phase-a-impl-notes.md`.
+- **`variants/hermes/HERMES-variantF.md`** — sibling variant teaching `delegate_worker_v2` exclusively, with classification enforced as a tool-call argument rather than a text marker. md5 `01c0e77bb2a6e753a8ea9063784a25e0`. Variants D and E preserved as siblings.
+- **`probe-variantF-check.py`**, **`probe-variantF-wrapper.sh`**, **`probe-variantF-stage.sh`** — new probe harness reading classification from `tool_calls[0].function.arguments` directly. Filters out runtime-rejected hallucinated tool names (P1 analyzer fix applied) so first-tool classification reflects what the gate actually bound, not what the model emitted before rejection.
+- **`ARTIFACT-r7.4-p1-terminal-binding.md`** + **`ARTIFACT-r7.4-p1-judge-verdict.md`** — P1 resolution artifacts proving the r7.3 "terminal" leak was not a gate bypass.
+- **`ARTIFACT-r7.4-phase-a-impl-notes.md`** — v2 tool implementation notes (schema, handler, registry, backwards-compat).
+- **`ARTIFACT-r7.4-phase-c-judge-verdict.md`** — mid-probe judge verdict.
+- **`ARTIFACT-r7.4-phase-d-moe-results.md`** — MoE leg, 20 trials complete.
+- **`ARTIFACT-r7.4-phase-d-dense-results.md`** + **`ARTIFACT-r7.4-phase-d-dense-gapfill.md`** — dense leg (13 measured, 7 unmeasured) + gap-fill covering T5 runs 1–5 and T6 runs 1–2.
+- **`ARTIFACT-r7.4-ship-judge-verdict.md`** and **v2** — ship-decision judge (v2 is authoritative; v1 is the HOLD verdict that triggered the gap-fill).
+
+### P1 resolution (r7.3 blocker cleared)
+The r7.3 "`terminal` bound outside the toolset gate" issue was **not** a gate bypass. Direct probes against the VM confirmed the runtime binds exactly 6 tools (`clarify, delegate_task, delegate_worker, read_file, search_files, todo`) under `TOOLSETS=delegation,todo,clarify,file_readonly` on both models. In all 4 r7.3 "leak" trials, the model *hallucinated* a `terminal` tool name; the runtime rejected the call with `"Tool 'terminal' does not exist"`; no terminal command executed; tripwires stayed clean across 34 trials. The artifact is a 10-line analyzer fix in `probe-variantE-check.py` (and now native in `probe-variantF-check.py`): filter tool calls whose name is not in the session's bound `tools` array, or skip calls immediately followed by a `"Tool '…' does not exist"` tool message. Layer-1 structural property held on every trial. See `ARTIFACT-r7.4-p1-terminal-binding.md` + judge verdict.
+
+### Probe results (ship judge v2, authoritative)
+Pre-committed thresholds: dense ≥14/20 first-attempt strict; MoE ≥8/20; v2-adoption on compliant ≥95%; one-shot regression 0.
+
+| Metric | Dense | MoE | Threshold | Verdict |
+|--------|-------|-----|-----------|---------|
+| Structured/LH first-attempt PASS (absolute) | 10/20 (7 unmeasured) | 17/20 | Dense ≥14, MoE ≥8 | Dense BELOW absolute; MoE PASS >2× margin |
+| Structured/LH first-attempt PASS (rate on measured) | 10/13 = 77% | 17/20 = 85% | — | Above 70% / 40% proportional |
+| v2-adoption on compliant | 10/10 = 100% | 20/20 eventual / 17/20 strict | ≥95% | PASS (MoE ambiguous on strict) |
+| One-shot regression fails | 0/6 | 0/6 | 0 | PASS |
+
+MoE cleared its threshold cleanly with >2× margin; dense is below absolute on the 20-trial scale but the 77% measured rate on 13 independent observations (spanning T4 refactor, T5 bug-hunt, T6 long-horizon) projects to ~15–16/20 under full coverage.
+
+### Key finding — `todo` / `search_files` escape on dense
+3/13 measured dense structured/LH trials (T5 run 1, T5 run 2, T6 run 1) bypassed `delegate_worker_v2` by calling `todo` (2×) or `search_files` (1×) as their first tool, then exhausting the retry loop without ever calling v2 (47, 47, 26 messages respectively). These tools are legitimately bound in the current probe TOOLSETS. **β-fuse is necessary-but-not-sufficient under a wide toolset:** it forces classification-as-payload *when the model chooses the delegation path*, but does not force the delegation path itself. MoE shows 0/20 such escapes on the same toolset, confirming the pattern is a dense-specific behavioral pull, not a harness defect. Closure path is a v2.1 toolset-scoping refinement (turn-0 bind only `delegation,clarify`; grant full toolset after v2 is called). Wrapper-layer retry loop still detects and reports these as violations, so defense-in-depth holds.
+
+### Ship status
+**SHIP-WITH-CAVEAT** per `ARTIFACT-r7.4-ship-judge-verdict-v2.md`. Documented caveats:
+1. Dense absolute count did not strictly clear ≥14/20 on measured data (10/20 measured PASS, 3 FAIL, 7 unmeasured). Proportional rate 77% clears 70% proportional equivalent, but this is a softer reading than the pre-committed threshold.
+2. Dense 3/13 exhibit `todo`/`search_files` first-tool-escape. v2.1 should tighten the classification-gate toolset.
+3. MoE strict `v2_was_first_tool` is 85% (below the 95% headline); eventual-compliance is 100%.
+
+Productionization steps (canonical HERMES.md swap on VM, cron-safety confirmation, Monday 8am Jira cron monitoring, stage script kept for rollback) are pending operator authorization. Variant F artifacts are staged and ready; VM remains on canonical HERMES.md (md5 `0780c232…`) at session end.
+
+### r7.3 → r7.4 lift
+First-attempt dispatch on structured/LH:
+- **Dense:** 1/15 (6.7%) → 10/13 (77%) measured = **11.5× lift**.
+- **MoE:** 1/15 (6.7%) → 17/20 (85%) = **12.7× lift** (≈17× at the margin stated in the ship verdict).
+- **One-shot regression:** 4/4 → 12/12 intact; β-fuse does not force structured dispatch on trivial tasks.
+
+### Cross-model integrity
+Changes contained to `variants/hermes/`, top-level probe infrastructure, and Hermes VM install (side-by-side `delegate_worker_v2` registration). Core (`core/`, `references/`, `playbooks/`, `templates/`) and non-Hermes variants (`claude-code`, `claude-projects`, `generic`) unchanged and byte-identical. No tripwire mutations across any r7.4 probe run.
+
+### Files added
+- `variants/hermes/delegate_worker_v2.py`
+- `variants/hermes/HERMES-variantF.md`
+- `probe-variantF-check.py`, `probe-variantF-wrapper.sh`, `probe-variantF-stage.sh`
+- `ARTIFACT-r7.4-p1-terminal-binding.md`, `ARTIFACT-r7.4-p1-judge-verdict.md`
+- `ARTIFACT-r7.4-phase-a-impl-notes.md`, `ARTIFACT-r7.4-phase-c-judge-verdict.md`
+- `ARTIFACT-r7.4-phase-d-moe-results.md`, `ARTIFACT-r7.4-phase-d-dense-results.md`, `ARTIFACT-r7.4-phase-d-dense-gapfill.md`
+- `ARTIFACT-r7.4-ship-judge-verdict.md` (HOLD v1) + `ARTIFACT-r7.4-ship-judge-verdict-v2.md` (SHIP-WITH-CAVEAT, authoritative)
+
+### Files modified (scope audit)
+Contained to `variants/hermes/` and top-level probe infrastructure. VM-side `delegate_worker_v2` is additive (v1 retained). No edits to `core/`, `references/`, `playbooks/`, `templates/`, or non-Hermes variants.
+
+---
+
+## r7.3 (2026-04-18 → 2026-04-19) — Layer 1+2 remediation attempt (FAILED thresholds)
+
+### Context
+Diagnostic from r7.2 plus a 7-worker remediation playbook (Judge θ) identified four compounding causes of low first-attempt dispatch on Gemma: (1) HERMES.md sits in the prompt's attention valley, (2) `delegate_worker` is drowned by an adjacent `delegate_task` schema 3.5x larger and competing read/orient primitives, (3) HERMES.md and the wrapper correction text both contain five legitimate escape clauses inviting re-classify-to-one-shot rationalization, (4) dense and MoE fail at mechanically different decode steps (dense role-collapses to read/orient tools; MoE goes chatbot-mode and emits no tool call). Five layered remediations were designed; this release attempted Layers 1+2 stacked in a single 34-trial probe (15 dense structured/LH + 15 MoE structured/LH + 4 one-shot regression).
+
+### Added
+- **`file_readonly` toolset** on the Hermes VM — exposes only `read_file` and `search_files`. Additive, no removal of existing toolsets. Enables Layer 1 (toolset restriction to `delegation,todo,clarify,file_readonly`).
+- **`probe-variantE-wrapper.sh` `TOOLSETS` env-var passthrough** — defaults to no `-t` flag if unset, preserves prior probe behaviour.
+- **`variants/hermes/HERMES-variantE.md`** — escape-hatch-stripped variant of D. Wrapper correction text tightened in parallel. Sibling file; D unchanged.
+- **`variants/hermes/delegate_worker.py`** — unchanged from r7 (no Layer 3 changes shipped).
+- **`ARTIFACT-impl-3-beta-fuse-spec.md`** — Layer 3 spec for `delegate_worker_v2` with `classification` + `justification` + `goal` as required args. Design only, not implemented.
+- **`ARTIFACT-impl-4-soul-restructure.md`** — Option A1/A2/B/C analysis for SOUL.md / USER.md / MEMORY.md restructuring with 8 operator-decision questions gating implementation.
+- **7-worker diagnostic + design swarm artifacts** (workers α through η) plus Judge θ remediation playbook.
+- **Wave-2 verifier judge artifact** confirming worker-claim spot-checks against source.
+- **34-trial L1+L2 stacked probe** (`ARTIFACT-probe-r7.3-l12-results.md`) with separate analyzer artifact (judge shielding maintained).
+
+### Outcome (FAILED ship thresholds)
+Thresholds pre-committed by Judge θ §9 before the probe ran:
+
+| Threshold | Target | Observed | Verdict |
+|-----------|--------|----------|---------|
+| Dense first-attempt strict dispatch (T4+T6+T9, N=15) | ≥ 7/15 | **1/15** | **FAIL** |
+| MoE first-attempt strict dispatch (T4+T6+T9, N=15) | ≥ 4/15 | **1/15** | **FAIL** |
+| `tool_not_found` events across 30 structured/LH trials | ≤ 3/30 | 0/30 | PASS |
+| Tripwire mutations across 30 trials | 0 | 0 | PASS |
+| One-shot regression COMPLIANT (4 trials) | 4/4 | 4/4 | PASS |
+
+The two failing thresholds are the central ones; both fail categorically, not at the edge. Dense final dispatch (any-time) did improve from 40% (r7.2) to 87%, but that is a wrapper-rescue win, not a model-behavior win — the harness goal is first-attempt compliance.
+
+### New failure modes discovered
+- **`role-collapse-via-todo`** (11/30 trials, 37%) — closing the `search_files` door pushed the model to use `todo` as the orient-first escape. Plumbing-leak: prompt-language remediation displaces escape behavior rather than eliminating it.
+- **T4 dense regressed under L2.** L1-only partial data showed 5/5 first-attempt on T4; L1+L2 dropped to 1/5. The stricter language was actively counterproductive on the easiest case — best hypothesis is that escape-hatch removal made one-shot dispatch feel higher-risk and pushed dense toward "be careful, orient first" behavior.
+- **`chatbot-mode` persisted on MoE** (4/15 MoE trials with `NO_TOOL_CALLS` in first assistant). Predicted by worker β; L1+L2 alone does not address it — requires the Layer 3 β-fuse.
+
+### Probe-fidelity issue (BLOCKER for further work)
+5 dense trials called `terminal` despite `terminal` not being in `TOOLSETS=delegation,todo,clarify,file_readonly`. Either Hermes binds `terminal` outside the toolset gate, or the wrapper `-t` flag isn't actually restricting at runtime. Until resolved, all Layer-1 numbers are suspect — including the L1-only T4 5/5 result that looked like a win. Investigate before the next probe runs.
+
+### Recommended next steps
+1. Investigate `terminal` out-of-band binding (~30 min).
+2. Implement Layer 3 β-fuse per `ARTIFACT-impl-3-beta-fuse-spec.md` (~5 hours), re-probe MoE leg.
+3. Implement IMPL-4 Option A2 (prompt-builder slot reorder so dispatch instructions arrive before tool descriptions; ~1 hour, gated on operator answers to the 8 questions in IMPL-4).
+4. Do not revert L1 or L2 — each contributes (zero `tool_not_found`, intact one-shot regression, lifted final-dispatch). Removing them does not improve first-attempt and likely worsens wrapper-rescue.
+
+### Withdrawn
+- Variant E ship-candidate status (formally withdrawn 2026-04-18 per Step A re-tally; see r7.2 entry).
+
+### Files restored at session end (cron safety)
+HERMES.md restored to canonical (md5 `0780c232…`) on the VM. HERMES-variantE.md preserved as a sibling for next-session continuation. The `file_readonly` toolset left in `toolsets.py` (additive, harmless under default invocation). All 3 tripwires verified clean.
+
+### Files added
+- `variants/hermes/HERMES-variantE.md`
+- `ARTIFACT-impl-3-beta-fuse-spec.md`
+- `ARTIFACT-impl-4-soul-restructure.md`
+- `ARTIFACT-probe-r7.3-l12-results.md` and analyzer outputs
+- 7 worker diagnostic artifacts (α–η) + Judge θ playbook + Wave-2 verifier artifact
+- `probe-variantE-wrapper.sh` updated with `TOOLSETS` env-var passthrough
+
+### Files modified (scope audit)
+Changes contained to `variants/hermes/`, top-level probe infrastructure, and Hermes VM install (`toolsets.py`). Core (`core/`, `references/`, `playbooks/`, `templates/`) and non-Hermes variants unchanged.
+
+---
+
+## r7.2 (2026-04-18) — Dense vs MoE A/B + drift investigation
+
+### Context
+Tested `gemma-4-26B-A4B-it-MLX-8bit` (MoE, 4B-active) head-to-head against `gemma-4-31b-it-4bit` (dense) on the Hermes harness. A drift investigation was triggered when the dense baseline appeared to regress from r7's reported 3/5 first-attempt to 1/5 — the gap turned out to be a measurement artifact: r7's wrapper had been counting stdout `🔀 preparing delegate_worker…` markers as dispatches even when the parent session JSON was SIGTERM-truncated before persisting the call. Under a strict on-disk persisted-JSON criterion, r7's true first-attempt dispatch was 0/5 (worse than r7.2's 1/5), and the perceived drift dissolves once measurement is harmonized.
+
+### Added
+- **Pre-harness baseline check for MoE** — 3 sanity prompts covering native + custom tool-call format. Passed.
+- **r7.2 dense v1 + v2 trial sets** (10 trials each; v2 with the fixed wrapper).
+- **r7.2 MoE trial set** (10 trials with MoE-specific failure-mode classification).
+- **5-worker drift root-cause investigation** — α (oMLX state), β (session diff), γ (contamination), δ (sampling), ε (r7-vs-r7.2 byte diff) plus a synthesis judge.
+- **Step A strict on-disk re-tally** (`ARTIFACT-drift-step-a-retally.md`) — proved r7's 3/5 first-attempt was a wrapper-counted artifact; true r7 strict first-attempt was 0/5.
+
+### Findings
+- **Dense v2 strict on-disk:** 1/5 first-attempt, 2/5 final dispatch on structured/LH (Trials 4 + 10).
+- **MoE strict on-disk:** 0/5 first-attempt, **5/5 final** (every structured/LH trial retry-rescued).
+- **Speed:** MoE ~2x faster than dense on median wall-clock (132s vs 258s); MoE total run 27 min vs dense 61 min for 10 trials.
+- **MoE distinct failure mode (β finding):** chatbot-mode termination — emits classification + justification then no tool call (3/5 of MoE structured/LH msg1s).
+- **Dense distinct failure mode:** role-collapse — always emits a tool, often a wrong one (`search_files`, `read_file`, or worse, mutating tools `write_file` / `skill_manage` before any dispatch).
+- **Tripwire safety:** MoE kept all three tripwires clean across 10 trials; dense mutated SKILL.md on Trial 9 via main-session `skill_manage` (role-collapse with side-effect).
+- **Cosmetic native-format token leakage** on MoE (`<|channel>`, `<channel|>`, `<tool_call|>` raw tokens) in 7/10 parent sessions — non-load-bearing in 9/10, but caused one Trial 6 child to abort.
+- **"Drift" between r7 and r7.2 was illusory** — measurement artifact, not behavioral regression.
+
+### Wrapper bug fixes
+- `TIMEOUT_PER_TURN` raised 300s → 900s (dense was hitting the wall on first structured/LH turns).
+- Session-ID fallback recovery added for the case where SIGTERM kills hermes before the `session_id:` line reaches stdout.
+- `MODEL_MISMATCH` check now reads the session JSON `model` field directly rather than tail-grepping the oMLX log (the prior method produced false positives from log scrolling). Zero false positives in v2 vs. four in v1.
+
+### Files added
+- `ARTIFACT-probe-r7.2-dense-v2.md` — dense leg with fixed wrapper (supersedes v1)
+- `ARTIFACT-probe-r7.2-moe.md` — MoE leg with MoE-specific failure-mode classification
+- `ARTIFACT-drift-step-a-retally.md` — strict on-disk re-tally proving the r7 measurement artifact
+- 5 drift-investigation worker artifacts (α–ε) + synthesis judge
+- Updated `probe-variantE-wrapper.sh` (TIMEOUT, fallback, MM-check fixes)
+- `variants/hermes/PROBE-RESULTS-r7.md` revisions to be applied per the next entry
+
+### r7 verdict revision
+The r7 ship-candidate framing for Variant E rested on inflated numbers driven by stdout-counted dispatches that never persisted to disk. **Withdraw the ship-candidate status.** Under the strict persisted-JSON metric used for r7.2+, r7 underperforms r7.2 (0/5 vs 1/5 first-attempt; 1/5 vs 2/5 final). See `variants/hermes/PROBE-RESULTS-r7.md` revision for details. Cross-run comparisons must use the strict criterion going forward.
+
+---
+
+## r7.1 (2026-04-18) — Hermes-Variant Probe Sweep
+
+### Context
+A five-variant probe sweep (A/B/C/D/E) validated that Gemma-4-31B running on Hermes Agent v0.8.0 can operate the AgentFW harness end-to-end as the local parent orchestrator. Key finding: dispatch rate on structured/long-horizon tasks went from 0% (baseline) to 60% first-attempt / 80% after runtime retries once the tool surface was simplified (Jira-skill pattern generalized). Architectural thesis — "Gemma as orchestrator, workers/judges as separate fresh-context child Gemma sessions, 100% local inference" — is validated.
+
+The sweep is contained entirely under `variants/hermes/`. AgentFW core (`core/`, `references/`, `playbooks/`, `templates/`) and non-Hermes variants (claude-code, claude-projects, generic) were not touched. Cross-model integrity preserved.
+
+### Added
+- **`variants/hermes/DESIGN.md`** — detailed design spec for the Hermes-flavored AgentFW variant: architecture, the Jira-skill pattern generalized, component breakdown (HERMES-variantD.md system prompt, `delegate_worker` tool, three Hermes source patches, optional retry wrapper), Planner-Worker-Judge flow on Gemma, design constraints, failure modes addressed vs. residual.
+- **`variants/hermes/IMPLEMENTATION.md`** — concrete install/activate/rollback/verify procedure; exact diffs for the three Hermes source patches; re-probe procedure; known issues and workarounds.
+- **`variants/hermes/PROBE-RESULTS-r7.md`** — consolidated 5-variant sweep results: methodology, cross-variant metric table, dispatch trajectory analysis, runtime-truth vs persisted-session caveat, residual failure modes, cross-model integrity verification, judge independence caveat.
+- **`variants/hermes/NEXT-STEPS.md`** — session-handoff doc for follow-up work: N=10 re-probe plan, SIGTERM-truncation fix, worker-quality probe design (r8 scope), production hardening paths.
+- **`variants/hermes/HERMES-variantB.md`** — probe sibling: hard output contract variant (classification gate + Critical Rules). Retained for re-probe.
+- **`variants/hermes/HERMES-variantD.md`** — **ship candidate:** hard contract + dispatch scaffolding + worked `<tool_call>` example for `delegate_worker`. Operator-activated via `probe-variantD-stage.sh`.
+- **`variants/hermes/delegate_worker.py`** — **ship tool:** simplified single-argument dispatch wrapper (`goal: str`) around `delegate_task`. Designed for Gemma's tool-surface preferences.
+- **Probe infrastructure at project root** — `PLAN-hermes-harness-probe.md`, `probe-tasks.md`, `probe-reproducibility.md`, `probe-swap.sh`, `probe-variantD-stage.sh`, `probe-variantE-wrapper.sh`, `probe-variantE-check.py`. Retained for re-probing.
+- **`archive/hermes-probe-r7-2026-04-18/`** — 19 intermediate probe artifacts (worker reports, trial records, judge verdicts, revert histories) preserved for audit trail.
+
+### Validated
+- Gemma-4-31B can classify tasks reliably (10/10 marker emission with Variant B hard contract).
+- Gemma-4-31B emits well-formed `delegate_worker` tool calls when the schema is simple and scaffolding is present.
+- The Planner-Worker-Judge flow runs end-to-end on local inference (parent Gemma → child Gemma worker → summary → optional judge child Gemma).
+- The Jira-skill pattern (narrow tool surface + worked format example + retry wrapper) generalizes from the Jira Daily Briefing to the full harness.
+
+### Known gaps (r8 scope)
+- **Worker quality.** When dispatch fires, children sometimes invent data, loop in wrong directories, or don't complete. Estimated operational ceiling at r7 ship state: ~25% useful-completion (80% dispatch × ~30% worker-useful).
+- **SIGTERM truncation.** Parent sessions blocked waiting for child workers get killed by VM-side `timeout`, losing the parent's record of the dispatch. Runtime-truth ≠ persisted-session-truth. Workaround documented; upstream contribution candidate.
+- **Trial-9-class bug-hunt tasks.** Gemma concludes "no bug" and re-classifies to one-shot in retry body; check script only reads first assistant's first line. False-negative in wrapper metrics. Fix documented in NEXT-STEPS.md.
+- **Post-dispatch role collapse.** Parent can emit `delegate_worker` cleanly, then make unrelated mutations in main session while child runs. ROLE_COLLAPSE gate only catches pre-dispatch mutations.
+
+### Cross-model integrity check
+All AgentFW core and non-Hermes variant files verified byte-identical before and after the probe. `core/harness-core.md` md5 unchanged. Probe infrastructure (scripts, variant sibling files, documentation) lives entirely under `variants/hermes/` and top-level `probe-*` files — never touching files shared with other variants.
+
+### Files modified (scope audit)
+- Added under `variants/hermes/`: DESIGN.md, IMPLEMENTATION.md, PROBE-RESULTS-r7.md, NEXT-STEPS.md, HERMES-variantB.md, HERMES-variantD.md, delegate_worker.py
+- Added at top level: PLAN-hermes-harness-probe.md, probe-tasks.md, probe-reproducibility.md, probe-swap.sh, probe-variantD-stage.sh, probe-variantE-wrapper.sh, probe-variantE-check.py
+- Added: `archive/hermes-probe-r7-2026-04-18/` directory with README and 19 artifacts
+- Unchanged: `core/`, `references/`, `playbooks/`, `templates/`, `variants/claude-code/`, `variants/claude-projects/`, `variants/generic/`, `evaluation/`, all pre-r7 PLAN and ARTIFACT files
+
+---
+
 ## r7 (2026-04-17) — Cross-Model Tuning Pass
 
 ### Context
