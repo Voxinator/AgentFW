@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+# probe-variantI-wrapper.sh — Variant F wrapper + HERMES_WORKER_OVERLAY env-var injection.
+#
+# Identical semantics to probe-variantF-wrapper.sh, but the remote SSH command
+# is prefixed with HERMES_WORKER_OVERLAY=1 so the delegate_tool.py overlay (per
+# probe-variantI-stage.sh) activates for child sessions spawned by
+# delegate_worker_v2 on this trial. Used for Arm B of the r7.6-P1C probe
+# matrix. Arm A uses probe-variantF-wrapper.sh unmodified (env var unset →
+# overlay inactive → mechanical-fixes-only baseline).
+#
+# DESIGN RATIONALE for forking (vs. editing probe-variantF-wrapper.sh):
+#   - The operator's brief forbids mid-run artifact edits (wrapper/check/stage).
+#   - A sibling wrapper is a setup-time artifact, not a mid-run edit.
+#   - Arm A and Arm B trials are interleaved at the TASK level (T4x5, T5x5,
+#     T6x5, T10x5), not interleaved within a single batch, so arm selection
+#     happens per-orchestrator-invocation, not per-trial. Using separate
+#     wrappers makes arm selection an explicit binary.
+#
+# Usage: probe-variantI-wrapper.sh <run_num> [task_prompt_text]
+# Env: same as variantF-wrapper.sh; MODEL, SOURCE_PREFIX, TOOLSETS, etc.
+
+set -euo pipefail
+
+RUN_NUM="${1:?run_num required}"
+TASK_TEXT="${2:-$(cat)}"
+MODEL="${MODEL:?MODEL env var required}"
+SOURCE_PREFIX="${SOURCE_PREFIX:-probe-r7.6-armB}"
+MAX_RETRIES=3
+TIMEOUT_PER_TURN=900
+SOURCE_TAG="${SOURCE_PREFIX}-run${RUN_NUM}"
+TOOLSETS_ENV="${TOOLSETS:-delegation,todo,clarify,file_readonly}"
+if [[ -n "$TOOLSETS_ENV" ]]; then
+  TOOLSETS_FLAG="-t \"$TOOLSETS_ENV\""
+else
+  TOOLSETS_FLAG=""
+fi
+CHECK_REMOTE="/tmp/probe-variantH-check.py"
+LOCAL_CHECK="/Users/briantaylor/Projects/AgentFW/probe-variantH-check.py"
+
+# Arm selection. When ARM=B (or HERMES_WORKER_OVERLAY=1 in orchestrator's env),
+# prefix the remote hermes command with HERMES_WORKER_OVERLAY=1 so child
+# sessions pick up the HERMES-WORKER.md scaffold overlay (see probe-variantI-
+# stage.sh for the delegate_tool.py patch). ARM=A leaves overlay unset.
+ARM="${ARM:-A}"
+ARM_UPPER=$(echo "$ARM" | tr '[:lower:]' '[:upper:]')
+if [[ "$ARM_UPPER" == "B" || "${HERMES_WORKER_OVERLAY:-0}" == "1" ]]; then
+  HWO_PREFIX="HERMES_WORKER_OVERLAY=1"
+  ARM_DISPLAY="B"
+else
+  HWO_PREFIX=""
+  ARM_DISPLAY="A"
+fi
+LOG_FILE="/tmp/${SOURCE_PREFIX}-run${RUN_NUM}-wrapper.log"
+STDOUT_FILE="/tmp/${SOURCE_PREFIX}-run${RUN_NUM}-stdout.txt"
+
+log() {
+  local msg="[${SOURCE_PREFIX} run${RUN_NUM}] $*"
+  echo "$msg"
+  echo "$msg" >> "$LOG_FILE"
+}
+
+ssh_run() { ssh ubuntu-vm "$@"; }
+
+extract_session_id() {
+  grep -oE 'session_id: [0-9]{8}_[0-9]{6}_[a-f0-9]+' "$1" | tail -1 | awk '{print $2}'
+}
+
+session_path_for() {
+  echo "/home/parallels/.hermes/sessions/session_${1}.json"
+}
+
+run_check() {
+  ssh_run "python3 $CHECK_REMOTE $(session_path_for "$1") 2>&1"
+}
+
+compute_mm() {
+  local sid="$1"
+  if [[ -z "$sid" ]]; then
+    echo " MODEL_CHECK=no-session"
+    return
+  fi
+  local sp; sp=$(session_path_for "$sid")
+  local session_model
+  session_model=$(ssh_run "python3 -c 'import json,sys;
+try:
+  print(json.load(open(\"$sp\")).get(\"model\",\"UNKNOWN\"))
+except Exception:
+  print(\"MISSING\")' 2>/dev/null" 2>/dev/null || echo "MISSING")
+  session_model=$(echo "$session_model" | tr -d '\r' | head -1)
+  if [[ "$session_model" == "$MODEL" ]]; then
+    echo ""
+  elif [[ "$session_model" == "UNKNOWN" || "$session_model" == "MISSING" || -z "$session_model" ]]; then
+    echo " MODEL_CHECK=session-json-missing"
+  else
+    echo " MODEL_MISMATCH=$session_model"
+  fi
+}
+
+correction_for() {
+  local v=$1
+  case "$v" in
+    VIOLATION:NO_MARKER)
+      cat <<'MSGEOF'
+Your first tool call was not `delegate_worker_v2`. Under the AgentFW β-fuse contract, every task must begin with a `delegate_worker_v2` tool call that records your classification. Emit the tool call now in EXACTLY this format:
+
+<tool_call>
+{"name": "delegate_worker_v2", "arguments": {"classification": "<one-shot|structured|long-horizon>", "justification": "<reason, ≥30 chars>", "goal": "<if structured/long-horizon, self-contained task spawn>"}}
+</tool_call>
+MSGEOF
+      ;;
+    "VIOLATION:NO_DISPATCH:structured"|"VIOLATION:NO_DISPATCH:long-horizon")
+      cat <<'MSGEOF'
+You classified this task as structured or long-horizon but did not dispatch a worker. HERMES.md requires: for structured/long-horizon tasks, your FIRST action must be a `delegate_worker_v2` tool call with a self-contained `goal` string. Output the tool call now in EXACTLY this format:
+
+<tool_call>
+{"name": "delegate_worker_v2", "arguments": {"classification": "structured", "justification": "<concrete reason, ≥30 chars, naming THIS task's properties>", "goal": "your complete self-contained task description including what to do, which file paths matter, what constraints apply, and what 'done' looks like"}}
+</tool_call>
+
+Do not call patch, write_file, terminal, execute_code, or skill_manage in the main session for this task. Dispatch is mandatory for this class. Re-classification is not an option here.
+MSGEOF
+      ;;
+    "VIOLATION:ROLE_COLLAPSE:structured"|"VIOLATION:ROLE_COLLAPSE:long-horizon")
+      cat <<'MSGEOF'
+You classified this task as structured or long-horizon, then used main-session mutation tools (patch, write_file, execute_code, or skill_manage) BEFORE dispatching a worker. That's role collapse. HERMES.md forbids this — for structured/long-horizon classes, your FIRST substantive action must be `delegate_worker_v2`. Stop the main-session work. Dispatch a worker now with a goal that includes everything you have learned so far, in EXACTLY this format:
+
+<tool_call>
+{"name": "delegate_worker_v2", "arguments": {"classification": "structured", "justification": "<concrete reason, ≥30 chars, naming THIS task's properties>", "goal": "your complete self-contained task description, including any file paths or findings from your orientation so far"}}
+</tool_call>
+MSGEOF
+      ;;
+    VIOLATION:FABRICATION)
+      echo "Your last tool calls returned errors, but your response claims the work is complete. Either: (a) retry the failed tool calls with corrected arguments and verify they succeed, or (b) state explicitly that the work is NOT complete, list which tool calls failed, and stop without claiming completion."
+      ;;
+    VIOLATION:NO_ASSISTANT_RESPONSE)
+      echo "No response produced. Begin your response with a \`delegate_worker_v2\` tool call classifying this task."
+      ;;
+    *)
+      echo "Your response did not meet the AgentFW β-fuse contract. Re-read HERMES.md and respond again, beginning with a \`delegate_worker_v2\` tool call that records your classification, justification, and (for structured/long-horizon) goal."
+      ;;
+  esac
+}
+
+: > "$LOG_FILE"
+: > "$STDOUT_FILE"
+log "MODEL=${MODEL} SOURCE_PREFIX=${SOURCE_PREFIX} TOOLSETS=${TOOLSETS_ENV:-<default>} TIMEOUT=${TIMEOUT_PER_TURN}s ARM=${ARM_DISPLAY} OVERLAY=${HWO_PREFIX:-off}"
+log "task: $(echo "$TASK_TEXT" | head -c 100)..."
+TRIAL_START_EPOCH=$(date +%s)
+
+SENTINEL_REMOTE="/tmp/probe_sentinel_${SOURCE_PREFIX}_run${RUN_NUM}"
+ssh_run "rm -f $SENTINEL_REMOTE && touch $SENTINEL_REMOTE" >/dev/null 2>&1 || true
+
+# Stage check script on VM (idempotent) — uses variantH check (has fabrication detector)
+LOCAL_CHECK_MD5=$(md5 -q "$LOCAL_CHECK" 2>/dev/null || md5sum "$LOCAL_CHECK" | awk '{print $1}')
+REMOTE_CHECK_MD5=$(ssh_run "md5sum $CHECK_REMOTE 2>/dev/null | awk '{print \$1}'" 2>/dev/null || echo "")
+if [[ "$LOCAL_CHECK_MD5" != "$REMOTE_CHECK_MD5" ]]; then
+  log "uploading check script (md5 local=$LOCAL_CHECK_MD5 remote=${REMOTE_CHECK_MD5:-none})"
+  scp -q "$LOCAL_CHECK" "ubuntu-vm:$CHECK_REMOTE"
+fi
+
+ATTEMPT=0
+log "attempt $ATTEMPT: initial invocation (ARM=${ARM_DISPLAY})"
+TURN_OUT=$(mktemp "/tmp/varI-r${RUN_NUM}-a${ATTEMPT}.XXXXXX")
+trap 'rm -f /tmp/varI-r${RUN_NUM}-a*.* 2>/dev/null' EXIT
+
+# The key difference vs variantF-wrapper.sh: HERMES_WORKER_OVERLAY=1 is injected
+# into the remote command. This env var is read by delegate_tool.py's patched
+# _build_child_system_prompt to prepend HERMES-WORKER.md to child prompts.
+set +e
+ssh_run "P=\$(cat); cd ~/.hermes/hermes-agent && ${HWO_PREFIX} timeout $TIMEOUT_PER_TURN ./venv/bin/hermes chat -m $MODEL -Q --max-turns 20 --checkpoints $TOOLSETS_FLAG -q \"\$P\" --source $SOURCE_TAG" <<< "$TASK_TEXT" > "$TURN_OUT" 2>&1
+RC=$?
+set -e
+cat "$TURN_OUT" >> "$STDOUT_FILE"
+echo "---ATTEMPT $ATTEMPT END (rc=$RC)---" >> "$STDOUT_FILE"
+
+SESSION_ID=$(extract_session_id "$TURN_OUT" || true)
+if [[ -z "$SESSION_ID" ]]; then
+  log "primary regex missed session_id; attempting fallback recovery by source-tag scan..."
+  FALLBACK_CANDIDATES=$(ssh_run "find /home/parallels/.hermes/sessions -name 'session_*.json' -newer $SENTINEL_REMOTE 2>/dev/null | xargs -I{} sh -c 'grep -l \"$SOURCE_TAG\" {} 2>/dev/null' 2>/dev/null | sort" 2>/dev/null || true)
+  if [[ -z "$FALLBACK_CANDIDATES" ]]; then
+    log "source-tag scan empty; trying most-recent-newer-than-sentinel as last resort"
+    FALLBACK_CANDIDATES=$(ssh_run "find /home/parallels/.hermes/sessions -name 'session_*.json' -newer $SENTINEL_REMOTE -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | awk '{print \$2}'" 2>/dev/null || true)
+  fi
+  FALLBACK_PATH=$(echo "$FALLBACK_CANDIDATES" | tail -1)
+  if [[ -n "$FALLBACK_PATH" ]]; then
+    SESSION_ID=$(basename "$FALLBACK_PATH" | sed -E 's/^session_(.+)\.json$/\1/')
+  fi
+  if [[ -z "$SESSION_ID" ]]; then
+    log "ERROR: session_id recovery also failed"
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=ERROR detail=NO_SESSION_ID attempts=1 final_session=none"
+    exit 0
+  fi
+  log "recovered session_id via fallback: $SESSION_ID"
+else
+  log "session_id captured: $SESSION_ID"
+fi
+
+CHAIN="A0:rc=$RC"
+
+while [[ $ATTEMPT -le $MAX_RETRIES ]]; do
+  CHECK_OUT=$(run_check "$SESSION_ID" || echo "ERROR:CHECK_FAILED")
+  VERDICT=$(echo "$CHECK_OUT" | head -1 | tr -d '\r')
+  log "attempt $ATTEMPT verdict: $VERDICT"
+  CHAIN="$CHAIN | A$ATTEMPT:$VERDICT"
+
+  if [[ "$VERDICT" == "COMPLIANT" ]]; then
+    TRIAL_ELAPSED=$(( $(date +%s) - TRIAL_START_EPOCH ))
+    MM=$(compute_mm "$SESSION_ID")
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=COMPLIANT attempts=$((ATTEMPT+1)) elapsed=${TRIAL_ELAPSED}s final_session=$SESSION_ID${MM} chain=\"$CHAIN\""
+    exit 0
+  fi
+
+  if [[ "$VERDICT" == ERROR:* ]]; then
+    TRIAL_ELAPSED=$(( $(date +%s) - TRIAL_START_EPOCH ))
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=WRAPPER_ERROR detail=$VERDICT attempts=$((ATTEMPT+1)) elapsed=${TRIAL_ELAPSED}s final_session=$SESSION_ID chain=\"$CHAIN\""
+    exit 0
+  fi
+
+  if [[ $ATTEMPT -ge $MAX_RETRIES ]]; then
+    TRIAL_ELAPSED=$(( $(date +%s) - TRIAL_START_EPOCH ))
+    MM=$(compute_mm "$SESSION_ID")
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=RETRY_EXHAUSTED last_violation=$VERDICT attempts=$((ATTEMPT+1)) elapsed=${TRIAL_ELAPSED}s final_session=$SESSION_ID${MM} chain=\"$CHAIN\""
+    exit 0
+  fi
+
+  ATTEMPT=$((ATTEMPT + 1))
+  CORRECTION=$(correction_for "$VERDICT")
+  log "attempt $ATTEMPT: sending correction for $VERDICT (ARM=${ARM_DISPLAY})"
+  TURN_OUT=$(mktemp "/tmp/varI-r${RUN_NUM}-a${ATTEMPT}.XXXXXX")
+
+  set +e
+  ssh_run "P=\$(cat); cd ~/.hermes/hermes-agent && ${HWO_PREFIX} timeout $TIMEOUT_PER_TURN ./venv/bin/hermes chat -m $MODEL --resume $SESSION_ID -Q --max-turns 20 $TOOLSETS_FLAG -q \"\$P\" --source $SOURCE_TAG" <<< "$CORRECTION" > "$TURN_OUT" 2>&1
+  RC=$?
+  set -e
+  cat "$TURN_OUT" >> "$STDOUT_FILE"
+  echo "---ATTEMPT $ATTEMPT (correction for $VERDICT) END (rc=$RC)---" >> "$STDOUT_FILE"
+  CHAIN="$CHAIN | A${ATTEMPT}_correct:rc=$RC"
+done
+
+echo "OUTCOME run=$RUN_NUM RESULT=UNEXPECTED_LOOP_EXIT attempts=$((ATTEMPT+1)) final_session=$SESSION_ID chain=\"$CHAIN\""
+exit 0

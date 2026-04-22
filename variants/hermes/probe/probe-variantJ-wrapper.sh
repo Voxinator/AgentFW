@@ -1,0 +1,436 @@
+#!/usr/bin/env bash
+# Fix 3 (rev 2, r7.6-P1C) — anti-child-attachment + timeout raise 2026-04-19
+# See PLAN-r7.6-P1C-fixes-implementation.md §5 for rationale.
+# probe-variantI-wrapper.sh — Variant F wrapper + HERMES_WORKER_OVERLAY env-var injection.
+#
+# Identical semantics to probe-variantF-wrapper.sh, but the remote SSH command
+# is prefixed with HERMES_WORKER_OVERLAY=1 so the delegate_tool.py overlay (per
+# probe-variantI-stage.sh) activates for child sessions spawned by
+# delegate_worker_v2 on this trial. Used for Arm B of the r7.6-P1C probe
+# matrix. Arm A uses probe-variantF-wrapper.sh unmodified (env var unset →
+# overlay inactive → mechanical-fixes-only baseline).
+#
+# DESIGN RATIONALE for forking (vs. editing probe-variantF-wrapper.sh):
+#   - The operator's brief forbids mid-run artifact edits (wrapper/check/stage).
+#   - A sibling wrapper is a setup-time artifact, not a mid-run edit.
+#   - Arm A and Arm B trials are interleaved at the TASK level (T4x5, T5x5,
+#     T6x5, T10x5), not interleaved within a single batch, so arm selection
+#     happens per-orchestrator-invocation, not per-trial. Using separate
+#     wrappers makes arm selection an explicit binary.
+#
+# Usage: probe-variantI-wrapper.sh <run_num> [task_prompt_text]
+# Env: same as variantF-wrapper.sh; MODEL, SOURCE_PREFIX, TOOLSETS, etc.
+
+set -euo pipefail
+
+RUN_NUM="${1:?run_num required}"
+TASK_TEXT="${2:-$(cat)}"
+MODEL="${MODEL:?MODEL env var required}"
+SOURCE_PREFIX="${SOURCE_PREFIX:-probe-r7.6-armB}"
+MAX_RETRIES=3
+: "${TIMEOUT_PER_TURN:=1500}"  # Fix 3 (rev 2, r7.6-P1C): raised 900→1500 for overlay-on long tasks; env-overridable
+SOURCE_TAG="${SOURCE_PREFIX}-run${RUN_NUM}"
+TOOLSETS_ENV="${TOOLSETS:-delegation,todo,clarify,file_readonly}"
+if [[ -n "$TOOLSETS_ENV" ]]; then
+  TOOLSETS_FLAG="-t \"$TOOLSETS_ENV\""
+else
+  TOOLSETS_FLAG=""
+fi
+CHECK_REMOTE="/tmp/probe-variantH-check.py"
+LOCAL_CHECK="/Users/briantaylor/Projects/AgentFW/probe-variantH-check.py"
+
+# Arm selection. When ARM=B (or HERMES_WORKER_OVERLAY=1 in orchestrator's env),
+# prefix the remote hermes command with HERMES_WORKER_OVERLAY=1 so child
+# sessions pick up the HERMES-WORKER.md scaffold overlay (see probe-variantI-
+# stage.sh for the delegate_tool.py patch). ARM=A leaves overlay unset.
+ARM="${ARM:-A}"
+ARM_UPPER=$(echo "$ARM" | tr '[:lower:]' '[:upper:]')
+if [[ "$ARM_UPPER" == "B" || "${HERMES_WORKER_OVERLAY:-0}" == "1" ]]; then
+  HWO_PREFIX="HERMES_WORKER_OVERLAY=1"
+  ARM_DISPLAY="B"
+else
+  HWO_PREFIX=""
+  ARM_DISPLAY="A"
+fi
+# variantJ-wrapper addition (r7.7 S7 smoke): also forward A1/A2 env gates.
+# Sibling variantI wrapper only forwards HERMES_WORKER_OVERLAY; A1/A2 require
+# their own activation env vars on the VM. If unset locally, nothing extra is
+# prepended (preserves canonical behavior).
+if [[ "${HERMES_CHILD_TOOLSET_RESTRICT:-0}" == "1" ]]; then
+  HWO_PREFIX="${HWO_PREFIX:+$HWO_PREFIX }HERMES_CHILD_TOOLSET_RESTRICT=1"
+fi
+if [[ "${HERMES_WRITE_BEFORE_CLAIM_GATE:-0}" == "1" ]]; then
+  HWO_PREFIX="${HWO_PREFIX:+$HWO_PREFIX }HERMES_WRITE_BEFORE_CLAIM_GATE=1"
+fi
+LOG_FILE="/tmp/${SOURCE_PREFIX}-run${RUN_NUM}-wrapper.log"
+STDOUT_FILE="/tmp/${SOURCE_PREFIX}-run${RUN_NUM}-stdout.txt"
+
+log() {
+  local msg="[${SOURCE_PREFIX} run${RUN_NUM}] $*"
+  echo "$msg"
+  echo "$msg" >> "$LOG_FILE"
+}
+
+ssh_run() { ssh ubuntu-vm "$@"; }
+
+extract_session_id() {
+  grep -oE 'session_id: [0-9]{8}_[0-9]{6}_[a-f0-9]+' "$1" | tail -1 | awk '{print $2}'
+}
+
+session_path_for() {
+  echo "/home/parallels/.hermes/sessions/session_${1}.json"
+}
+
+run_check() {
+  # Fix 3 (rev 2, r7.6-P1C) port of variantH Block 1: pass the first-80-byte
+  # prefix of TASK_TEXT as base64 via --expected-prompt-prefix-b64 so the check
+  # script can verify the session it's scoring actually belongs to THIS trial
+  # (not a child/orphan). Base64 chosen over raw to survive shell quoting /
+  # newlines / quotes in the trial prompt without escaping gymnastics. On
+  # mismatch the check returns `ERROR:WRONG_SESSION` which the verdict loop
+  # treats as a WRAPPER_ERROR terminal.
+  ssh_run "python3 $CHECK_REMOTE $(session_path_for "$1") --expected-prompt-prefix-b64 '$EXPECTED_PREFIX_B64' 2>&1"
+}
+
+compute_mm() {
+  local sid="$1"
+  if [[ -z "$sid" ]]; then
+    echo " MODEL_CHECK=no-session"
+    return
+  fi
+  local sp; sp=$(session_path_for "$sid")
+  local session_model
+  session_model=$(ssh_run "python3 -c 'import json,sys;
+try:
+  print(json.load(open(\"$sp\")).get(\"model\",\"UNKNOWN\"))
+except Exception:
+  print(\"MISSING\")' 2>/dev/null" 2>/dev/null || echo "MISSING")
+  session_model=$(echo "$session_model" | tr -d '\r' | head -1)
+  if [[ "$session_model" == "$MODEL" ]]; then
+    echo ""
+  elif [[ "$session_model" == "UNKNOWN" || "$session_model" == "MISSING" || -z "$session_model" ]]; then
+    echo " MODEL_CHECK=session-json-missing"
+  else
+    echo " MODEL_MISMATCH=$session_model"
+  fi
+}
+
+# Fix 4 (rev 2, r7.6-P1C, 2026-04-19) — retry-framing preamble.
+# Every correction message now BEGINS with the original TASK_TEXT framed as
+# "This is a RETRY of your original task" + a "preserve your original
+# classification" directive. Prevents the one-shot-no-goal cascade observed
+# in armB-T4-run3 / armB-T5-run4 where SIGTERM-before-persistence left a
+# session whose only visible user turn was the correction framing — the model
+# legitimately classified the correction itself as one-shot-no-goal because
+# it had no visibility into the original task. See ARTIFACT-r7.6-P1C-diag-
+# parent-one-shot.md for root-cause analysis (H4B confirmed ~80%).
+#
+# TASK_TEXT is truncated to 1500 bytes (well under context budget; probe
+# tasks currently ≤~1100 bytes) to keep the correction turn bounded. If
+# future tasks exceed this, bump the cap and document.
+retry_preamble() {
+  local original_task_prefix="${TASK_TEXT:0:1500}"
+  cat <<PREAMBLE_EOF
+CONTEXT: This is a RETRY of the task you were originally asked to solve. The initial attempt did not satisfy the AgentFW β-fuse contract (see specific correction below). This is NOT a new one-shot request and NOT a meta-conversation about protocol — it is a continuation of the ORIGINAL task. Preserve your original classification (one-shot / structured / long-horizon) when you respond; do not re-classify the correction message itself.
+
+--- BEGIN ORIGINAL TASK ---
+${original_task_prefix}
+--- END ORIGINAL TASK ---
+
+CORRECTION (specific protocol issue from the previous attempt):
+PREAMBLE_EOF
+}
+
+correction_for() {
+  local v=$1
+  local preamble
+  preamble=$(retry_preamble)
+  case "$v" in
+    VIOLATION:NO_MARKER)
+      {
+        printf '%s\n\n' "$preamble"
+        cat <<'MSGEOF'
+Your first tool call was not `delegate_worker_v2`. Under the AgentFW β-fuse contract, every task must begin with a `delegate_worker_v2` tool call that records your classification. Emit the tool call now in EXACTLY this format:
+
+<tool_call>
+{"name": "delegate_worker_v2", "arguments": {"classification": "<one-shot|structured|long-horizon>", "justification": "<reason, ≥30 chars>", "goal": "<if structured/long-horizon, self-contained task spawn>"}}
+</tool_call>
+MSGEOF
+      }
+      ;;
+    "VIOLATION:NO_DISPATCH:structured"|"VIOLATION:NO_DISPATCH:long-horizon")
+      {
+        printf '%s\n\n' "$preamble"
+        cat <<'MSGEOF'
+You classified this task as structured or long-horizon but did not dispatch a worker. HERMES.md requires: for structured/long-horizon tasks, your FIRST action must be a `delegate_worker_v2` tool call with a self-contained `goal` string. Output the tool call now in EXACTLY this format:
+
+<tool_call>
+{"name": "delegate_worker_v2", "arguments": {"classification": "structured", "justification": "<concrete reason, ≥30 chars, naming THIS task's properties>", "goal": "your complete self-contained task description including what to do, which file paths matter, what constraints apply, and what 'done' looks like"}}
+</tool_call>
+
+Do not call patch, write_file, terminal, execute_code, or skill_manage in the main session for this task. Dispatch is mandatory for this class. Re-classification is not an option here.
+MSGEOF
+      }
+      ;;
+    "VIOLATION:ROLE_COLLAPSE:structured"|"VIOLATION:ROLE_COLLAPSE:long-horizon")
+      {
+        printf '%s\n\n' "$preamble"
+        cat <<'MSGEOF'
+You classified this task as structured or long-horizon, then used main-session mutation tools (patch, write_file, execute_code, or skill_manage) BEFORE dispatching a worker. That's role collapse. HERMES.md forbids this — for structured/long-horizon classes, your FIRST substantive action must be `delegate_worker_v2`. Stop the main-session work. Dispatch a worker now with a goal that includes everything you have learned so far, in EXACTLY this format:
+
+<tool_call>
+{"name": "delegate_worker_v2", "arguments": {"classification": "structured", "justification": "<concrete reason, ≥30 chars, naming THIS task's properties>", "goal": "your complete self-contained task description, including any file paths or findings from your orientation so far"}}
+</tool_call>
+MSGEOF
+      }
+      ;;
+    VIOLATION:FABRICATION)
+      {
+        printf '%s\n\n' "$preamble"
+        echo "Your last tool calls returned errors, but your response claims the work is complete. Either: (a) retry the failed tool calls with corrected arguments and verify they succeed, or (b) state explicitly that the work is NOT complete, list which tool calls failed, and stop without claiming completion."
+      }
+      ;;
+    VIOLATION:NO_ASSISTANT_RESPONSE)
+      {
+        printf '%s\n\n' "$preamble"
+        echo "No response produced. Begin your response with a \`delegate_worker_v2\` tool call classifying this task (preserving your original classification for the original task above)."
+      }
+      ;;
+    VIOLATION:EMPTY_SYNTHESIS)
+      {
+        printf '%s\n\n' "$preamble"
+        cat <<'MSGEOF'
+Your delegated worker(s) returned results but you produced no final synthesis for the user. Emit ONE of the following now:
+
+(a) A concise summary (≥1 sentence, in plain prose) of what the worker(s) accomplished, key findings, and remaining gaps — reference concrete file paths, commands, or outputs from the worker results.
+
+OR
+
+(b) The honest-blocked template verbatim if the task could NOT be completed:
+
+BLOCKED: <one-line reason, e.g. missing tool, missing file, schema mismatch>
+What was attempted: <1-3 lines>
+What is needed to unblock: <1-2 lines>
+
+Do NOT emit another `delegate_worker_v2` call. Do NOT emit an empty or marker-only response. Your next message must be user-facing synthesis text.
+MSGEOF
+      }
+      ;;
+    *)
+      {
+        printf '%s\n\n' "$preamble"
+        echo "Your response did not meet the AgentFW β-fuse contract. Re-read HERMES.md and respond again, beginning with a \`delegate_worker_v2\` tool call that records your classification (preserve the original classification for the task above), justification, and (for structured/long-horizon) goal."
+      }
+      ;;
+  esac
+}
+
+: > "$LOG_FILE"
+: > "$STDOUT_FILE"
+log "MODEL=${MODEL} SOURCE_PREFIX=${SOURCE_PREFIX} TOOLSETS=${TOOLSETS_ENV:-<default>} TIMEOUT=${TIMEOUT_PER_TURN}s ARM=${ARM_DISPLAY} OVERLAY=${HWO_PREFIX:-off}"
+log "task: $(echo "$TASK_TEXT" | head -c 100)..."
+TRIAL_START_EPOCH=$(date +%s)
+
+# Fix 3 (rev 2, r7.6-P1C) port of variantH Block 1: compute the first-80-byte
+# prefix of TASK_TEXT once, as base64, for both (a) the check-script coupling
+# via --expected-prompt-prefix-b64 (see run_check) and (b) the fallback
+# anti-child-attachment content-match below (as raw hex). 80 bytes suffices
+# because all probe-tasks.md prompts diverge by char ~10; if any two trial
+# prompts share an 80-char prefix in future task sets, bump to 160 and document.
+EXPECTED_PREFIX_B64=$(printf '%s' "$TASK_TEXT" | head -c 80 | base64 | tr -d '\n')
+
+SENTINEL_REMOTE="/tmp/probe_sentinel_${SOURCE_PREFIX}_run${RUN_NUM}"
+ssh_run "rm -f $SENTINEL_REMOTE && touch $SENTINEL_REMOTE" >/dev/null 2>&1 || true
+
+# Stage check script on VM (idempotent) — uses variantH check (has fabrication detector)
+LOCAL_CHECK_MD5=$(md5 -q "$LOCAL_CHECK" 2>/dev/null || md5sum "$LOCAL_CHECK" | awk '{print $1}')
+REMOTE_CHECK_MD5=$(ssh_run "md5sum $CHECK_REMOTE 2>/dev/null | awk '{print \$1}'" 2>/dev/null || echo "")
+if [[ "$LOCAL_CHECK_MD5" != "$REMOTE_CHECK_MD5" ]]; then
+  log "uploading check script (md5 local=$LOCAL_CHECK_MD5 remote=${REMOTE_CHECK_MD5:-none})"
+  scp -q "$LOCAL_CHECK" "ubuntu-vm:$CHECK_REMOTE"
+fi
+
+ATTEMPT=0
+log "attempt $ATTEMPT: initial invocation (ARM=${ARM_DISPLAY})"
+TURN_OUT=$(mktemp "/tmp/varI-r${RUN_NUM}-a${ATTEMPT}.XXXXXX")
+trap 'rm -f /tmp/varI-r${RUN_NUM}-a*.* 2>/dev/null' EXIT
+
+# The key difference vs variantF-wrapper.sh: HERMES_WORKER_OVERLAY=1 is injected
+# into the remote command. This env var is read by delegate_tool.py's patched
+# _build_child_system_prompt to prepend HERMES-WORKER.md to child prompts.
+set +e
+ssh_run "P=\$(cat); cd ~/.hermes/hermes-agent && ${HWO_PREFIX} timeout $TIMEOUT_PER_TURN ./venv/bin/hermes chat -m $MODEL -Q --max-turns 20 --checkpoints $TOOLSETS_FLAG -q \"\$P\" --source $SOURCE_TAG" <<< "$TASK_TEXT" > "$TURN_OUT" 2>&1
+RC=$?
+set -e
+cat "$TURN_OUT" >> "$STDOUT_FILE"
+echo "---ATTEMPT $ATTEMPT END (rc=$RC)---" >> "$STDOUT_FILE"
+
+SESSION_ID=$(extract_session_id "$TURN_OUT" || true)
+FALLBACK_USED=false
+if [[ -z "$SESSION_ID" ]]; then
+  # Fix 3 (rev 2, r7.6-P1C) port of variantH Block 2: anti-child-attachment.
+  # Primary regex missed (common when `timeout` kills hermes mid-turn before
+  # the session_id marker is flushed to stdout). Fall back to scanning the VM
+  # for session JSONs created after our sentinel whose content matches our
+  # SOURCE_TAG. Hermes does NOT install a SIGTERM handler on the single-query
+  # (-q) code path, so when `timeout` fires mid-turn the parent session JSON
+  # is never persisted to disk. The pre-Fix-3 fallback frequently picked up
+  # the *child* session instead (delegated workers complete normally within
+  # their own timeout budget and DO persist). We now compute the first-80-byte
+  # prefix of each candidate's messages[0].content and compare against the
+  # first 80 bytes of TASK_TEXT; only a prefix-match candidate is accepted.
+  # See ARTIFACT-r7.4-sigterm-research.md Q8 for the empirical incident.
+  log "primary regex missed session_id; attempting fallback recovery by source-tag scan..."
+  FALLBACK_CANDIDATES=$(ssh_run "find /home/parallels/.hermes/sessions -name 'session_*.json' -newer $SENTINEL_REMOTE 2>/dev/null | xargs -I{} sh -c 'grep -l \"$SOURCE_TAG\" {} 2>/dev/null' 2>/dev/null | sort" 2>/dev/null || true)
+  if [[ -z "$FALLBACK_CANDIDATES" ]]; then
+    log "source-tag scan empty; trying most-recent-newer-than-sentinel as last resort"
+    FALLBACK_CANDIDATES=$(ssh_run "find /home/parallels/.hermes/sessions -name 'session_*.json' -newer $SENTINEL_REMOTE -printf '%T@ %p\n' 2>/dev/null | sort -n | awk '{print \$2}'" 2>/dev/null || true)
+  fi
+
+  # Compute the expected first-80-byte prefix of TASK_TEXT as hex (robust to
+  # newlines, quotes, and non-ASCII bytes — raw byte compare, no shell-quote
+  # parsing). Same 80-byte rationale as EXPECTED_PREFIX_B64 above.
+  EXPECTED_PREFIX_HEX=$(printf '%s' "$TASK_TEXT" | head -c 80 | xxd -p | tr -d '\n')
+
+  # Helper: read candidate's messages[0].content first 80 bytes (as hex) via
+  # the VM. Falls through messages[] to the first user-role message if [0]
+  # isn't user (defensive — Hermes research confirms [0] is user in practice).
+  # Retries once after ~1s if content empty (partial write race).
+  read_candidate_prefix_hex() {
+    local cpath="$1"
+    local attempt=0
+    local result=""
+    while [[ $attempt -lt 2 ]]; do
+      result=$(ssh_run "python3 -c '
+import json, sys
+try:
+    with open(\"$cpath\") as f:
+        data = json.load(f)
+    msgs = data.get(\"messages\", [])
+    content = \"\"
+    for m in msgs:
+        if m.get(\"role\") == \"user\":
+            content = m.get(\"content\", \"\") or \"\"
+            break
+    if not content and msgs:
+        content = msgs[0].get(\"content\", \"\") or \"\"
+    b = content.encode(\"utf-8\", errors=\"replace\")[:80]
+    sys.stdout.write(b.hex())
+except Exception:
+    sys.stdout.write(\"\")
+' 2>/dev/null" 2>/dev/null || echo "")
+      result=$(echo "$result" | tr -d '\r\n ')
+      if [[ -n "$result" ]]; then
+        echo "$result"
+        return 0
+      fi
+      attempt=$((attempt + 1))
+      [[ $attempt -lt 2 ]] && sleep 1
+    done
+    echo ""
+    return 0
+  }
+
+  MATCHED_SESSION_ID=""
+  MATCHED_PATH=""
+  CANDIDATE_COUNT=0
+  while IFS= read -r CPATH; do
+    [[ -z "$CPATH" ]] && continue
+    CANDIDATE_COUNT=$((CANDIDATE_COUNT + 1))
+    CAND_SID=$(basename "$CPATH" | sed -E 's/^session_(.+)\.json$/\1/')
+    CAND_HEX=$(read_candidate_prefix_hex "$CPATH")
+    if [[ -z "$CAND_HEX" ]]; then
+      log "fallback candidate $CAND_SID: messages[0].content empty after retry — skipping"
+      continue
+    fi
+    if [[ "$CAND_HEX" == "$EXPECTED_PREFIX_HEX" ]]; then
+      log "fallback candidate $CAND_SID: content-match OK (first 80 bytes)"
+      MATCHED_SESSION_ID="$CAND_SID"
+      MATCHED_PATH="$CPATH"
+      break
+    else
+      log "fallback candidate $CAND_SID: content-MISMATCH (likely child session or orphan)"
+    fi
+  done <<< "$FALLBACK_CANDIDATES"
+
+  if [[ -n "$MATCHED_SESSION_ID" ]]; then
+    SESSION_ID="$MATCHED_SESSION_ID"
+    FALLBACK_USED=true
+    log "recovered session_id via fallback (content-verified): $SESSION_ID"
+  else
+    # Either no candidates at all, or no candidate passed content-match.
+    if [[ $CANDIDATE_COUNT -eq 0 ]]; then
+      log "ERROR: session_id recovery failed (no session files newer than sentinel)"
+      echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=ERROR detail=NO_SESSION_ID attempts=1 final_session=none"
+      exit 0
+    else
+      # Report the last candidate considered as final_session (breadcrumb for debug);
+      # WRONG_SESSION verdict says we rejected all of them rather than silently
+      # attaching to a child and scoring it as NO_MARKER.
+      LAST_CAND_SID=$(echo "$FALLBACK_CANDIDATES" | tail -1 | xargs -I{} basename {} | sed -E 's/^session_(.+)\.json$/\1/')
+      log "ERROR: all $CANDIDATE_COUNT fallback candidate(s) failed content-match; rejecting as WRONG_SESSION"
+      echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=ERROR detail=WRONG_SESSION final_session=${LAST_CAND_SID:-none} reason=content_mismatch candidates=$CANDIDATE_COUNT chain=\"A0:rc=$RC | fallback_rejected\""
+      exit 0
+    fi
+  fi
+else
+  log "session_id captured: $SESSION_ID"
+fi
+
+CHAIN="A0:rc=$RC"
+
+# Fix 3 (rev 2, r7.6-P1C) port of variantH Block 3: when the session_id came
+# from the FALLBACK path (rather than the primary stdout regex), shrink
+# MAX_RETRIES to 1. Rationale: a fallback-recovered session already survived a
+# timeout/SIGTERM scenario — continuing to retry compounds the risk of
+# cascading SIGTERMs eating budget. The content-match guarantees the session
+# IS the right one before we burn a retry on it, so 1 retry is the minimum
+# rescue budget; 3 was overkill.
+if [[ "$FALLBACK_USED" == "true" ]]; then
+  log "FALLBACK_USED=true → shrinking MAX_RETRIES from $MAX_RETRIES to 1 for this trial"
+  MAX_RETRIES=1
+  CHAIN="$CHAIN | fallback_recovered_content_verified"
+fi
+
+while [[ $ATTEMPT -le $MAX_RETRIES ]]; do
+  CHECK_OUT=$(run_check "$SESSION_ID" || echo "ERROR:CHECK_FAILED")
+  VERDICT=$(echo "$CHECK_OUT" | head -1 | tr -d '\r')
+  log "attempt $ATTEMPT verdict: $VERDICT"
+  CHAIN="$CHAIN | A$ATTEMPT:$VERDICT"
+
+  if [[ "$VERDICT" == "COMPLIANT" ]]; then
+    TRIAL_ELAPSED=$(( $(date +%s) - TRIAL_START_EPOCH ))
+    MM=$(compute_mm "$SESSION_ID")
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=COMPLIANT attempts=$((ATTEMPT+1)) elapsed=${TRIAL_ELAPSED}s final_session=$SESSION_ID${MM} chain=\"$CHAIN\""
+    exit 0
+  fi
+
+  if [[ "$VERDICT" == ERROR:* ]]; then
+    TRIAL_ELAPSED=$(( $(date +%s) - TRIAL_START_EPOCH ))
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=WRAPPER_ERROR detail=$VERDICT attempts=$((ATTEMPT+1)) elapsed=${TRIAL_ELAPSED}s final_session=$SESSION_ID chain=\"$CHAIN\""
+    exit 0
+  fi
+
+  if [[ $ATTEMPT -ge $MAX_RETRIES ]]; then
+    TRIAL_ELAPSED=$(( $(date +%s) - TRIAL_START_EPOCH ))
+    MM=$(compute_mm "$SESSION_ID")
+    echo "OUTCOME run=$RUN_NUM MODEL=$MODEL RESULT=RETRY_EXHAUSTED last_violation=$VERDICT attempts=$((ATTEMPT+1)) elapsed=${TRIAL_ELAPSED}s final_session=$SESSION_ID${MM} chain=\"$CHAIN\""
+    exit 0
+  fi
+
+  ATTEMPT=$((ATTEMPT + 1))
+  CORRECTION=$(correction_for "$VERDICT")
+  log "attempt $ATTEMPT: sending correction for $VERDICT (ARM=${ARM_DISPLAY})"
+  TURN_OUT=$(mktemp "/tmp/varI-r${RUN_NUM}-a${ATTEMPT}.XXXXXX")
+
+  set +e
+  ssh_run "P=\$(cat); cd ~/.hermes/hermes-agent && ${HWO_PREFIX} timeout $TIMEOUT_PER_TURN ./venv/bin/hermes chat -m $MODEL --resume $SESSION_ID -Q --max-turns 20 $TOOLSETS_FLAG -q \"\$P\" --source $SOURCE_TAG" <<< "$CORRECTION" > "$TURN_OUT" 2>&1
+  RC=$?
+  set -e
+  cat "$TURN_OUT" >> "$STDOUT_FILE"
+  echo "---ATTEMPT $ATTEMPT (correction for $VERDICT) END (rc=$RC)---" >> "$STDOUT_FILE"
+  CHAIN="$CHAIN | A${ATTEMPT}_correct:rc=$RC"
+done
+
+echo "OUTCOME run=$RUN_NUM RESULT=UNEXPECTED_LOOP_EXIT attempts=$((ATTEMPT+1)) final_session=$SESSION_ID chain=\"$CHAIN\""
+exit 0

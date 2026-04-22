@@ -12,6 +12,11 @@ HANDOFF-*.md
 SESSION_LOG.md
 SESSION-*.md
 
+# Exception: Hermes variant's campaign-handoff tree contains DURABLE handoff
+# docs (not ephemeral per-conversation artifacts). Commit those.
+!variants/hermes/campaign-handoff/
+!variants/hermes/campaign-handoff/HANDOFF-*.md
+
 # Probe infrastructure backups — session-local one-time snapshots.
 # Naming convention: <script>.pre-<revision>-orig or .probe-*-orig
 *.pre-*-orig
