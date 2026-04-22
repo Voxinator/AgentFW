@@ -1,5 +1,11 @@
 # AgentFW Changelog
 
+## r7.5-campaign-arc (2026-04-21, post-tag) — HOLD
+
+Campaign arc addendum for the Hermes variant. Three follow-up campaigns (r7.6/7.7/7.8) after the `r7.5-hermes-prerelease` tag tested worker-quality interventions; all HOLD. See `variants/hermes/CEILING-FINDING-r7.8.md` for the substrate-ceiling finding, `variants/hermes/campaign-handoff/HANDOFF-post-r7.8.md` for r7.9 options, and `variants/hermes/PROBE-RESULTS-r7.md` §19+ for the full campaign-arc record. No canonical changes to framework; updates scoped under `variants/hermes/`.
+
+---
+
 ## r7.5 (2026-04-19) — Hermes variant pre-release — HOLD-narrow
 
 ### Context
