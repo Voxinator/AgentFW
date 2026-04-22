@@ -26,8 +26,62 @@ Both remain callable during r7.4 phase A. HERMES.md teaches v2 exclusively
 starting in phase C. v1 is sunset in phase E once adoption holds.
 """
 
+import os
+
 from tools.delegate_tool import delegate_task
 from tools.registry import registry
+
+
+# Mirror delegate_tool.py's last-resort default. Must stay in sync with
+# ~/.hermes/hermes-agent/tools/delegate_tool.py:40.
+_DEFAULT_TOOLSETS_FALLBACK = ["terminal", "file", "web"]
+
+# Toolsets to strip from child when A1 restriction is active.
+_A1_FABRICATION_SUBSTRATE = frozenset({"todo"})
+
+
+def _resolve_parent_toolsets(parent_agent):
+    """Mirror the three-way fallback in delegate_tool.py:228-239.
+
+    Returns a list of toolset names representing the parent's effective
+    toolset surface, in the same semantics delegate_task would derive if
+    given toolsets=None.
+    """
+    if parent_agent is None:
+        return list(_DEFAULT_TOOLSETS_FALLBACK)
+    parent_enabled = getattr(parent_agent, "enabled_toolsets", None)
+    if parent_enabled is not None:
+        return list(parent_enabled)
+    valid = getattr(parent_agent, "valid_tool_names", None)
+    if valid:
+        try:
+            import model_tools
+            derived = {
+                ts for name in valid
+                if (ts := model_tools.get_toolset_for_tool(name)) is not None
+            }
+            if derived:
+                return sorted(derived)
+        except Exception:
+            pass
+    return list(_DEFAULT_TOOLSETS_FALLBACK)
+
+
+def _derive_restricted_child_toolset(parent_agent):
+    """A1: parent's resolved toolsets minus fabrication substrate (todo).
+
+    Idempotent: if the parent's set already excludes todo, the result is
+    identical (sans any reordering from _resolve_parent_toolsets).
+    Non-expansive: the intersection logic in delegate_tool.py:242-243 will
+    still clip anything we return to the parent's surface, so a stale/larger
+    return value cannot accidentally grant the child extra tools.
+
+    Grandchild note: MAX_DEPTH=2 and `delegation` being blocked for children
+    together guarantee no grandchildren exist, so this helper's effect does
+    not need to propagate beyond depth 1.
+    """
+    resolved = _resolve_parent_toolsets(parent_agent)
+    return [t for t in resolved if t not in _A1_FABRICATION_SUBSTRATE]
 
 
 DELEGATE_WORKER_V2_SCHEMA = {
@@ -135,11 +189,19 @@ def delegate_worker_v2(classification, justification, goal=None,
         }
 
     # Spawn child via delegate_task internals (same path as legacy
-    # delegate_worker).
+    # delegate_worker). A1 (r7.7): if HERMES_CHILD_TOOLSET_RESTRICT=1, strip
+    # fabrication-substrate toolsets (todo) from the child's surface before
+    # inheritance. Default off preserves r7.5 behavior for A/B probes.
+    # Env var is read per-call (not cached) so a probe harness can toggle
+    # between runs without restarting Hermes.
+    if os.environ.get("HERMES_CHILD_TOOLSET_RESTRICT") == "1":
+        restricted = _derive_restricted_child_toolset(parent_agent)
+    else:
+        restricted = None
     return delegate_task(
         goal=goal,
         context=None,
-        toolsets=None,
+        toolsets=restricted,
         tasks=None,
         max_iterations=None,
         acp_command=None,

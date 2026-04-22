@@ -472,6 +472,7 @@ The original r7 SHIP verdict on Variant E is withdrawn. No subsequent variant ha
 - **2026-04-18 → 2026-04-19 (r7.3 added — `ARTIFACT-probe-r7.3-l12-results.md`, `ARTIFACT-remediation-judge-theta-playbook.md`):** New §15 documents Layer 1+2 stacked remediation attempt (FAIL on both first-attempt thresholds — dense 1/15 vs ≥7/15 target, MoE 1/15 vs ≥4/15 target), `role-collapse-via-todo` whack-a-mole finding, dense T4 regression (5/5 L1-only → 1/5 L1+L2), and `terminal` probe-fidelity issue. PROCEED-TO-OPTION-A2-AND-LAYER-3 verdict adopted.
 - **2026-04-19 (final findings — §16):** Operative state summary integrating r7, r7.2, r7.3. Outcome line in document header changed from "Variant E = SHIP. Architectural thesis validated." to the current corrected framing.
 - **2026-04-19 (r7.4 added — §17, §18):** New §17 documents the Layer 3 β-fuse probe (Variant F / `delegate_worker_v2`) — MoE 17/20 first-attempt strict (>2× threshold), dense 10/13 measured (77%; 7 unmeasured due to budget), v2-adoption 100% on compliant on both legs, 0/12 one-shot regression. Judge verdict SHIP-WITH-CAVEAT. §18 documents the r7.3 P1 terminal-binding resolution (ACCEPT: runtime gate was clean; probe analyzer mis-counted rejected hallucinated calls).
+- **2026-04-21 (r7.5 pre-release + campaign arc added — §19, §20, §21, §22, §23):** New §19 documents the `r7.5-hermes-prerelease` tag and its HOLD-narrow verdict (dispatch 16/20 vs 17/20 floor — within r7.4 variance; worker quality 3/20 vs 15/20 floor — decisive miss on an orthogonal surface). §20 documents r7.6 HWO scaffold campaign (HOLD — scaffold works but caps at T4-class tasks). §21 documents r7.7 Path A structural interventions (HOLD — A1+A2 land in noise band; S9 autopsy shows ~2/3 of FAILs are generation-layer, not agentic-layer). §22 documents r7.8 generation-layer T1 loop detector (HOLD) plus the **substrate-ceiling finding** (vanilla 4/20 = r7.6 Arm A baseline; all 5 non-baseline arms within 1-2σ). §23 carries the campaign-arc aggregate table. The r7.5 pre-release tag remains the operator-facing milestone; no new tag issued for r7.6/7.7/7.8. See `variants/hermes/CEILING-FINDING-r7.8.md` and `variants/hermes/campaign-handoff/HANDOFF-post-r7.8.md` for r7.9 option framing.
 
 ---
 
@@ -579,3 +580,151 @@ For strict first-attempt scoring, these count as MISS (85% strict PASS). Under t
 **Effect on r7.3 numbers:** the `role-collapse-via-terminal` row (5/30) collapses to 0; 4 dense trials re-label into `role-collapse-via-readonly` (their first accepted tool call was `search_files`). The r7.3 headline findings (dense 1/15, MoE 1/15 first-attempt strict) are **unchanged** — the gate verdict was always stable; only the failure-mode attribution shifts.
 
 **Judge verdict:** ACCEPT. Gate is sound. r7.4 β-fuse probe proceeded with the existing wrapper + toolset configuration.
+
+---
+
+## 19. r7.5 (2026-04-19) — Pre-release + first worker-quality measurement (HOLD-narrow)
+
+r7.5 is the first probe campaign to carry a formal **worker-quality gate** alongside the dispatch gate. It shipped two things: (a) a turn-0 toolset restriction hook (β-fuse v2.1) layered on top of r7.4's β-fuse dispatch, and (b) a 5-criterion worker-quality rubric (COMPLETION / CORRECTNESS / HONESTY / TURN_EFFICIENCY / NO_SIDE_EFFECTS) scored against each child session's persisted transcript. The campaign culminated in the `r7.5-hermes-prerelease` GitHub tag (commit `001a1a9`).
+
+**Pre-committed ship thresholds (both must hold for SHIP):**
+- Dispatch first-attempt strict PASS ≥17/20
+- Worker-quality 5-criterion PASS ≥15/20
+- LOST ≤3/20
+
+**Observed (20-trial MoE matrix):**
+
+| Gate | Threshold | Actual | Margin | Verdict |
+|------|-----------|--------|--------|---------|
+| Dispatch first-attempt strict PASS | ≥17/20 | 16/20 | −1 | FAIL |
+| Worker quality PASS (5-criterion) | ≥15/20 | **3/20** | **−12** | FAIL |
+| LOST limit | ≤3/20 | 0/20 | +3 slack | PASS |
+| VM canonical at return | Required | Yes | — | PASS |
+
+**Ship-judge verdict:** HOLD-narrow (`ARTIFACT-r7.5-SHIP-judge-verdict.md`). Dispatch missed by 1/20 with an identical empty-`messages[1]` failure signature to r7.4 — Poisson variance on the same task matrix, not a regression caused by the turn-0 hook. Worker quality missed by 12/20 on an orthogonal surface (child execution, not parent dispatch) that β-fuse was never designed to address. β-fuse dispatch thesis **INTACT**: v2-adoption 20/20 (100%); the 4 first-attempt misses all recovered cleanly via the correction loop.
+
+**Worker-quality failure modes (the r7.6 scope seed):** (1) `search_files` thrash on unknown cwd (7/20), (2) SIGTERM mid-turn truncation (8/20 — wrapper-level artifact; Tier-1 parent-side fix shipped, child-side is the r7.6 mirror), (3) malformed pseudo-tool-call text emission (3/20 — 26B MoE emits `call:X{args}<tool_call|>` in content rather than structured `tool_calls`), (4) fabricated completion claims on 2 T10 trials (summary claims "Created X" with zero `write_file` / `patch` / `terminal` calls in transcript).
+
+**What shipped as code under this campaign (now archived under `archive/r7.5-prerelease-2026-04-19/`):** `probe-variantG-{stage.sh,wrapper.sh,check.py}`, `probe-omlx-health-check.sh`, VM-side `_resolve_tools_for_turn_r75a` hook in `run_agent.py`. The operator-facing milestone is the tag itself; see `variants/hermes/archive/r7.5-prerelease-2026-04-19/RELEASE-NOTES-r7.5-hermes-prerelease.md` for the authoritative original release notes and `variants/hermes/RELEASE-NOTES-r7.5-hermes-prerelease.md` for the post-tag campaign-arc addendum.
+
+**Operator decision preserved:** r7.4's SHIP-WITH-CAVEAT verdict for variantF β-fuse dispatch is *not retroactively weakened* by r7.5's worker-quality HOLD — worker quality wasn't measured in r7.4. The operator may canonicalize variantF as a dispatch-layer improvement independently of the worker-quality hold; that remains an operator call, not a judge call.
+
+---
+
+## 20. r7.6 (2026-04-20) — HERMES-WORKER scaffold campaign (HOLD)
+
+r7.6 tested the hypothesis that **child sessions need their own scaffolding** analogous to HERMES.md. A new doctrine doc `HERMES-WORKER.md` (HWO — the W1 workstream from r7.5's roadmap) was injected into child system prompts teaching a 5-part discipline: PLAN-first, stop-after-3-unproductive-searches, honest-blocked template, 20-turn budget, anti-fabrication rule.
+
+**Campaign shape:** 40 trials across two arms (A = no scaffold baseline, B = HWO scaffold), fresh-LLM judgments on every trial after the Python heuristic judge was proven systematically biased. See `variants/hermes/archive/r7.6-campaign-2026-04-20/ARTIFACT-r7.6-MORNING-SUMMARY.md`.
+
+**Pre-committed ship thresholds:**
+- Absolute Arm B PASS ≥15/20
+- Non-LOST rate ≥75%
+- Delta ≥+5 absolute
+
+**Observed:**
+
+| Arm | Config | PASS / 20 | Non-LOST rate |
+|-----|--------|-----------|---------------|
+| Arm A | no scaffold | 4/20 (20%) | 4/20 (20%) |
+| Arm B | + HERMES-WORKER.md | 8/20 (40%) | 8/17 (47%) |
+| Delta |  | +4 absolute, +20pp | +27pp |
+
+All three thresholds failed. **Verdict: HOLD.** The scaffold produces real, measurable lift (+4 absolute, +20pp) but it does not clear the 75% floor, and the lift is non-uniform: HWO works on T4-class (concrete-blocked) tasks where the honest answer is "these files don't exist," but doesn't rescue T5 bug-hunts, T6 long-horizon plan+implement, or T10 long-horizon fabrication. Near-tripwire-breach events on 2 Arm B T10 trials (children attempted to `mkdir` into `~/.hermes/hermes-agent/*` — prevented only by toolset restriction, not by the scaffold).
+
+**Secondary campaign finding — methodology regression.** Three sessions across r7.5 F.2 and r7.6 P1-C hit the same tool-surface regression: orchestrator sub-agents couldn't dispatch Claude sub-agents, forcing fallback to self-judging. Fix 5 shipped a non-bypassable `probe-preflight.sh` gate plus a standing `CALIBRATION-r7.6-judge-protocol.md` formalizing fresh-LLM calibration as a ship gate (≥4/5 passes; 3/5 expands to 10-sample; ≤2/5 blocks ship).
+
+**Tracked-file drift:** `variants/hermes/HERMES-variantF.md` gained anti-pattern #6 "Retry Re-Classification" (Fix 4; +1 line) as part of the r7.6 retry-misclassification repair. This is the only content mutation on a tracked canonical-ish file since the r7.5 tag. The tag's copy is immutable at ref; only main drifted.
+
+**Interpretation (carried forward):** the scaffold is a prompt-level guardrail, and prompt-level guardrails have a ceiling on a 26B MoE model. The §5 anti-fabrication rule is being read but not obeyed — same lesson as r7.2→r7.3 (language-only fixes don't move the needle; structural fixes do). Recommendation at r7.6 close: pivot to structural fixes in r7.7 (Path A: child-toolset restriction + write-before-claim gate).
+
+---
+
+## 21. r7.7 (2026-04-20) — Path A structural interventions (HOLD)
+
+r7.7 shipped two structural fixes on top of the r7.6 HWO scaffold and ran a clean ablation matrix: **A1** (child-toolset restriction, removing `todo` from child sessions) and **A2** (write-before-claim runtime gate that rejects child summaries claiming file creation when no `write_file` / `patch` / `terminal` call appears in the transcript). See `variants/hermes/archive/r7.7-campaign-2026-04-20/ARTIFACT-r7.7-MORNING-SUMMARY.md` and `variants/hermes/archive/r7.7-campaign-2026-04-20/artifacts/ARTIFACT-r7.7-S9-ship-judge.md` (authoritative ship verdict).
+
+**Ablation design (40 trials, fresh-LLM judged):**
+
+| Arm | Config | PASS / 20 | vs r7.6 baseline |
+|-----|--------|-----------|------------------|
+| Arm G | A1 only | 5/20 (25%) | +1 over Arm A (4/20) — noise |
+| Arm F | A1 + A2 + HWO | 7/20 (35%) | −1 from Arm B (8/20) — noise |
+
+Both arms land in the noise band (σ≈2 at n=20, p≈0.25). **S9 ship-judge verdict (fresh context): HOLD.** No SHIP. No canonical swap.
+
+**Per-task structure tells a richer story than the aggregate:**
+
+| Task | r7.6 A | r7.6 B | r7.7 G (A1) | r7.7 F (A1+A2+HWO) | Interpretation |
+|------|--------|--------|-------------|--------------------|----------------|
+| T4 | 4/5 | 4/4 | **5/5** | 3/5 | HWO *hurts* T4; scaffold's "stop after 3 unproductive searches" causes premature termination |
+| T5 | 0/5 | 0/5 | 0/5 | 1/5 | Mode 2 thrash dominant — neither arm engages the failure |
+| T6 | 0/5 | 2/4 non-LOST | 0/5 | 0/5 | Wipeout in both arms; generation-layer thrash unsolvable on this substrate |
+| T10 | 0/5 | 2/4 non-LOST | 0/5 | **3/5** | HWO+A2 enables honest-blocked summaries; A2 caught real fabrication on run 5 |
+
+**The autopsy — the most important finding of the campaign.** Per `ARTIFACT-r7.7-S9-ship-judge.md` ablation: **~2/3 of FAILs are generation-layer pathologies, not agentic-layer.** Across 28 FAIL trials: zero HONESTY violations. Dominant patterns: `thought\n<channel|>` token leakage, `finish_reason=length` mid-turn truncation, degenerate planning text-loops, silent post-tool-result termination. A1 and A2 were targeting the wrong substrate — the model isn't fabricating because it has access to `todo`, it's failing to *generate coherent text at all* on long-horizon tasks.
+
+**Wins banked:** A2 runtime gate mechanism works (caught T10-run5 fabrication, independently corroborated); A1 child-toolset restriction works (prevented multiple `~/.hermes/hermes-agent/*` mkdir attempts); β-fuse dispatch holds 100% across all 40 trials; tripwire integrity perfect; path-aware `skill_manage` matching verified. Infrastructure calibrations carried forward: `OMLX_SWAP_MAX_GB=30` (was 5.5, demonstrably too aggressive); pre-probe oMLX restart discipline for sustained runs.
+
+**Tracked-file drift (carried to r7.8):** `variants/hermes/delegate_worker_v2.py` +64 env-gated lines (A1 child-toolset restriction behind `HERMES_CHILD_TOOLSET_RESTRICT`; behaviorally identical to r7.5 tag with env var unset).
+
+**Setup for r7.8:** if 2/3 of FAILs are generation-layer, then an intervention targeting the generation layer is the next honest swing. r7.8's top candidate: a cross-turn loop detector (T1) that fires on consecutive byte-identical tool-call signatures.
+
+---
+
+## 22. r7.8 (2026-04-20 → 2026-04-21) — Generation-layer T1 + substrate-ceiling finding (HOLD)
+
+r7.8 tested **T1 — cross-turn loop detector** in Hermes's generation loop, targeting the dominant Mode D pathology from r7.7 (consecutive identical tool_calls). Implementation: byte-identical match on `(tool_name, arguments)` signatures; WARN at 5 consecutive; TERMINATE at 6. Vet passed 5/5 (one trial exercised the pathology; T1 fired WARN at 5 and TERMINATE at 6 exactly as spec'd). See `variants/hermes/archive/r7.8-campaign-2026-04-21/ARTIFACT-r7.8-MORNING-SUMMARY.md`.
+
+**Campaign shape:** 20-trial Arm K (T1-only) matrix + 20-trial Arm K' pure-vanilla control. Two additional candidates (C1 parser scrubber, S1 sampler tune) rejected in vet.
+
+**Observed (strict on-disk, 20 trials per arm):**
+
+| Arm | Config | T4 | T5 | T6 | T10 | Total PASS/20 |
+|-----|--------|----|----|----|-----|---------------|
+| Arm K | T1 loop detector only | 2/5 | 0/5 | 0/5 | 0/5 | **2/20 (10%)** |
+| Arm K' | vanilla baseline control | 4/5 | 0/5 | 0/5 | 0/5 | **4/20 (20%)** |
+
+**Verdict: HOLD.** T1 underperformed the control by 2 trials on T4 (the scaffold-known-good task). T1 fired WARN 6× at n=20 (all on T10), 0 TERMINATEs — the vet was non-representative; only 1 of 5 vet trials exercised Mode D, and T1's exact-match limitation means 6+ Arm K FAILs were pattern-varied search thrash that evaded byte-identical detection.
+
+### 22.1. The ceiling finding
+
+Arm K' hit 4/20, **exactly matching r7.6 Arm A's vanilla baseline of 4/20.** This is not coincidence — it is measurement converging. Across 3 campaigns and 5 non-baseline arms (r7.6 HWO 8/17 non-LOST; r7.7 A1 5/20; r7.7 A1+A2+HWO 7/20; r7.8 T1 2/20; r7.8 vanilla 4/20), **every observed arm sits within 1-2σ of the vanilla baseline** (σ≈2 at n=20, p≈0.25).
+
+**Per-task shape is the invariant, not the intervention.** T4 ≈ 60-100% regardless of arm. T5/T6/T10 ≈ 0-3/5 regardless of arm. If you drop T4 from the denominator, every arm scores ~0-3/15 on the hard tasks. **No tested agentic-layer intervention moves that needle.**
+
+**Per r7.8-P1a failure-mode attribution across 28 FAILs from r7.7:** sampler 36%, parser 18%, prompt 18%, tool-call 18%, environment 14%, honesty 0%. Dispatch integrity is perfect (0 SCOPE breaches across 80+ trials). The dominant failure class is generation-layer; the agentic layer has been at ceiling for the last three campaigns.
+
+This finding is captured in a standalone doc — see `variants/hermes/CEILING-FINDING-r7.8.md`.
+
+### 22.2. Implications for r7.9
+
+Per the r7.8 MORNING-SUMMARY and the operator-review handoff `variants/hermes/campaign-handoff/HANDOFF-post-r7.8.md`, three directions remain and a combined recommendation:
+
+- **Option α — Substrate upgrade to Gemma-4-31B-dense.** Tests whether the MoE variant itself is the ceiling. Operator-authorized hardware-compatible (`gemma-4-31B-it-4bit`, 4-bit dense).
+- **Option β — Generation-layer, correctly targeted.** Pattern-similarity loop detector (Jaccard ≥0.9 on tool args); harmony `reasoning_parser` in oMLX model_settings; pre-parser content scrubber at `run_agent.py:8633` (C1 moved upstream).
+- **Option γ — Broader eval.** 5-8 task battery stratified across short-loop, data-transform, small-refactor, Q&A-with-citation, planning-only; tests whether existing interventions generalize or were benchmark-tuning.
+- **Option δ — Combined: α + γ in parallel, β deferred.** Operator's lean from r7.8 MORNING-SUMMARY.
+
+Not-a-fourth-option (explicit): more agentic-layer prompt tuning on MoE with the same 4-task eval. Three campaigns say this is the wrong place to spend a fourth overnight.
+
+### 22.3. What stays untouched
+
+- `r7.5-hermes-prerelease` tag remains the operator-facing milestone.
+- No new tag was issued for r7.6/7.7/7.8 — all HOLD verdicts, no ship thesis earned.
+- Canonical `HERMES.md` md5 `0780c232a6cb52e13e432261f0d68ad9` unchanged across all 3 campaigns + 80+ trials. Strongest single invariant in the project.
+
+---
+
+## 23. Campaign-arc aggregate (r7.6 / r7.7 / r7.8)
+
+| Campaign | Arm | Config (additive) | Total PASS/20 | Rate |
+|----------|-----|-------------------|---------------|------|
+| r7.6 | Arm A | vanilla (β-fuse dispatch only) | 4/20 | 20% |
+| r7.6 | Arm B | + HERMES-WORKER.md scaffold | 8/17 non-LOST | 47% of non-LOST |
+| r7.7 | Arm G | + A1 child-toolset restriction (no `todo`) | 5/20 | 25% |
+| r7.7 | Arm F | + HWO + A1 + A2 write-before-claim gate | 7/20 | 35% |
+| r7.8 | Arm K | + T1 cross-turn loop detector only | 2/20 | 10% |
+| r7.8 | Arm K' | vanilla baseline control | 4/20 | 20% |
+
+At n=20, p≈0.25, σ≈2. Every non-baseline arm is within 1-2σ of the vanilla baseline. See `variants/hermes/CEILING-FINDING-r7.8.md` for the full ceiling-finding analysis and `variants/hermes/campaign-handoff/HANDOFF-post-r7.8.md` for r7.9 option framing.
