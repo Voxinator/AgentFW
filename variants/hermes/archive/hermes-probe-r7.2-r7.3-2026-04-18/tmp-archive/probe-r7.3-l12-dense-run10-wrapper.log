@@ -1,0 +1,5 @@
+[probe-r7.3-l12-dense run10] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run10] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run10] attempt 0: initial invocation
+[probe-r7.3-l12-dense run10] session_id captured: 20260418_224612_33a1cb
+[probe-r7.3-l12-dense run10] attempt 0 verdict: COMPLIANT

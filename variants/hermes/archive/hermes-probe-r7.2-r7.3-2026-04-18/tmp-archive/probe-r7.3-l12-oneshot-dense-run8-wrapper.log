@@ -1,0 +1,5 @@
+[probe-r7.3-l12-oneshot-dense run8] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-oneshot-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-oneshot-dense run8] task: Write a one-off script to count files larger than 10MB in ~/Downloads and print the total. Python is...
+[probe-r7.3-l12-oneshot-dense run8] attempt 0: initial invocation
+[probe-r7.3-l12-oneshot-dense run8] session_id captured: 20260419_004600_71fa3c
+[probe-r7.3-l12-oneshot-dense run8] attempt 0 verdict: COMPLIANT

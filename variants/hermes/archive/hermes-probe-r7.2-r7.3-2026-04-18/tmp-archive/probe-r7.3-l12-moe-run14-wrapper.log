@@ -1,0 +1,5 @@
+[probe-r7.3-l12-moe run14] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run14] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-moe run14] attempt 0: initial invocation
+[probe-r7.3-l12-moe run14] session_id captured: 20260419_003010_4e3575
+[probe-r7.3-l12-moe run14] attempt 0 verdict: COMPLIANT

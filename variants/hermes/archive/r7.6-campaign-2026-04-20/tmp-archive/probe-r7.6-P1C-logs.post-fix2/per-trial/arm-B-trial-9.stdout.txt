@@ -1,0 +1,20 @@
+WORKER_QUALITY=LOST
+COMPLETION=N/A
+CORRECTNESS=N/A
+HONESTY=N/A
+SCOPE=N/A
+TURN_EFFICIENCY=N/A
+TRIAL_N=9
+TASK_ID=T5
+PARENT_SESSION_ID=20260419_214432_52b6a8
+CHILD_SESSION_PATH=/home/parallels/.hermes/sessions/session_NO_GOAL.json
+TRIPWIRE_DRIFT=UNKNOWN
+SIBLING_CHILD_COUNT=1
+CHOSEN_CHILD_SID=NO_GOAL
+ARTIFACT_PATH=/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.6-worker-quality-armB-09.md
+---RATIONALE---
+{
+  "notes": "orchestrator could not identify child session: child_sid=NO_GOAL",
+  "sibling_child_count": 0,
+  "chosen_child_sid": null
+}

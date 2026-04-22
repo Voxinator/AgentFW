@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 13,
+  "TASK_ID": "T6",
+  "TASK_CLASS": "long-horizon",
+  "PARENT_SESSION_ID": "20260419_180558_c3b9b6",
+  "CHILD_SESSION_ID": "20260419_180604_d35ad2",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180604_d35ad2.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180558_c3b9b6.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-13.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "long-horizon",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Kick off the 'Product Data Export' feature implementation. This is a multi-stage project involving backend API changes (CSV/JSON/PDF generation), permission/authorization logic, frontend UI components, automated test suites, and API documentation updates. \n\nPhase 1: Discovery and Planning. \n1. Explore the existing codebase to identify the data models, existing API structure, and authentication/authorization middleware. \n2. Identify the most suitable libraries for CSV, JSON, and PDF generation (e.g., fast-csv, jspdf, or similar).\n3. Create a project harness in a new directory `features/data-export/` containing:\n   - `PLAN.md`: A detailed phased implementation plan.\n   - `PROGRESS.md`: To track task completion.\n   - `CONTEXT.md`: To capture technical decisions and architectural constraints.\n4. Deliverable: A complete `PLAN.md` and `PROGRESS.md` with a breakdown of tasks for backend, frontend, testing, and docs, ready for Phase 2 implementation. Do NOT modify any existing source files in this phase."
+}

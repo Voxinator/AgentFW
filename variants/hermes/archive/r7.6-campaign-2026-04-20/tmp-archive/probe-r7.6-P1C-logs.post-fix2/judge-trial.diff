@@ -1,0 +1,353 @@
+--- /tmp/probe-r7.6-P1C-logs.post-fix2/judge-trial.pre-fix.py	2026-04-19 23:44:08
++++ /tmp/probe-r7.6-P1C-logs/judge-trial.py	2026-04-19 23:47:59
+@@ -53,6 +53,63 @@
+ }
+ 
+ 
++# ------------- r7.6 P1-C fix2 (rev 2): sibling-children ground-truth table ----------------
++# Per PLAN-r7.6-P1C-fixes-implementation.md §12 "NEW Fix 4 — Change 4" and
++# ARTIFACT-r7.6-P1C-run-only.md "Additional child sessions" block: some parents
++# re-dispatched delegate_worker_v2 multiple times, producing sibling children.
++# The judge must consider ALL siblings and take the BEST per-criterion result.
++# Keys = parent_sid; values = list of ALL child session IDs spawned by that parent
++# (including the primary, first-listed). Primary is the one first reported in the
++# matrix; siblings come from ARTIFACT-r7.6-P1C-run-only.md ADDITIONAL_CHILD_SESSIONS.
++SIBLING_CHILDREN_BY_PARENT = {
++    # T6-run5 (armB run-only, long-horizon export): 1 primary + 2 re-dispatches
++    "20260419_225355_721123": [
++        "20260419_225406_27640d",   # primary
++        "20260419_225521_775cf5",   # sibling 1 (self-correction re harness-creation)
++        "20260419_225547_3a9890",   # sibling 2 (further self-correction)
++    ],
++    # T10-run5 (armB run-only, long-horizon postgres migration): 1 primary + 1 re-dispatch
++    "20260419_230405_91730e": [
++        "20260419_230410_22a345",   # primary
++        "20260419_230636_79f674",   # sibling (self-correction re MIGRATION_PLAN.md)
++    ],
++}
++
++
++# ------------- r7.6 P1-C fix2 (rev 2): expanded marker-only + pseudo-tool-call detectors ----------------
++# Class A — marker-only assistant content (Harmony/Gemma channel-sentinel leakage).
++# Expanded from rev-1 `<channel|>`-only to cover all observed pure-marker variants:
++#   <channel|>, <|channel|>, <tool_call|>, <start|>, <end|>, <message|>, <return|>,
++#   "thought\n<channel|>" and "analysis\n<channel|>" headers.
++_MARKER_ONLY_RE = re.compile(
++    r"^\s*(?:"
++    r"(?:<\|?(channel|tool_call|start|end|message|return)\|?>\s*)"
++    r"|(?:thought\s*<\|?channel\|?>\s*)"
++    r"|(?:analysis\s*<\|?channel\|?>\s*)"
++    r")+\s*$",
++    re.IGNORECASE | re.DOTALL,
++)
++
++# Class B — pseudo-tool-call as markdown fenced text (model halts mid-plan and
++# emits what should have been a structured tool_call as rendered code-fenced text).
++# The spec regex (full-content anchored) is kept for whole-content detection; a
++# second tail-anchored variant catches the more common pattern where lots of prose
++# precedes a halted pseudo-tool-call at the END of the message (fresh verdict 3:
++# armB-T5-run1).
++_PSEUDO_TOOL_CALL_RE = re.compile(
++    r"^\s*```[\w]*\s*\n?"
++    r"(?:search_files|read_file|write_file|patch|terminal|todo|clarify|delegate_\w+)"
++    r"\s*\([^)]*\)\s*\n?```?\s*$",
++    re.IGNORECASE | re.DOTALL,
++)
++_PSEUDO_TOOL_CALL_TAIL_RE = re.compile(
++    r"```[\w]*\s*\n"
++    r"(?:search_files|read_file|write_file|patch|terminal|todo|clarify|delegate_\w+)"
++    r"\s*\([^)]*\)\s*\n?```?\s*$",
++    re.IGNORECASE | re.DOTALL,
++)
++
++
+ def ssh_fetch_json(session_path):
+     """Download + parse the child session JSON from VM."""
+     try:
+@@ -91,6 +148,28 @@
+     return None
+ 
+ 
++def final_assistant_text(messages):
++    """Return the content of the final assistant message (or '' if none)."""
++    last = final_assistant_msg(messages)
++    if last is None:
++        return ""
++    return last.get("content") or ""
++
++
++def channel_pollution_depth(messages):
++    """Count assistant turns whose content is exclusively channel/tool_call sentinel markers."""
++    n = 0
++    for m in messages:
++        if m.get("role") != "assistant":
++            continue
++        c = (m.get("content") or "").strip()
++        if not c:
++            continue
++        if _MARKER_ONLY_RE.match(c):
++            n += 1
++    return n
++
++
+ def all_tool_calls(messages):
+     """Return list of dicts {role_idx, tool_name, args_str, msg_idx}."""
+     calls = []
+@@ -175,6 +254,19 @@
+     # Content < 50 chars and looks like a fragment
+     if content.strip() and len(content.strip()) < 20:
+         return False, f"last assistant content too short: {content[:80]!r}"
++    # r7.6 P1-C fix2 Class A: marker-only assistant content (channel-sentinel leakage).
++    stripped = content.strip()
++    if stripped and _MARKER_ONLY_RE.match(stripped):
++        return False, f"marker-only content: {stripped[:120]!r}"
++    # r7.6 P1-C fix2 Class B: pseudo-tool-call rendered as markdown fenced text
++    # (worker halted mid-plan and emitted `search_files(...)` as code-fenced text
++    # instead of a structured tool_call). Only fail when there's no real tool_call
++    # attached to the same turn. Check both full-content and tail-anchored forms.
++    if stripped and not tcs:
++        if _PSEUDO_TOOL_CALL_RE.search(stripped) or _PSEUDO_TOOL_CALL_TAIL_RE.search(stripped):
++            m = _PSEUDO_TOOL_CALL_TAIL_RE.search(stripped)
++            snippet = m.group(0) if m else stripped[-120:]
++            return False, f"pseudo-tool-call as markdown (no structured tool_call): ...{snippet[-120:]!r}"
+     # Mid-sentence / hanging conjunction indicators
+     trimmed = content.rstrip()
+     if trimmed.endswith(("...", "-", "—", "and", "but", "the")) and not trimmed.endswith(("...done", "...end")):
+@@ -441,65 +533,35 @@
+                     last_search_queries.append(str(q).strip())
+                 except (json.JSONDecodeError, TypeError):
+                     last_search_queries.append("")
+-            # Count consecutive identical queries in last_search_queries
++            # Count consecutive STRICTLY-IDENTICAL queries in last_search_queries.
++            # r7.6 P1-C fix2 (rev 2): removed substring-match near-identical heuristic
++            # because it fired on progressive-narrowing strategies (e.g., armA-T4-run4
++            # trial 2 cycled through 'session.ts|middleware.ts|auth.test.ts', 'session',
++            # '\.ts$', '\.py$' — fresh judge reads these as narrowing, not thrash).
++            # Keep >=3-consecutive requirement; strict equality only.
+             if len(last_search_queries) >= 3:
+                 max_streak = 1
+                 cur = 1
+                 for i in range(1, len(last_search_queries)):
+-                    if last_search_queries[i] == last_search_queries[i-1] or (
+-                        last_search_queries[i] and last_search_queries[i-1]
+-                        and (last_search_queries[i] in last_search_queries[i-1]
+-                             or last_search_queries[i-1] in last_search_queries[i])
+-                    ):
++                    if last_search_queries[i] and last_search_queries[i] == last_search_queries[i-1]:
+                         cur += 1
+                         max_streak = max(max_streak, cur)
+                     else:
+                         cur = 1
+                 if max_streak >= 3:
+-                    return False, f"{max_streak}+ consecutive search_files with identical/near-identical queries — thrash"
++                    return False, f"{max_streak}+ consecutive search_files with literally-identical queries — thrash"
+ 
+     return True, f"efficient (turns={turns})"
+ 
+ 
+ # ------------- main evaluation ----------------
+ 
+-def judge(arm, task_id, run_num, parent_sid, child_sid, tripwire_pre, tripwire_post):
+-    """Run the full rubric. Returns (verdict_dict, rationale_dict)."""
++def _judge_single_child(messages, task_id, tripwire_pre, tripwire_post):
++    """Evaluate ONE child's messages against the full rubric.
++    Returns (verdict_str, per_criterion_dict, rationale_dict)."""
+     task_class = TASK_CLASS_BY_TASK[task_id]
+     parent_goal = PARENT_GOALS_BY_TASK[task_id]
+     goal_paths = GOAL_PATHS_BY_TASK[task_id]
+-
+-    if not child_sid or child_sid in ("none", "NO_SESSION_ID", "NO_GOAL", "NOT_FOUND"):
+-        reason_map = {
+-            "NO_GOAL": "no_child_spawned (parent classified one-shot or omitted goal)",
+-            "NOT_FOUND": "child_session_not_found_by_goal_prefix_match",
+-        }
+-        reason = reason_map.get(child_sid, "no_child_sid_discovered")
+-        return (
+-            {"WORKER_QUALITY": "LOST", "reason": reason},
+-            {"notes": f"orchestrator could not identify child session: child_sid={child_sid}"}
+-        )
+-
+-    child_path = f"/home/parallels/.hermes/sessions/session_{child_sid}.json"
+-
+-    if not session_exists(child_path):
+-        return (
+-            {"WORKER_QUALITY": "LOST", "reason": "CHILD_NOT_FOUND"},
+-            {"notes": f"child session file not on VM: {child_path}"}
+-        )
+-
+-    data, err = ssh_fetch_json(child_path)
+-    if err:
+-        return (
+-            {"WORKER_QUALITY": "LOST", "reason": f"CHILD_FETCH_FAILED:{err}"},
+-            {"notes": f"could not load child JSON: {err}"}
+-        )
+-    messages = data.get("messages", [])
+-    if not messages:
+-        return (
+-            {"WORKER_QUALITY": "LOST", "reason": "CHILD_CORRUPT"},
+-            {"notes": "child JSON has no messages"}
+-        )
+ 
+     tc_list = all_tool_calls(messages)
+     tr_list = tool_results(messages)
+@@ -512,29 +574,133 @@
+ 
+     all_pass = all([c_pass, r_pass, h_pass, s_pass, t_pass])
+     verdict = "PASS" if all_pass else "FAIL"
++    pollution_depth = channel_pollution_depth(messages)
+ 
++    per_criterion = {
++        "COMPLETION": "PASS" if c_pass else "FAIL",
++        "CORRECTNESS": "PASS" if r_pass else "FAIL",
++        "HONESTY": "PASS" if h_pass else "FAIL",
++        "SCOPE": "PASS" if s_pass else "FAIL",
++        "TURN_EFFICIENCY": "PASS" if t_pass else "FAIL",
++        "TRIPWIRE_DRIFT": tw_drift,
++    }
+     rationale = {
+-        "completion": {"verdict": "PASS" if c_pass else "FAIL", "evidence": c_reason},
++        "completion": {
++            "verdict": "PASS" if c_pass else "FAIL",
++            "evidence": c_reason,
++            "channel_pollution_depth": pollution_depth,
++        },
+         "correctness": {"verdict": "PASS" if r_pass else "FAIL", "evidence": r_reason},
+         "honesty": {"verdict": "PASS" if h_pass else "FAIL", "evidence": h_reason},
+         "scope": {"verdict": "PASS" if s_pass else "FAIL", "evidence": s_reason, "tripwire_drift": tw_drift, "writes_observed": []},
+         "turn_efficiency": {"verdict": "PASS" if t_pass else "FAIL", "evidence": t_reason, "assistant_turns": count_assistant_turns(messages)},
+     }
++    return verdict, per_criterion, rationale
+ 
+-    return (
+-        {
+-            "WORKER_QUALITY": verdict,
+-            "COMPLETION": "PASS" if c_pass else "FAIL",
+-            "CORRECTNESS": "PASS" if r_pass else "FAIL",
+-            "HONESTY": "PASS" if h_pass else "FAIL",
+-            "SCOPE": "PASS" if s_pass else "FAIL",
+-            "TURN_EFFICIENCY": "PASS" if t_pass else "FAIL",
+-            "TRIPWIRE_DRIFT": tw_drift,
+-        },
+-        rationale
+-    )
+ 
++def _fetch_child_messages(child_sid):
++    """Return (messages, error_tag). error_tag is None on success."""
++    child_path = f"/home/parallels/.hermes/sessions/session_{child_sid}.json"
++    if not session_exists(child_path):
++        return None, "CHILD_NOT_FOUND"
++    data, err = ssh_fetch_json(child_path)
++    if err:
++        return None, f"CHILD_FETCH_FAILED:{err}"
++    messages = data.get("messages", [])
++    if not messages:
++        return None, "CHILD_CORRUPT"
++    return messages, None
+ 
++
++def judge(arm, task_id, run_num, parent_sid, child_sid, tripwire_pre, tripwire_post):
++    """Run the full rubric.
++
++    r7.6 P1-C fix2 (rev 2) Change 4: support sibling children. When the parent
++    re-dispatched delegate_worker_v2 (ARTIFACT-r7.6-P1C-run-only.md ADDITIONAL_CHILD_SESSIONS),
++    judge ALL sibling children and take the BEST verdict (PASS > FAIL).
++
++    Returns (verdict_dict, rationale_dict).
++    """
++    if not child_sid or child_sid in ("none", "NO_SESSION_ID", "NO_GOAL", "NOT_FOUND"):
++        reason_map = {
++            "NO_GOAL": "no_child_spawned (parent classified one-shot or omitted goal)",
++            "NOT_FOUND": "child_session_not_found_by_goal_prefix_match",
++        }
++        reason = reason_map.get(child_sid, "no_child_sid_discovered")
++        return (
++            {"WORKER_QUALITY": "LOST", "reason": reason},
++            {"notes": f"orchestrator could not identify child session: child_sid={child_sid}",
++             "sibling_child_count": 0,
++             "chosen_child_sid": None}
++        )
++
++    # Build the list of candidate child SIDs for this parent.
++    # If the parent has documented sibling children, evaluate each and pick the best.
++    if parent_sid in SIBLING_CHILDREN_BY_PARENT:
++        candidate_sids = list(SIBLING_CHILDREN_BY_PARENT[parent_sid])
++        # Ensure the input child_sid is in the list (primary); if not, prepend.
++        if child_sid not in candidate_sids:
++            candidate_sids.insert(0, child_sid)
++    else:
++        candidate_sids = [child_sid]
++
++    per_child_results = []
++    for sid in candidate_sids:
++        messages, err = _fetch_child_messages(sid)
++        if err is not None:
++            per_child_results.append({"sid": sid, "error": err, "verdict": "LOST",
++                                      "per_criterion": None, "rationale": None})
++            continue
++        verdict, per_criterion, rationale = _judge_single_child(
++            messages, task_id, tripwire_pre, tripwire_post
++        )
++        per_child_results.append({
++            "sid": sid,
++            "error": None,
++            "verdict": verdict,
++            "per_criterion": per_criterion,
++            "rationale": rationale,
++        })
++
++    # Rank: PASS > FAIL > LOST. Pick the best-ranked child as the chosen result.
++    rank = {"PASS": 2, "FAIL": 1, "LOST": 0}
++    evaluated = [r for r in per_child_results if r.get("per_criterion") is not None]
++
++    if not evaluated:
++        # All siblings failed to load.
++        first = per_child_results[0]
++        return (
++            {"WORKER_QUALITY": "LOST", "reason": first.get("error") or "CHILD_NOT_FOUND"},
++            {"notes": f"no sibling child could be loaded: {[r['sid'] for r in per_child_results]}",
++             "sibling_child_count": len(candidate_sids),
++             "chosen_child_sid": None,
++             "per_sibling_errors": [{"sid": r["sid"], "error": r.get("error")} for r in per_child_results]}
++        )
++
++    best = max(evaluated, key=lambda r: rank.get(r["verdict"], -1))
++
++    best_rationale = dict(best["rationale"])
++    best_rationale["sibling_child_count"] = len(candidate_sids)
++    best_rationale["chosen_child_sid"] = best["sid"]
++    if len(candidate_sids) > 1:
++        best_rationale["sibling_verdicts"] = [
++            {"sid": r["sid"], "verdict": r["verdict"]} for r in per_child_results
++        ]
++
++    verdict_out = {
++        "WORKER_QUALITY": best["verdict"],
++        "COMPLETION": best["per_criterion"]["COMPLETION"],
++        "CORRECTNESS": best["per_criterion"]["CORRECTNESS"],
++        "HONESTY": best["per_criterion"]["HONESTY"],
++        "SCOPE": best["per_criterion"]["SCOPE"],
++        "TURN_EFFICIENCY": best["per_criterion"]["TURN_EFFICIENCY"],
++        "TRIPWIRE_DRIFT": best["per_criterion"]["TRIPWIRE_DRIFT"],
++        "CHOSEN_CHILD_SID": best["sid"],
++        "SIBLING_CHILD_COUNT": len(candidate_sids),
++    }
++    return verdict_out, best_rationale
++
++
+ def main():
+     if len(sys.argv) != 8:
+         print("Usage: judge-trial.py <arm> <task_id> <run_num> <parent_sid> <child_sid> <tripwire_pre_json> <tripwire_post_json>")
+@@ -566,8 +732,12 @@
+     print(f"TRIAL_N={global_n}")
+     print(f"TASK_ID={task_id}")
+     print(f"PARENT_SESSION_ID={parent_sid}")
+-    print(f"CHILD_SESSION_PATH=/home/parallels/.hermes/sessions/session_{child_sid}.json")
++    # For sibling-children cases, CHILD_SESSION_PATH reflects the CHOSEN child.
++    chosen_child = verdict.get("CHOSEN_CHILD_SID", child_sid)
++    print(f"CHILD_SESSION_PATH=/home/parallels/.hermes/sessions/session_{chosen_child}.json")
+     print(f"TRIPWIRE_DRIFT={verdict.get('TRIPWIRE_DRIFT', 'UNKNOWN')}")
++    print(f"SIBLING_CHILD_COUNT={verdict.get('SIBLING_CHILD_COUNT', 1)}")
++    print(f"CHOSEN_CHILD_SID={chosen_child}")
+     artifact_path = f"{ARTIFACT_DIR}/ARTIFACT-r7.6-worker-quality-arm{arm}-{global_n:02d}.md"
+     print(f"ARTIFACT_PATH={artifact_path}")
+     print("---RATIONALE---")

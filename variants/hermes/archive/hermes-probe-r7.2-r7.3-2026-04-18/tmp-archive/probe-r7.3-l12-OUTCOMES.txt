@@ -1,0 +1,336 @@
+=== probe-r7.3-l12 driver starting at 2026-04-18 20:51:12 ===
+Wrapper: /Users/briantaylor/Projects/AgentFW/probe-variantE-wrapper.sh
+Toolsets: delegation,todo,clarify,file_readonly
+HERMES.md md5 (live on VM): 42b8ed602c1cc601bbc5f3189c915355
+Tripwire baselines: useDash=5503ee1c2ef7d635a020eea275e41239 jira=a1dce6e989527686124d0860830627c9 skill=fb1a5a5208a6cf2fcb8252aac10397eb
+
+
+=== [20:51:13] probe-r7.3-l12-dense run1 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run1] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run1] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-dense run1] attempt 0: initial invocation
+[probe-r7.3-l12-dense run1] session_id captured: 20260418_205113_1be9e9
+[probe-r7.3-l12-dense run1] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run1] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run1] attempt 1 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run1] attempt 2: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run1] attempt 2 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=3 elapsed=1593s final_session=20260418_205113_1be9e9 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=124 | A1:VIOLATION:NO_DISPATCH:structured | A2_correct:rc=0 | A2:COMPLIANT"
+
+=== [21:17:47] probe-r7.3-l12-dense run2 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run2] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run2] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-dense run2] attempt 0: initial invocation
+[probe-r7.3-l12-dense run2] session_id captured: 20260418_211748_65dbc0
+[probe-r7.3-l12-dense run2] attempt 0 verdict: COMPLIANT
+OUTCOME run=2 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=80s final_session=20260418_211748_65dbc0 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [21:19:07] probe-r7.3-l12-dense run3 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run3] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run3] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-dense run3] attempt 0: initial invocation
+[probe-r7.3-l12-dense run3] session_id captured: 20260418_211908_2b4e07
+[probe-r7.3-l12-dense run3] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run3] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run3] attempt 1 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=2 elapsed=151s final_session=20260418_211908_2b4e07 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [21:21:39] probe-r7.3-l12-dense run4 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run4] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run4] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-dense run4] attempt 0: initial invocation
+[probe-r7.3-l12-dense run4] session_id captured: 20260418_212139_309bf1
+[probe-r7.3-l12-dense run4] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run4] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run4] attempt 1 verdict: COMPLIANT
+OUTCOME run=4 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=2 elapsed=514s final_session=20260418_212139_309bf1 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [21:30:13] probe-r7.3-l12-dense run5 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run5] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run5] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-dense run5] attempt 0: initial invocation
+[probe-r7.3-l12-dense run5] session_id captured: 20260418_213015_d6f4b6
+[probe-r7.3-l12-dense run5] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run5] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run5] attempt 1 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run5] attempt 2: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run5] attempt 2 verdict: COMPLIANT
+OUTCOME run=5 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=3 elapsed=1211s final_session=20260418_213015_d6f4b6 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=124 | A1:VIOLATION:NO_DISPATCH:structured | A2_correct:rc=0 | A2:COMPLIANT"
+
+=== [21:50:24] probe-r7.3-l12-dense run6 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run6] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run6] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run6] attempt 0: initial invocation
+[probe-r7.3-l12-dense run6] session_id captured: 20260418_215024_e989e0
+[probe-r7.3-l12-dense run6] attempt 0 verdict: COMPLIANT
+OUTCOME run=6 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=707s final_session=20260418_215024_e989e0 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [22:02:12] probe-r7.3-l12-dense run7 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run7] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run7] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run7] attempt 0: initial invocation
+[probe-r7.3-l12-dense run7] primary regex missed session_id; attempting fallback recovery by source-tag scan...
+[probe-r7.3-l12-dense run7] source-tag scan empty; trying most-recent-newer-than-sentinel as last resort
+[probe-r7.3-l12-dense run7] recovered session_id via fallback: 20260418_220212_ee975a
+[probe-r7.3-l12-dense run7] attempt 0 verdict: COMPLIANT
+OUTCOME run=7 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=901s final_session=20260418_220212_ee975a chain="A0:rc=124 | A0:COMPLIANT"
+
+=== [22:17:13] probe-r7.3-l12-dense run8 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run8] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run8] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run8] attempt 0: initial invocation
+[probe-r7.3-l12-dense run8] session_id captured: 20260418_221714_32fe38
+[probe-r7.3-l12-dense run8] attempt 0 verdict: COMPLIANT
+OUTCOME run=8 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=815s final_session=20260418_221714_32fe38 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [22:30:48] probe-r7.3-l12-dense run9 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run9] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run9] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run9] attempt 0: initial invocation
+[probe-r7.3-l12-dense run9] primary regex missed session_id; attempting fallback recovery by source-tag scan...
+[probe-r7.3-l12-dense run9] source-tag scan empty; trying most-recent-newer-than-sentinel as last resort
+[probe-r7.3-l12-dense run9] recovered session_id via fallback: 20260418_224526_2e5991
+[probe-r7.3-l12-dense run9] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 1: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 1 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 2: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 2 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 3: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 3 verdict: VIOLATION:NO_MARKER
+OUTCOME run=9 MODEL=gemma-4-31b-it-4bit RESULT=RETRY_EXHAUSTED last_violation=VIOLATION:NO_MARKER attempts=4 elapsed=923s final_session=20260418_224526_2e5991 chain="A0:rc=124 | A0:VIOLATION:NO_MARKER | A1_correct:rc=0 | A1:VIOLATION:NO_MARKER | A2_correct:rc=0 | A2:VIOLATION:NO_MARKER | A3_correct:rc=0 | A3:VIOLATION:NO_MARKER"
+
+=== [22:46:12] probe-r7.3-l12-dense run10 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run10] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run10] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run10] attempt 0: initial invocation
+[probe-r7.3-l12-dense run10] session_id captured: 20260418_224612_33a1cb
+[probe-r7.3-l12-dense run10] attempt 0 verdict: COMPLIANT
+OUTCOME run=10 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=345s final_session=20260418_224612_33a1cb chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [22:51:57] probe-r7.3-l12-dense run11 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run11] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run11] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-dense run11] attempt 0: initial invocation
+[probe-r7.3-l12-dense run11] session_id captured: 20260418_225158_8365fb
+[probe-r7.3-l12-dense run11] attempt 0 verdict: COMPLIANT
+OUTCOME run=11 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=286s final_session=20260418_225158_8365fb chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [22:56:43] probe-r7.3-l12-dense run12 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run12] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run12] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-dense run12] attempt 0: initial invocation
+[probe-r7.3-l12-dense run12] session_id captured: 20260418_225644_500da4
+[probe-r7.3-l12-dense run12] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run12] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-dense run12] attempt 1 verdict: COMPLIANT
+OUTCOME run=12 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=2 elapsed=264s final_session=20260418_225644_500da4 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:01:07] probe-r7.3-l12-dense run13 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run13] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run13] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-dense run13] attempt 0: initial invocation
+[probe-r7.3-l12-dense run13] primary regex missed session_id; attempting fallback recovery by source-tag scan...
+[probe-r7.3-l12-dense run13] source-tag scan empty; trying most-recent-newer-than-sentinel as last resort
+[probe-r7.3-l12-dense run13] recovered session_id via fallback: 20260418_230650_5c74de
+[probe-r7.3-l12-dense run13] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run13] attempt 1: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run13] attempt 1 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run13] attempt 2: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run13] attempt 2 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run13] attempt 3: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run13] attempt 3 verdict: VIOLATION:NO_MARKER
+OUTCOME run=13 MODEL=gemma-4-31b-it-4bit RESULT=RETRY_EXHAUSTED last_violation=VIOLATION:NO_MARKER attempts=4 elapsed=1341s final_session=20260418_230650_5c74de chain="A0:rc=124 | A0:VIOLATION:NO_MARKER | A1_correct:rc=0 | A1:VIOLATION:NO_MARKER | A2_correct:rc=0 | A2:VIOLATION:NO_MARKER | A3_correct:rc=0 | A3:VIOLATION:NO_MARKER"
+
+=== [23:23:28] probe-r7.3-l12-dense run14 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run14] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run14] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-dense run14] attempt 0: initial invocation
+[probe-r7.3-l12-dense run14] session_id captured: 20260418_232329_2448c2
+[probe-r7.3-l12-dense run14] attempt 0 verdict: COMPLIANT
+OUTCOME run=14 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=213s final_session=20260418_232329_2448c2 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [23:27:02] probe-r7.3-l12-dense run15 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-dense run15] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run15] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-dense run15] attempt 0: initial invocation
+[probe-r7.3-l12-dense run15] session_id captured: 20260418_232703_f179b2
+[probe-r7.3-l12-dense run15] attempt 0 verdict: COMPLIANT
+OUTCOME run=15 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=585s final_session=20260418_232703_f179b2 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [23:36:47] probe-r7.3-l12-moe run1 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run1] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-moe run1] attempt 0: initial invocation
+[probe-r7.3-l12-moe run1] session_id captured: 20260418_233647_e9506e
+[probe-r7.3-l12-moe run1] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run1] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run1] attempt 1 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=92s final_session=20260418_233647_e9506e chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:38:20] probe-r7.3-l12-moe run2 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run2] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run2] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-moe run2] attempt 0: initial invocation
+[probe-r7.3-l12-moe run2] session_id captured: 20260418_233820_9361ef
+[probe-r7.3-l12-moe run2] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run2] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run2] attempt 1 verdict: COMPLIANT
+OUTCOME run=2 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=396s final_session=20260418_233820_9361ef chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:44:57] probe-r7.3-l12-moe run3 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run3] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-moe run3] attempt 0: initial invocation
+[probe-r7.3-l12-moe run3] session_id captured: 20260418_234457_5b344c
+[probe-r7.3-l12-moe run3] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run3] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run3] attempt 1 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=38s final_session=20260418_234457_5b344c chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:45:36] probe-r7.3-l12-moe run4 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run4] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run4] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-moe run4] attempt 0: initial invocation
+[probe-r7.3-l12-moe run4] session_id captured: 20260418_234536_31965f
+[probe-r7.3-l12-moe run4] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run4] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run4] attempt 1 verdict: COMPLIANT
+OUTCOME run=4 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=55s final_session=20260418_234536_31965f chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:46:32] probe-r7.3-l12-moe run5 task=T4 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run5] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run5] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.3-l12-moe run5] attempt 0: initial invocation
+[probe-r7.3-l12-moe run5] session_id captured: 20260418_234632_4ef29e
+[probe-r7.3-l12-moe run5] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run5] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run5] attempt 1 verdict: COMPLIANT
+OUTCOME run=5 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=69s final_session=20260418_234632_4ef29e chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:47:42] probe-r7.3-l12-moe run6 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run6] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run6] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-moe run6] attempt 0: initial invocation
+[probe-r7.3-l12-moe run6] session_id captured: 20260418_234742_3ad557
+[probe-r7.3-l12-moe run6] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run6] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run6] attempt 1 verdict: COMPLIANT
+OUTCOME run=6 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=175s final_session=20260418_234742_3ad557 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:long-horizon | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:50:37] probe-r7.3-l12-moe run7 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run7] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run7] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-moe run7] attempt 0: initial invocation
+[probe-r7.3-l12-moe run7] session_id captured: 20260418_235038_b872fe
+[probe-r7.3-l12-moe run7] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run7] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run7] attempt 1 verdict: COMPLIANT
+OUTCOME run=7 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=308s final_session=20260418_235038_b872fe chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:long-horizon | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [23:55:45] probe-r7.3-l12-moe run8 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run8] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run8] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-moe run8] attempt 0: initial invocation
+[probe-r7.3-l12-moe run8] session_id captured: 20260418_235546_3ba6ec
+[probe-r7.3-l12-moe run8] attempt 0 verdict: COMPLIANT
+OUTCOME run=8 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=702s final_session=20260418_235546_3ba6ec chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:07:27] probe-r7.3-l12-moe run9 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run9] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run9] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-moe run9] attempt 0: initial invocation
+[probe-r7.3-l12-moe run9] session_id captured: 20260419_000728_dde555
+[probe-r7.3-l12-moe run9] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run9] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run9] attempt 1 verdict: COMPLIANT
+OUTCOME run=9 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=901s final_session=20260419_000728_dde555 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:long-horizon | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [00:22:29] probe-r7.3-l12-moe run10 task=T6 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run10] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run10] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-moe run10] attempt 0: initial invocation
+[probe-r7.3-l12-moe run10] session_id captured: 20260419_002229_49f70d
+[probe-r7.3-l12-moe run10] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run10] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run10] attempt 1 verdict: COMPLIANT
+OUTCOME run=10 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=50s final_session=20260419_002229_49f70d chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:long-horizon | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [00:23:20] probe-r7.3-l12-moe run11 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run11] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run11] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-moe run11] attempt 0: initial invocation
+[probe-r7.3-l12-moe run11] session_id captured: 20260419_002320_a80a97
+[probe-r7.3-l12-moe run11] attempt 0 verdict: COMPLIANT
+OUTCOME run=11 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=227s final_session=20260419_002320_a80a97 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:27:08] probe-r7.3-l12-moe run12 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run12] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run12] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-moe run12] attempt 0: initial invocation
+[probe-r7.3-l12-moe run12] session_id captured: 20260419_002708_2bce00
+[probe-r7.3-l12-moe run12] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run12] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run12] attempt 1 verdict: COMPLIANT
+OUTCOME run=12 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=90s final_session=20260419_002708_2bce00 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:COMPLIANT"
+
+=== [00:28:39] probe-r7.3-l12-moe run13 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run13] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run13] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-moe run13] attempt 0: initial invocation
+[probe-r7.3-l12-moe run13] session_id captured: 20260419_002839_c9bb28
+[probe-r7.3-l12-moe run13] attempt 0 verdict: COMPLIANT
+OUTCOME run=13 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=90s final_session=20260419_002839_c9bb28 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:30:09] probe-r7.3-l12-moe run14 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run14] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run14] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-moe run14] attempt 0: initial invocation
+[probe-r7.3-l12-moe run14] session_id captured: 20260419_003010_4e3575
+[probe-r7.3-l12-moe run14] attempt 0 verdict: COMPLIANT
+OUTCOME run=14 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=867s final_session=20260419_003010_4e3575 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:44:37] probe-r7.3-l12-moe run15 task=T9 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-moe run15] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run15] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-moe run15] attempt 0: initial invocation
+[probe-r7.3-l12-moe run15] session_id captured: 20260419_004437_a62c47
+[probe-r7.3-l12-moe run15] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run15] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run15] attempt 1 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run15] attempt 2: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.3-l12-moe run15] attempt 2 verdict: COMPLIANT
+OUTCOME run=15 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=3 elapsed=47s final_session=20260419_004437_a62c47 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:VIOLATION:NO_DISPATCH:structured | A2_correct:rc=0 | A2:COMPLIANT"
+
+=== [00:45:24] probe-r7.3-l12-oneshot-dense run1 task=T1 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-oneshot-dense run1] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-oneshot-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-oneshot-dense run1] task: What's the capital of France?...
+[probe-r7.3-l12-oneshot-dense run1] attempt 0: initial invocation
+[probe-r7.3-l12-oneshot-dense run1] session_id captured: 20260419_004524_49ad38
+[probe-r7.3-l12-oneshot-dense run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=36s final_session=20260419_004524_49ad38 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:46:00] probe-r7.3-l12-oneshot-dense run8 task=T8 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-oneshot-dense run8] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-oneshot-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-oneshot-dense run8] task: Write a one-off script to count files larger than 10MB in ~/Downloads and print the total. Python is...
+[probe-r7.3-l12-oneshot-dense run8] attempt 0: initial invocation
+[probe-r7.3-l12-oneshot-dense run8] session_id captured: 20260419_004600_71fa3c
+[probe-r7.3-l12-oneshot-dense run8] attempt 0 verdict: COMPLIANT
+OUTCOME run=8 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=20s final_session=20260419_004600_71fa3c chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:46:20] probe-r7.3-l12-oneshot-moe run1 task=T1 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-oneshot-moe run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-oneshot-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-oneshot-moe run1] task: What's the capital of France?...
+[probe-r7.3-l12-oneshot-moe run1] attempt 0: initial invocation
+[probe-r7.3-l12-oneshot-moe run1] session_id captured: 20260419_004621_2c9672
+[probe-r7.3-l12-oneshot-moe run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=6s final_session=20260419_004621_2c9672 chain="A0:rc=0 | A0:COMPLIANT"
+
+=== [00:46:26] probe-r7.3-l12-oneshot-moe run8 task=T8 tw=5503ee1c2ef7d635a020eea275e41239,a1dce6e989527686124d0860830627c9,fb1a5a5208a6cf2fcb8252aac10397eb, ===
+[probe-r7.3-l12-oneshot-moe run8] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-oneshot-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-oneshot-moe run8] task: Write a one-off script to count files larger than 10MB in ~/Downloads and print the total. Python is...
+[probe-r7.3-l12-oneshot-moe run8] attempt 0: initial invocation
+[probe-r7.3-l12-oneshot-moe run8] session_id captured: 20260419_004626_301a0b
+[probe-r7.3-l12-oneshot-moe run8] attempt 0 verdict: COMPLIANT
+OUTCOME run=8 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=7s final_session=20260419_004626_301a0b chain="A0:rc=0 | A0:COMPLIANT"
+
+=== probe-r7.3-l12 driver completed at 2026-04-19 00:46:33 ===

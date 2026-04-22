@@ -1,0 +1,6 @@
+[probe-r7.5-T10-moe run3] MODEL=gemma-4-26b-a4b-it-mlx-8bit SOURCE_PREFIX=probe-r7.5-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.5-T10-moe run3] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.5-T10-moe run3] attempt 0: initial invocation
+[probe-r7.5-T10-moe run3] session_id captured: 20260419_181002_099235
+[probe-r7.5-T10-moe run3] attempt 0 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26b-a4b-it-mlx-8bit RESULT=COMPLIANT attempts=1 elapsed=24s final_session=20260419_181002_099235 chain="A0:rc=0 | A0:COMPLIANT"

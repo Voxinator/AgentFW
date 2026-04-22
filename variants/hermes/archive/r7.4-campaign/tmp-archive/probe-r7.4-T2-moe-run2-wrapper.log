@@ -1,0 +1,5 @@
+[probe-r7.4-T2-moe run2] MODEL=gemma-4-26b-a4b-it-mlx-8bit SOURCE_PREFIX=probe-r7.4-T2-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.4-T2-moe run2] task: In /home/parallels/scratch/scratch.py there is a variable named `foo`. Rename it to `bar`. There is ...
+[probe-r7.4-T2-moe run2] attempt 0: initial invocation
+[probe-r7.4-T2-moe run2] session_id captured: 20260419_141504_5ece09
+[probe-r7.4-T2-moe run2] attempt 0 verdict: COMPLIANT

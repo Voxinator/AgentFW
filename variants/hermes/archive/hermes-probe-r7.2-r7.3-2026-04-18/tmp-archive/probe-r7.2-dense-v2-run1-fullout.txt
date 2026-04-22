@@ -1,0 +1,6 @@
+[probe-r7.2-dense-v2 run1] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense-v2 TIMEOUT=900s
+[probe-r7.2-dense-v2 run1] task: What's the capital of France?...
+[probe-r7.2-dense-v2 run1] attempt 0: initial invocation
+[probe-r7.2-dense-v2 run1] session_id captured: 20260418_140752_fa4852
+[probe-r7.2-dense-v2 run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=37s final_session=20260418_140752_fa4852 chain="A0:rc=0 | A0:COMPLIANT"

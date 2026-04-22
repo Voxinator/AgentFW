@@ -1,0 +1,7 @@
+[probe-r7.2-moe run9] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.2-moe TIMEOUT=900s
+[probe-r7.2-moe run9] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.2-moe run9] attempt 0: initial invocation
+[probe-r7.2-moe run9] session_id captured: 20260418_163433_6a2a0c
+[probe-r7.2-moe run9] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-moe run9] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-moe run9] attempt 1 verdict: COMPLIANT

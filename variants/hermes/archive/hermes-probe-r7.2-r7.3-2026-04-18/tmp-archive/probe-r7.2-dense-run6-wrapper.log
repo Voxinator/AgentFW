@@ -1,0 +1,4 @@
+[probe-r7.2-dense run6] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense TIMEOUT=600s
+[probe-r7.2-dense run6] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.2-dense run6] attempt 0: initial invocation
+[probe-r7.2-dense run6] ERROR: no session_id captured from initial invocation (rc=124)

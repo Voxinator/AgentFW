@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 6,
+  "TASK_ID": "T5",
+  "TASK_CLASS": "structured",
+  "PARENT_SESSION_ID": "20260419_175717_2dc2aa",
+  "CHILD_SESSION_ID": "20260419_175731_46919a",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_175731_46919a.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_175717_2dc2aa.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-06.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": false,
+  "CLASSIFICATION": "structured",
+  "ATTEMPTS": 2,
+  "PARENT_GOAL": "Investigate and fix intermittent stale data in the Chief of Staff Dashboard after a 'Save' action. \n\n1. Locate the 'Save' logic in the dashboard codebase (likely under /media/psf/Projects/chief-of-staff-dashboard/src/). \n2. Identify how the application handles data fetching and state updates post-save (e.g., React Query, useEffect, or manual state management). \n3. Check for common causes: lack of cache invalidation, race conditions between the PUT/POST request and the subsequent GET request, or stale local state. \n4. Attempt to reproduce the issue by simulating rapid save/fetch cycles if possible. \n5. Propose and implement a fix (e.g., explicit cache invalidation or awaiting the response before refetching). \n6. Verify the fix by ensuring data is consistently fresh after a save operation. \n\nFiles to inspect: src/ components, src/ hooks, and any API service files."
+}

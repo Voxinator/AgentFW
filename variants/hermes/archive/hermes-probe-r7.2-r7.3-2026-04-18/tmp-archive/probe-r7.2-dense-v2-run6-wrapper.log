@@ -1,0 +1,13 @@
+[probe-r7.2-dense-v2 run6] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense-v2 TIMEOUT=900s
+[probe-r7.2-dense-v2 run6] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.2-dense-v2 run6] attempt 0: initial invocation
+[probe-r7.2-dense-v2 run6] primary regex missed session_id; attempting fallback recovery by source-tag scan...
+[probe-r7.2-dense-v2 run6] source-tag scan empty; trying most-recent-newer-than-sentinel as last resort
+[probe-r7.2-dense-v2 run6] recovered session_id via fallback: 20260418_143639_c0e074
+[probe-r7.2-dense-v2 run6] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run6] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run6] attempt 1 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run6] attempt 2: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run6] attempt 2 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run6] attempt 3: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run6] attempt 3 verdict: VIOLATION:NO_DISPATCH:structured

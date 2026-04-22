@@ -1,0 +1,4 @@
+/tmp/r7.7-S8-prompts/run-trial.sh: line 30: timeout: command not found
+OUTCOME run=1 RESULT=TIMEOUT_30MIN final_session=none
+1|T4|1|2026-04-20T22:02:47Z|2026-04-20T22:02:47Z|0s|MISSING|none|none|TIMEOUT|OMLX_HEALTH=CLEAN|PREFLIGHT=PASS
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=863s final_session=20260420_170311_e637a5 chain="A0:rc=0 | A0:COMPLIANT"

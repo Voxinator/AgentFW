@@ -1,0 +1,132 @@
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+[TASK CLASS: long-horizon]
+Justification: This is a critical infrastructure migration involving a large production dataset (80GB), zero-downtime requirements, and multiple dependent services, necessitating a phased approach with strict verification.
+
+This is a high-stakes operation. Moving from Postgres 12 to 16 is a multi-major version jump. A "zero downtime" requirement for a database of this size means we cannot simply run `pg_upgrade` (which requires downtime) or a simple dump/restore. We need a logical replication strategy or a managed migration path.
+
+I will act as the Planner and Judge. I will not execute the migration steps directly in this session; I will dispatch specialized workers for each phase.
+
+### Initial Assessment & Strategy
+Given the "zero downtime" constraint and the version gap (12 $\rightarrow$ 16), the most reliable path is:
+1. **Target Environment Setup:** Provision a Postgres 16 instance.
+2. **Schema Migration:** Export and import the schema (no data).
+3. **Data Synchronization:** Use Logical Replication (via `pglogical` or native logical replication) to stream changes from the PG12 primary to the PG16 replica.
+4. **Verification:** Run checksums/row counts to ensure parity.
+5. **Traffic Shift:** Perform a phased cutover of the three dependent services.
+6. **Cleanup:** Decommission the PG12 instance.
+
+### Phase 1: Discovery & Environment Audit
+Before I can build the plan, I need to know exactly what we are dealing with:
+- Where is the DB hosted? (Self-hosted VM, AWS RDS, Azure Database for PostgreSQL, etc.)
+- What are the current OS and Postgres extensions in use? (Some extensions may not be compatible with PG16).
+- How are the dependent services connected? (Direct connection, connection pooler like PgBouncer, etc.)
+
+I'll start by searching for any existing infrastructure documentation or environment configs.
+
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔎 preparing search_files…
+  ┊ 🔎 find      postgres OR database OR db-config  0.6s
+  ┊ 🔎 preparing search_files…
+  ┊ 🔎 grep      *postgres* OR *db* OR *database* OR *infra*`,target:  0.4s
+  ┊ 💻 preparing terminal…
+  ┊ 💻 $         ps aux | grep postgres  0.5s
+  ┊ 💻 preparing terminal…
+  ┊ 💻 $         netstat -tulpn | grep 5432  0.3s [exit 1]
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+Since I can't find the database process or port 5432 active on this specific VM, it's highly likely the production database is hosted externally (e.g., AWS RDS, Azure, or a dedicated DB server). 
+
+Brian, I'm ready to orchestrate this, but I need the "where" and "how" before I can build the execution plan. Since this is a zero-downtime migration of an 80GB production DB, we can't guess on the infrastructure.
+
+**Could you tell me:**
+1. **Hosting:** Is this on a managed service (RDS, Azure, Cloud SQL) or a self-hosted VM?
+2. **Connectivity:** Do the three dependent services connect via a load balancer, a connection pooler (like PgBouncer), or direct IP/DNS?
+3. **Current State:** Do we already have a Postgres 16 instance provisioned, or should I include the provisioning in the plan?
+
+Since I can't find the database process or port 5432 active on this specific VM, it's highly likely the production database is hosted externally (e.g., AWS RDS, Azure, or a dedicated DB server). 
+
+Brian, I'm ready to orchestrate this, but I need the "where" and "how" before I can build the execution plan. Since this is a zero-downtime migration of an 80GB production DB, we can't guess on the infrastructure.
+
+**Could you tell me:**
+1. **Hosting:** Is this on a managed service (RDS, Azure, Cloud SQL) or a self-hosted VM?
+2. **Connectivity:** Do the three dependent services connect via a load balancer, a connection pooler (like PgBouncer), or direct IP/DNS?
+3. **Current State:** Do we already have a Postgres 16 instance provisioned, or should I include the provisioning in the plan?
+
+Once I have these, I'll create the `PLAN.md` and `PROGRESS.md` and start dispatching workers for the discovery and migration phases.
+
+session_id: 20260418_150708_06e953
+---ATTEMPT 0 END (rc=0)---
+↻ Resumed session 20260418_150708_06e953 (1 user message, 10 total messages)
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+I apologize. I failed to maintain the role separation required by the `long-horizon` classification. I attempted to perform discovery in the main session instead of dispatching a worker to gather the necessary infrastructure intelligence.
+
+I will now dispatch a worker to perform the initial environment audit and discovery.
+
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔀 preparing delegate_worker…
+  ┊ 📋 plan      5 task(s)  0.0s
+  ┊ 💻 $         env | grep -E 'AWS|AZURE|GOOGLE|KUBERNETES|HOST' && hostname -f && uname -a  0.3s [exit 1]
+  ┊ 💻 $         ps aux | grep -E 'postgres|pg_ctl' && netstat -plnt | grep 5432 || ss -plnt | grep 5432  0.3s [exit 1]
+  ┊ 🔎 grep      *config*`,target:  0.6s
+  ┊ 💻 $         ls -R /home/parallels/.hermes/agent  0.3s
+  ┊ 📖 read      /home/parallels/.hermes/agent/DB_TOPOLOGY.md  0.9s
+  ┊ 💻 $         psql -h pg-v12-host -U user -d app_db -c "SELECT version();" && psql -h pg-v12-host -U user -d app_db -c "SELECT * FROM pg_extension;" && psql -h pg-v12-host -U user -d app_db -c "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r';"  0.7s [exit 127]
+
+┌──────────────────────────────────────────────────────────┐
+│  🔐 SUDO PASSWORD REQUIRED                              │
+├──────────────────────────────────────────────────────────┤
+│  Enter password below (input is hidden), or:            │
+│    • Press Enter to skip (command fails gracefully)     │
+│    • Wait 45s to auto-skip                           │
+└──────────────────────────────────────────────────────────┘
+
+  Password (hidden): 
+  ⏭ Skipped - continuing without sudo
+
+  ┊ 💻 $         sudo apt update && sudo apt install -y postgresql-client-common postgresql-client-12  0.5s [exit 1]
+  ┊ 💻 $         grep -r "pg-v12-host" /home/parallels/.hermes/agent/  0.2s
+  ┊ 💻 $         ping -c 4 pg-v12-host && traceroute pg-v12-host || echo "Network tools not found or host unreachable"  0.3s
+  ┊ 📖 read      /home/parallels/.hermes/agent/PLAN.md  0.9s
+  ┊ 💻 $         grep -r "PG12" /home/parallels/.hermes/agent/ || grep -r "Postgres" /home/parallels/.hermes/agent/  0.3s
+  ┊ 💻 $         ls -la /home/parallels/.hermes/agent/  0.3s
+  ┊ ✍️  write     /home/parallels/.hermes/agent/DISCOVERY_REPORT.md  0.6s
+  ┊ 📋 plan      5 task(s)  0.0s
+  ┊ 🔀 delegate  Perform a comprehensive discovery audit of the production Postgres 12 environment to prepare for a zero-downtime migration to Postgres 16. 1. Identify the hosting provider (e.g., AWS RDS, Azure, On-prem VM). 2. Determine the current database version, installed extensions, and overall schema complexity. 3. Map the connection architecture for the three dependent services (identify if they use direct connections, PgBouncer, or a load balancer). 4. Assess network latency and connectivity between the current PG12 instance and potential PG16 locations. 5. Check for any existing backup/replication configurations. Output a 'DISCOVERY_REPORT.md' containing all these facts, a list of identified risks (e.g., incompatible extensions), and a recommended migration path (Logical Replication vs. Managed Migration). 'Done' is when DISCOVERY_REPORT.md is created and verified to contain all requested infrastructure details.  161.0s
+  ┊ 🔀 preparing delegate_worker…
+  ┊ 📖 read      /home/parallels/.hermes/agent/DISCOVERY_REPORT.md  0.9s
+  ┊ ✍️  write     /home/parallels/.hermes/agent/PLAN.md  0.6s
+  ┊ 🔀 delegate  Review the DISCOVERY_REPORT.md generated by the previous worker and create a detailed execution plan in PLAN.md for the Postgres 12 to 16 migration. The plan must: 1. Detail the specific steps for Logical Replication setup (e.g., enabling logical replication in postgresql.conf, creating publications on v12, and subscriptions on v16). 2. Define a strict verification matrix for data parity (row counts, checksums) before cutover. 3. Propose a phased cutover strategy for the three dependent services (API Gateway, Reporting Engine, Worker Node) to minimize risk, given they use direct connections. 4. Include a detailed rollback plan in case of failure during cutover. 5. Identify all required configuration changes on both source and target servers. 'Done' is when PLAN.md is created, containing a step-by-step checklist with clear success criteria for each phase.  106.7s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+The discovery phase is complete, and the execution plan is now formalized in `PLAN.md`. 
+
+The discovery report highlighted a significant risk: **the three dependent services connect directly to the database host**, meaning there is no intermediate proxy (like PgBouncer) to facilitate a seamless DNS swap. Each service will require a configuration update during the cutover.
+
+The planned migration path is **Logical Replication**, which allows us to sync the 80GB dataset in the background and switch traffic only when the target is in parity.
+
+### Current Status
+- [x] **Discovery Audit:** Completed. `DISCOVERY_REPORT.md` created.
+- [x] **Execution Planning:** Completed. `PLAN.md` created.
+- [ ] **Environment Preparation:** Pending.
+- [ ] **Data Synchronization:** Pending.
+- [ ] **Verification & Cutover:** Pending.
+
+The discovery phase is complete, and the execution plan is now formalized in `PLAN.md`. 
+
+The discovery report highlighted a significant risk: **the three dependent services connect directly to the database host**, meaning there is no intermediate proxy (like PgBouncer) to facilitate a seamless DNS swap. Each service will require a configuration update during the cutover.
+
+The planned migration path is **Logical Replication**, which allows us to sync the 80GB dataset in the background and switch traffic only when the target is in parity.
+
+### Current Status
+- [x] **Discovery Audit:** Completed. `DISCOVERY_REPORT.md` created.
+- [x] **Execution Planning:** Completed. `PLAN.md` created.
+- [ ] **Environment Preparation:** Pending.
+- [ ] **Data Synchronization:** Pending.
+- [ ] **Verification & Cutover:** Pending.
+
+I will now move into the **Environment Preparation** phase. I'll dispatch a worker to implement the necessary configuration changes on the source (PG12) and target (PG16) servers to enable logical replication.
+
+session_id: 20260418_150708_06e953
+---ATTEMPT 1 (correction for VIOLATION:NO_DISPATCH:long-horizon) END (rc=0)---

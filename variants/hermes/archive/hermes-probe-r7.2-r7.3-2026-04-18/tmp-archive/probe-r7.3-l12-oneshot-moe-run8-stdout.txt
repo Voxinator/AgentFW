@@ -1,0 +1,66 @@
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+[TASK CLASS: one-shot]
+Justification: This is a single-file script with no external dependencies or cross-file side effects.
+
+```python
+import os
+
+def count_large_files(directory, threshold_mb=10):
+    threshold_bytes = threshold_mb * 1024 * 1024
+    count = 0
+    
+    if not os.path.exists(directory):
+        print(f"Error: Directory {directory} does not exist.")
+        return
+
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                # Use os.path.getsize to avoid issues with broken symlinks
+                if os.path.getsize(file_path) > threshold_bytes:
+                    count += 1
+            except (OSError, PermissionError):
+                # Skip files that are inaccessible
+                continue
+                
+    print(f"Total files larger than {threshold_mb}MB in {directory}: {count}")
+
+if __name__ == "__main__":
+    downloads_path = os.path.expanduser("~/Downloads")
+    count_large_files(downloads_path)
+[TASK CLASS: one-shot]
+Justification: This is a single-file script with no external dependencies or cross-file side effects.
+
+```python
+import os
+
+def count_large_files(directory, threshold_mb=10):
+    threshold_bytes = threshold_mb * 1024 * 1024
+    count = 0
+    
+    if not os.path.exists(directory):
+        print(f"Error: Directory {directory} does not exist.")
+        return
+
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                # Use os.path.getsize to avoid issues with broken symlinks
+                if os.path.getsize(file_path) > threshold_bytes:
+                    count += 1
+            except (OSError, PermissionError):
+                # Skip files that are inaccessible
+                continue
+                
+    print(f"Total files larger than {threshold_mb}MB in {directory}: {count}")
+
+if __name__ == "__main__":
+    downloads_path = os.path.expanduser("~/Downloads")
+    count_large_files(downloads_path)
+```
+
+session_id: 20260419_004626_301a0b
+---ATTEMPT 0 END (rc=0)---

@@ -1,0 +1,7 @@
+[probe-r7.3-l12-moe run9] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-moe run9] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-moe run9] attempt 0: initial invocation
+[probe-r7.3-l12-moe run9] session_id captured: 20260419_000728_dde555
+[probe-r7.3-l12-moe run9] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run9] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.3-l12-moe run9] attempt 1 verdict: COMPLIANT

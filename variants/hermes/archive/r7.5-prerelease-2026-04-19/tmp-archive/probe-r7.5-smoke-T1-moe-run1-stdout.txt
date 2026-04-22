@@ -1,0 +1,8 @@
+  ┊ 🔀 preparing delegate_worker_v2…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+❌ Error during OpenAI-compatible API call #1: unhashable type: 'slice'
+The capital of France is Paris.
+
+session_id: 20260419_173854_f7fe42
+---ATTEMPT 0 END (rc=0)---

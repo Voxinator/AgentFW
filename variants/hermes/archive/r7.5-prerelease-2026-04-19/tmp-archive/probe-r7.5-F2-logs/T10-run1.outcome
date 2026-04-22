@@ -1,0 +1,8 @@
+[probe-r7.5-T10-moe run1] MODEL=gemma-4-26b-a4b-it-mlx-8bit SOURCE_PREFIX=probe-r7.5-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.5-T10-moe run1] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.5-T10-moe run1] attempt 0: initial invocation
+[probe-r7.5-T10-moe run1] session_id captured: 20260419_180726_5a4d5f
+[probe-r7.5-T10-moe run1] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.5-T10-moe run1] attempt 1: sending correction for VIOLATION:NO_MARKER
+[probe-r7.5-T10-moe run1] attempt 1 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26b-a4b-it-mlx-8bit RESULT=COMPLIANT attempts=2 elapsed=44s final_session=20260419_180726_5a4d5f chain="A0:rc=0 | A0:VIOLATION:NO_MARKER | A1_correct:rc=0 | A1:COMPLIANT"

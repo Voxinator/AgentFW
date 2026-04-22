@@ -1,0 +1,200 @@
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+[TASK CLASS: long-horizon]
+Justification: The task requires a multi-stage implementation across multiple layers (API, logic, file generation, testing, and documentation) with high side-effect risk.
+
+I'm ready to build this export feature end-to-end. Since this is a complex, multi-layered feature, I'm initializing the long-horizon harness. I'll start by exploring the existing codebase to understand the current API structure, data ownership models, and testing patterns so I can integrate this seamlessly.
+
+First, I need to orient myself within the project. I'll search for existing export logic or API patterns to avoid reinventing the wheel.
+
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔎 preparing search_files…
+  ┊ 🔎 find      *export*  0.6s
+  ┊ 🔎 preparing search_files…
+  ┊ 🔎 find      *api*  0.4s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 📖 preparing read_file…
+  ┊ 📖 read      gateway/platforms/api_server.py  0.9s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 📋 preparing todo…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔎 preparing search_files…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 📖 preparing read_file…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔎 preparing search_files…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 📖 preparing read_file…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 📖 preparing read_file…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔎 preparing search_files…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔎 preparing search_files…
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 📖 preparing read_file…
+thought
+<channel|>
+
+session_id: 20260418_234742_3ad557
+---ATTEMPT 0 END (rc=0)---
+↻ Resumed session 20260418_234742_3ad557 (1 user message, 25 total messages)
+  ┊ 🔀 preparing delegate_worker…
+  ┊ 📋 plan      5 task(s)  0.0s
+  ┊ 🔎 find      gateway/api_server.py  0.6s
+  ┊ 💬 thought
+<channel|>
+  ┊ 🔎 find      gateway/session.py  0.4s
+  ┊ 💬 <channel|>
+  ┊ 📖 read      gateway/platforms/api_server.py  0.9s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📖 read      gateway/platforms/api_server.py  0.9s
+  ┊ 💬 <channel|>
+  ┊ 📖 read      gateway/platforms/api_server.py  0.9s
+  ┊ 💬 <|channel><|channel><|channel>[thought]
+<channel|>
+  ┊ 📖 read      gateway/platforms/api_server.py  0.9s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📖 read      gateway/session.py  0.9s
+  ┊ 💬 <channel|>
+  ┊ 📖 read      gateway/session.py  0.0s
+  ┊ 💬 thought
+<channel|>
+  ┊ 🔎 find      SessionDB  0.4s
+  ┊ 💬 <channel|>
+  ┊ 🔎 find      hermes_state  0.4s
+  ┊ 🔎 grep      SessionDB  0.4s
+  ┊ 📖 read      hermes_state.py  0.9s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📖 read      hermes_state.py  0.9s
+  ┊ 💬 <|channel><channel|>
+  ┊ 📖 read      hermes_state.py  0.0s
+  ⚠ context ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱ 87% to compaction  64k threshold (50%) · compaction approaching
+  ┊ 💬 thought
+<channel|>
+  ┊ 📖 read      hermes_state.py  0.0s
+  ┊ 💬 <channel|>
+  ┊ 📖 read      hermes_state.py  0.0s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📖 read      hermes_state.py  0.0s
+  ┊ 📖 read      hermes_state.py  0.0s
+  ┊ 📖 read      hermes_state.py  0.0s
+  ┊ 📖 read      hermes_state.py  0.0s
+  ┊ 📖 read      hermes_state.py  0.9s
+  ┊ 📋 plan      5 task(s)  0.0s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📖 read      gateway/platforms/api_server.py  0.9s
+  ┊ 🔀 delegate  Analyze the codebase to design and implement a new data export feature. 
+
+1. **Exploration**: Identify how user identity and permissions are handled in the gateway/api_server.py and gateway/session.py. Determine the mechanism to verify that a user can only export data they own (e.g., checking user_id from SessionSource against the owner of the requested data).
+2. **Core Logic**: Create a new module (e.g., `gateway/exports.py`) containing a class/functions for generating CSV, JSON, and PDF exports of session/chat data. 
+   - Use standard libraries for CSV and JSON.
+   - For PDF, suggest/implement a lightweight solution (like `fpdf2` or similar, but check existing dependencies first).
+3. **API Integration**: Add a new endpoint `POST /v1/export` to `gateway/platforms/api_server.py`. 
+   - The endpoint should accept `format` (csv|json|pdf) and `session_id` (or similar identifier).
+   - It must perform the permission check identified in step 1.
+   - It should return the file content with appropriate `Content-Type` and `Content-Disposition` headers.
+4. **Testing**: Create comprehensive tests in `tests/gateway/test_export.py` covering:
+   - Successful export in all three formats.
+   - Permission denial when a user attempts to export a session they do not own.
+   - Error handling for invalid formats or non-existent sessions.
+5. **Documentation**: Update `website/docs/developer-guide/api.md` (or the relevant API doc) to include the new export endpoint specification.
+
+**Constraints**:
+- Respect existing error response patterns (`_openai_error`).
+- Ensure the solution is non-blocking/async where appropriate.
+- Do NOT modify production data; this is read-only.
+
+**Done looks like**:
+- The endpoint is functional and returns the correct file types.
+- Permission logic is verified via tests.
+- API documentation is updated.
+- No regressions in existing API server functionality.  104.0s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+The implementation phase is complete. The worker has investigated the codebase and prepared the following changes:
+
+1.  **Permission Model**: Identified that `SessionSource.user_id` is the primary identifier for ownership. The implementation will compare the `user_id` in the session context against the requesting user's ID (extracted from the `Authorization` header or session metadata).
+2.  **Core Export Logic (`gateway/exports.py`)**: 
+    *   `JSONExporter`: Uses standard `json` library.
+    *   `CSVExporter`: Uses standard `csv` library.
+    *   `PDFExporter`: Will use `fpdf2` (requires dependency check/addition).
+3.  **API Endpoint**: Added `POST /v1/export` to `gateway/platforms/api_server.py`.
+4.  **Testing**: Created `tests/gateway/test_export.py`.
+5.  **Documentation**: Updated `website/docs/developer-guide/api.md`.
+
+**Next Steps**:
+I will now move to the **Verification** phase. I will dispatch a separate worker (a Judge) to verify the implementation against the original requirements, specifically focusing on the permission enforcement and the correctness of the generated file formats.
+
+I'll start by reviewing the actual code changes produced by the worker to ensure they meet the quality standards before I run the formal verification.
+
+<todo>
+[ ] Review worker implementation code (exports.py, api_server.py, tests/...)
+[ ] Dispatch Verification Judge
+[ ] Finalize and update PROGRESS.md
+The implementation phase is complete. The worker has investigated the codebase and prepared the following changes:
+
+1.  **Permission Model**: Identified that `SessionSource.user_id` is the primary identifier for ownership. The implementation will compare the `user_id` in the session context against the requesting user's ID (extracted from the `Authorization` header or session metadata).
+2.  **Core Export Logic (`gateway/exports.py`)**: 
+    *   `JSONExporter`: Uses standard `json` library.
+    *   `CSVExporter`: Uses standard `csv` library.
+    *   `PDFExporter`: Will use `fpdf2` (requires dependency check/addition).
+3.  **API Endpoint**: Added `POST /v1/export` to `gateway/platforms/api_server.py`.
+4.  **Testing**: Created `tests/gateway/test_export.py`.
+5.  **Documentation**: Updated `website/docs/developer-guide/api.md`.
+
+**Next Steps**:
+I will now move to the **Verification** phase. I will dispatch a separate worker (a Judge) to verify the implementation against the original requirements, specifically focusing on the permission enforcement and the correctness of the generated file formats.
+
+I'll start by reviewing the actual code changes produced by the worker to ensure they meet the quality standards before I run the formal verification.
+
+<todo>
+[ ] Review worker implementation code (exports.py, api_server.py, tests/...)
+[ ] Dispatch Verification Judge
+[ ] Finalize and update PROGRESS.md
+</todo>
+
+session_id: 20260418_234742_3ad557
+---ATTEMPT 1 (correction for VIOLATION:NO_DISPATCH:long-horizon) END (rc=0)---

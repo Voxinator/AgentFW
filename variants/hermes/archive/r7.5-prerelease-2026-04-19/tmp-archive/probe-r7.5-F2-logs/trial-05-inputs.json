@@ -1,0 +1,30 @@
+{
+  "TRIAL_N": 5,
+  "TASK_ID": "T4",
+  "TASK_CLASS": "structured",
+  "PARENT_SESSION_ID": "20260419_175632_8e343a",
+  "CHILD_SESSION_ID": "20260419_175636_82d42b",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_175636_82d42b.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_175632_8e343a.json",
+  "GOAL_PATHS": [
+    "src/auth/session.ts",
+    "src/auth/middleware.ts",
+    "tests/auth.test.ts"
+  ],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-05.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "structured",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Refactor the auth module to use the new session store. 1. Update src/auth/session.ts to implement the new store interface. 2. Update src/auth/middleware.ts to consume the new session store logic. 3. Update tests/auth.test.ts to reflect these changes. Requirements: All existing tests must pass. Ensure no regressions in session creation, retrieval, or validation. After implementation, run the tests using `npm test tests/auth.test.ts` and confirm success."
+}

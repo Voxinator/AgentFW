@@ -1,0 +1,13 @@
+[12:56:12] Starting trial RUN=2 TASK=T4 MODEL=dense PREFIX=probe-r7.4-T4-dense
+[12:58:00] Done RUN=2: OUTCOME run=2 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=108s final_session=20260419_125613_71379f chain="A0:rc=0 | A0:COMPLIANT"
+[12:58:00] Starting trial RUN=3 TASK=T4 MODEL=dense PREFIX=probe-r7.4-T4-dense
+[12:59:23] Done RUN=3: OUTCOME run=3 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=83s final_session=20260419_125801_2cb36f chain="A0:rc=0 | A0:COMPLIANT"
+[12:59:23] Starting trial RUN=4 TASK=T4 MODEL=dense PREFIX=probe-r7.4-T4-dense
+[13:01:30] Done RUN=4: OUTCOME run=4 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=127s final_session=20260419_125924_6145fb chain="A0:rc=0 | A0:COMPLIANT"
+[13:01:30] Starting trial RUN=5 TASK=T4 MODEL=dense PREFIX=probe-r7.4-T4-dense
+[13:06:19] Done RUN=5: OUTCOME run=5 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=287s final_session=20260419_130137_415fbf chain="A0:rc=0 | A0:COMPLIANT"
+[13:06:19] Starting trial RUN=6 TASK=T4 MODEL=dense PREFIX=probe-r7.4-T4-dense
+[13:08:15] Done RUN=6: OUTCOME run=6 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=116s final_session=20260419_130620_292188 chain="A0:rc=0 | A0:COMPLIANT"
+[13:08:15] Starting trial RUN=7 TASK=T5 MODEL=dense PREFIX=probe-r7.4-T5-dense
+[13:23:17] Done RUN=7: OUTCOME run=7 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=902s final_session=20260419_130851_615d1e chain="A0:rc=124 | A0:COMPLIANT"
+[13:23:17] Starting trial RUN=8 TASK=T5 MODEL=dense PREFIX=probe-r7.4-T5-dense

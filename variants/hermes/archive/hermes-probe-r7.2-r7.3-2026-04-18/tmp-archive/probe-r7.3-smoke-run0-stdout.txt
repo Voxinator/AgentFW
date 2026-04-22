@@ -1,0 +1,12 @@
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+[TASK CLASS: one-shot]
+Justification: This is a quick factual answer requiring no file modifications or verification.
+
+[TASK CLASS: one-shot]
+Justification: This is a quick factual answer requiring no file modifications or verification.
+
+The capital of France is Paris.
+
+session_id: 20260418_193428_bf0423
+---ATTEMPT 0 END (rc=0)---

@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 11,
+  "TASK_ID": "T6",
+  "TASK_CLASS": "long-horizon",
+  "PARENT_SESSION_ID": "20260419_180505_7c5bec",
+  "CHILD_SESSION_ID": "20260419_180511_79a472",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180511_79a472.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180505_7c5bec.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-11.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "long-horizon",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Implement a multi-format export feature (CSV, JSON, PDF) for the product. \n\nScope:\n1. API Layer: Create endpoints for export requests. Ensure strict permission checks (user can only export owned data).\n2. Logic Layer: Implement data transformation engines for CSV, JSON, and PDF formats.\n3. Documentation: Update API documentation to include the new export endpoints and required authentication/permission headers.\n4. Testing: Achieve >80% test coverage including unit tests for formatters and integration tests for the permission-guarded endpoints.\n\nConstraints:\n- Respect existing authentication/authorization middleware.\n- Use standard libraries for file generation where possible.\n- Do not modify existing user data; this is a read-only export feature.\n\nDeliverables:\n- Working endpoints in the API.\n- Updated API documentation.\n- Passing test suite.\n- A PLAN.md file in the project root (or appropriate directory) outlining the phased approach (Schema/Auth -> Core Logic -> Formats -> Docs/Tests)."
+}

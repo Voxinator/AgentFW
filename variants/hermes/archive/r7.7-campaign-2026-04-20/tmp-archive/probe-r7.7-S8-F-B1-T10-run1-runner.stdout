@@ -1,0 +1,6 @@
+[probe-r7.7-S8-F-B1-T10-run1 run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.7-S8-F-B1-T10-run1 TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=1500s ARM=B OVERLAY=HERMES_WORKER_OVERLAY=1 HERMES_CHILD_TOOLSET_RESTRICT=1 HERMES_WRITE_BEFORE_CLAIM_GATE=1
+[probe-r7.7-S8-F-B1-T10-run1 run1] task: Begin phase 1 of the Postgres 12 to 16 zero-downtime migration. Scope: 1. Create a `migrations/pg-up...
+[probe-r7.7-S8-F-B1-T10-run1 run1] attempt 0: initial invocation (ARM=B)
+[probe-r7.7-S8-F-B1-T10-run1 run1] session_id captured: 20260420_195822_365547
+[probe-r7.7-S8-F-B1-T10-run1 run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=20s final_session=20260420_195822_365547 chain="A0:rc=0 | A0:COMPLIANT"

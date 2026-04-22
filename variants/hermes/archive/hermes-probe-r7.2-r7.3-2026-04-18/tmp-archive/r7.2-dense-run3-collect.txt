@@ -1,0 +1,18 @@
+=== RUN 3  session=20260418_124301_3990aa ===
+session_model_root: gemma-4-31b-it-4bit
+msg_count: 26
+first_assistant_first_line: '[TASK CLASS: one-shot]'
+first_assistant_snippet250: '[TASK CLASS: one-shot] | Justification: The change is a single-file modification of fewer than 20 lines with no cross-file dependencies.'
+class_emitted: one-shot
+tool_calls_in_order: ['read_file', 'search_files', 'read_file', 'read_file', 'search_files', 'read_file', 'search_files', 'search_files', 'search_files', 'read_file', 'search_files', 'read_file']
+delegate_worker_count: 0
+delegate_task_count: 0
+tool_errors_count: 1
+all_class_markers_in_assistant: ['one-shot']
+
+--- tripwire md5 ---
+5503ee1c2ef7d635a020eea275e41239  /media/psf/Projects/chief-of-staff-dashboard/src/hooks/useDashboard.ts
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
+--- recent omlx model served (last 2000 lines) ---
+  14 model=gemma-4-31b-it-4bit

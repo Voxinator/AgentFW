@@ -1,0 +1,5 @@
+[probe-r7.3-l12-dense run15] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run15] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.3-l12-dense run15] attempt 0: initial invocation
+[probe-r7.3-l12-dense run15] session_id captured: 20260418_232703_f179b2
+[probe-r7.3-l12-dense run15] attempt 0 verdict: COMPLIANT

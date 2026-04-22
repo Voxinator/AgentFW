@@ -1,0 +1,5 @@
+[probe-r7.6-armA-T10-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T10-moe run3] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.6-armA-T10-moe run3] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T10-moe run3] session_id captured: 20260419_205339_9534b8
+[probe-r7.6-armA-T10-moe run3] attempt 0 verdict: COMPLIANT

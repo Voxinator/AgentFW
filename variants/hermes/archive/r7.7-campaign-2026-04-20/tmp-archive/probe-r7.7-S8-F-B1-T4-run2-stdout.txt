@@ -1,0 +1,87 @@
+⚠️  API call failed (attempt 1/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 2.3639295550029784s (attempt 1/3)...
+⚠️  API call failed (attempt 2/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 5.998830762295518s (attempt 2/3)...
+⚠️  API call failed (attempt 3/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⚠️ Max retries (3) exhausted — trying fallback...
+❌ API failed after 3 retries — Connection error.
+   💀 Final error: Connection error.
+API call failed after 3 retries: Connection error.
+
+session_id: 20260420_182410_bab0fb
+---ATTEMPT 0 END (rc=1)---
+↻ Resumed session 20260420_182410_bab0fb (1 user message, 1 total messages)
+⚠️  API call failed (attempt 1/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 2.3322264527282672s (attempt 1/3)...
+⚠️  API call failed (attempt 2/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 5.077508148687162s (attempt 2/3)...
+⚠️  API call failed (attempt 3/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⚠️ Max retries (3) exhausted — trying fallback...
+❌ API failed after 3 retries — Connection error.
+   💀 Final error: Connection error.
+API call failed after 3 retries: Connection error.
+
+session_id: 20260420_182410_bab0fb
+---ATTEMPT 1 (correction for VIOLATION:NO_ASSISTANT_RESPONSE) END (rc=1)---
+↻ Resumed session 20260420_182410_bab0fb (2 user messages, 2 total messages)
+⚠️  API call failed (attempt 1/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 2.0596915348677705s (attempt 1/3)...
+⚠️  API call failed (attempt 2/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 5.922963086679665s (attempt 2/3)...
+⚠️  API call failed (attempt 3/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⚠️ Max retries (3) exhausted — trying fallback...
+❌ API failed after 3 retries — Connection error.
+   💀 Final error: Connection error.
+API call failed after 3 retries: Connection error.
+
+session_id: 20260420_182410_bab0fb
+---ATTEMPT 2 (correction for VIOLATION:NO_ASSISTANT_RESPONSE) END (rc=1)---
+↻ Resumed session 20260420_182410_bab0fb (3 user messages, 3 total messages)
+⚠️  API call failed (attempt 1/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 2.8574960442967283s (attempt 1/3)...
+⚠️  API call failed (attempt 2/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⏳ Retrying in 4.105464361531365s (attempt 2/3)...
+⚠️  API call failed (attempt 3/3): APIConnectionError
+   🔌 Provider: custom  Model: gemma-4-26B-A4B-it-MLX-8bit
+   🌐 Endpoint: http://10.211.55.2:8000/v1
+   📝 Error: Connection error.
+⚠️ Max retries (3) exhausted — trying fallback...
+❌ API failed after 3 retries — Connection error.
+   💀 Final error: Connection error.
+API call failed after 3 retries: Connection error.
+
+session_id: 20260420_182410_bab0fb
+---ATTEMPT 3 (correction for VIOLATION:NO_ASSISTANT_RESPONSE) END (rc=1)---

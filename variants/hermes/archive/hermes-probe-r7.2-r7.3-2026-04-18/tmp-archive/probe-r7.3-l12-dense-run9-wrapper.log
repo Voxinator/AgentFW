@@ -1,0 +1,13 @@
+[probe-r7.3-l12-dense run9] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.3-l12-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-dense run9] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.3-l12-dense run9] attempt 0: initial invocation
+[probe-r7.3-l12-dense run9] primary regex missed session_id; attempting fallback recovery by source-tag scan...
+[probe-r7.3-l12-dense run9] source-tag scan empty; trying most-recent-newer-than-sentinel as last resort
+[probe-r7.3-l12-dense run9] recovered session_id via fallback: 20260418_224526_2e5991
+[probe-r7.3-l12-dense run9] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 1: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 1 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 2: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 2 verdict: VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 3: sending correction for VIOLATION:NO_MARKER
+[probe-r7.3-l12-dense run9] attempt 3 verdict: VIOLATION:NO_MARKER

@@ -1,0 +1,14 @@
+[probe-r7.2-dense-v2 run5] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense-v2 TIMEOUT=900s
+[probe-r7.2-dense-v2 run5] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.2-dense-v2 run5] attempt 0: initial invocation
+[probe-r7.2-dense-v2 run5] primary regex missed session_id; attempting fallback recovery by source-tag scan...
+[probe-r7.2-dense-v2 run5] source-tag scan empty; trying most-recent-newer-than-sentinel as last resort
+[probe-r7.2-dense-v2 run5] recovered session_id via fallback: 20260418_142132_505637
+[probe-r7.2-dense-v2 run5] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.2-dense-v2 run5] attempt 1: sending correction for VIOLATION:NO_MARKER
+[probe-r7.2-dense-v2 run5] attempt 1 verdict: VIOLATION:NO_MARKER
+[probe-r7.2-dense-v2 run5] attempt 2: sending correction for VIOLATION:NO_MARKER
+[probe-r7.2-dense-v2 run5] attempt 2 verdict: VIOLATION:NO_MARKER
+[probe-r7.2-dense-v2 run5] attempt 3: sending correction for VIOLATION:NO_MARKER
+[probe-r7.2-dense-v2 run5] attempt 3 verdict: VIOLATION:NO_MARKER
+OUTCOME run=5 MODEL=gemma-4-31b-it-4bit RESULT=RETRY_EXHAUSTED last_violation=VIOLATION:NO_MARKER attempts=4 elapsed=975s final_session=20260418_142132_505637 chain="A0:rc=124 | A0:VIOLATION:NO_MARKER | A1_correct:rc=0 | A1:VIOLATION:NO_MARKER | A2_correct:rc=0 | A2:VIOLATION:NO_MARKER | A3_correct:rc=0 | A3:VIOLATION:NO_MARKER"

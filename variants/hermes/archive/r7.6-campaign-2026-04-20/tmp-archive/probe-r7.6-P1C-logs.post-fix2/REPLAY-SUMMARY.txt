@@ -1,0 +1,32 @@
+r7.6 P1-C Fix 2 rev-2 — replay summary
+=======================================
+
+Calibration gate: 5/5 (PASS)
+- Brief 1 (armA-T4-run1): PASS (unchanged)
+- Brief 2 (armA-T4-run4): FAIL -> PASS (flip, Change 4)
+- Brief 3 (armB-T5-run1): PASS -> FAIL (flip, Change 2 tail-anchored)
+- Brief 4 (armB-T6-run2): FAIL (unchanged)
+- Brief 5 (armB-T4-run3): LOST (unchanged)
+
+Arm A post-fix: 4 PASS / 16 FAIL / 0 LOST (was 3/17/0)
+Arm B post-fix: 12 PASS / 5 FAIL / 3 LOST (was 9/2/3 on 14-trial subset)
+
+Flips on common trials:
+  armA-T4-run4-g4 : FAIL -> PASS  (expected, Change 4 thrash relax)
+  armB-T5-run1-g6 : PASS -> FAIL  (expected, Change 2 pseudo-tool-call)
+  armB-T5-run5-g10: FAIL -> PASS  (declared consequence of Change 4; only 2 identical queries under strict equality)
+
+No unexpected flips. All 11 channel-pollution FAILs stay FAIL. All Arm A clean-variety
+PASSes (1, 3, 5) stay PASS.
+
+6 new Arm B trials (T6-run5 + T10-run1..5) added from ARTIFACT-r7.6-P1C-run-only.md:
+  g15 (T6-run5, 3 siblings)    : FAIL (all 3 children FAIL; channel_pollution_depth=27)
+  g16 (T10-run1)               : PASS (BLOCKED-with-reason per HERMES-WORKER.md §3)
+  g17 (T10-run2)               : FAIL (channel leakage)
+  g18 (T10-run3)               : PASS
+  g19 (T10-run4)               : PASS
+  g20 (T10-run5, 2 siblings)   : FAIL (both children FAIL; read_file loop + channel leak)
+
+Delta (PASS rate, all 20 trials):      +40 pp  (Arm B 60% - Arm A 20%)
+Delta (PASS rate, non-LOST basis):     +50.6 pp
+Absolute PASS count delta:             +8  (12 - 4)

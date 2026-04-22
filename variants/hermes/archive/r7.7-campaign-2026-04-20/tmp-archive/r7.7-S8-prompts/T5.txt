@@ -1,0 +1,11 @@
+Investigate and fix the intermittent stale data issue in the Chief of Staff Dashboard.
+1. Locate the 'Save' logic and the data fetching logic (likely in /media/psf/Projects/chief-of-staff-dashboard).
+2. Identify if the issue is due to:
+   a) Optimistic UI updates failing to sync with the server.
+   b) Stale cache in a state management library (e.g., React Query, SWR, or Context).
+   c) A race condition where the fetch triggered by 'Save' completes before the server has finished processing the write.
+3. Reproduce the issue if possible via testing or log analysis.
+4. Implement a fix (e.g., invalidating cache, adding a wait/retry, or ensuring sequential execution).
+5. Verify the fix by ensuring data is consistently fresh after a Save operation.
+
+Work within /media/psf/Projects/chief-of-staff-dashboard.

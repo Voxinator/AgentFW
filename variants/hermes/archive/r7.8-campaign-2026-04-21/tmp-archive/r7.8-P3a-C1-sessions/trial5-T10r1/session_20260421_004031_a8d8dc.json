@@ -1,0 +1,23 @@
+{
+  "session_id": "20260421_004031_a8d8dc",
+  "model": "gemma-4-26B-A4B-it-MLX-8bit",
+  "base_url": "http://10.211.55.2:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-04-21T00:40:31.576085",
+  "last_updated": "2026-04-21T00:40:32.964568",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nConversation started: Tuesday, April 21, 2026 12:40 AM\nModel: gemma-4-26B-A4B-it-MLX-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal.",
+  "tools": [],
+  "message_count": 2,
+  "messages": [
+    {
+      "role": "user",
+      "content": "1. Find the project root.\n2. Create directory `migrations/pg-upgrade-2026/` in the project root.\n3. Create `PLAN.md` in that directory with the specified technical content.\n4. Ensure all paths are absolute."
+    },
+    {
+      "role": "assistant",
+      "content": "<|tool_call>call:it_terminal:execute_command{command: \"find /home/parallels/.hermes/hermes-agent -maxdepth 2 -name .git -o -name package.json -o -name pyproject.toml\"}<tool_call|>",
+      "reasoning": null,
+      "finish_reason": "stop"
+    }
+  ]
+}

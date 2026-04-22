@@ -1,0 +1,1081 @@
+{
+  "session_id": "20260421_025138_2e5cbc",
+  "model": "gemma-4-26B-A4B-it-MLX-8bit",
+  "base_url": "http://10.211.55.2:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-04-21T02:51:38.166593",
+  "last_updated": "2026-04-21T02:52:44.133397",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\n# Tool-use enforcement\nYou MUST use your tools to take action — do not describe what you would do or plan to do without actually doing it. When you say you will perform an action (e.g. 'I will run the tests', 'Let me check the file', 'I will create the project'), you MUST immediately make the corresponding tool call in the same response. Never end your turn with a promise of future action — execute it now.\nKeep working until the task is actually complete. Do not stop with a summary of what you plan to do next time. If you have tools available that can accomplish the task, use them instead of telling the user what you would do.\nEvery response should either (a) contain tool calls that make progress, or (b) deliver a final result to the user. Responses that only describe intentions without acting are not acceptable.\n\n# Google model operational directives\nFollow these operational rules strictly:\n- **Absolute paths:** Always construct and use absolute file paths for all file system operations. Combine the project root with relative paths.\n- **Verify first:** Use read_file/search_files to check file contents and project structure before making changes. Never guess at file contents.\n- **Dependency checks:** Never assume a library is available. Check package.json, requirements.txt, Cargo.toml, etc. before importing.\n- **Conciseness:** Keep explanatory text brief — a few sentences, not paragraphs. Focus on actions and results over narration.\n- **Parallel tool calls:** When you need to perform multiple independent operations (e.g. reading several files), make all the tool calls in a single response rather than sequentially.\n- **Non-interactive commands:** Use flags like -y, --yes, --non-interactive to prevent CLI tools from hanging on prompts.\n- **Keep going:** Work autonomously until the task is fully resolved. Don't stop with a plan — execute it.\n\n\nConversation started: Tuesday, April 21, 2026 02:51 AM\nModel: gemma-4-26B-A4B-it-MLX-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal.",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your SESSION-ONLY task list for planning and step-tracking during complex work. This list is ephemeral -- it does NOT persist across sessions.\n\nUse this for: breaking down multi-step tasks, tracking progress within a session.\nUse dashboard_task_* tools instead for: real action items, reminders, or anything Brian needs to see on his dashboard or track across sessions.\n\nCall with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          },
+          "required": []
+        }
+      }
+    }
+  ],
+  "message_count": 81,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Phase 1: Discovery & Planning for the end-to-end export feature. \n1. Survey the codebase to identify:\n   - Data models relevant to exportable entities.\n   - Existing permission/ownership middleware and enforcement patterns.\n   - Current API routing and controller structure.\n   - Any existing utility services for CSV, JSON, or PDF generation.\n2. Create a directory 'docs/features/export-feature/'.\n3. Generate a 'PLAN.md' in that directory detailing:\n   - Proposed architecture (Service/Controller/Middleware).\n   - Specific file changes across the stack.\n   - Verification strategy (Unit, Integration, and Permission edge cases).\n   - A phased implementation checklist.\n\nConstraints: Use absolute paths. Follow existing architectural patterns."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_40ee553a",
+          "call_id": "call_40ee553a",
+          "response_item_id": "fc_40ee553a",
+          "type": "function",
+          "function": {
+            "name": "todo",
+            "arguments": "{\"todos\": [{\"content\": \"Survey codebase for data models, permissions, API routing, and utility services\", \"id\": \"survey_codebase\", \"status\": \"in_progress\"}, {\"content\": \"Create docs/features/export-feature/ directory\", \"id\": \"create_docs_dir\", \"status\": \"pending\"}, {\"content\": \"Generate PLAN.md with architecture, changes, verification, and checklist\", \"id\": \"generate_plan_md\", \"status\": \"pending\"}]}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"todos\": [{\"id\": \"survey_codebase\", \"content\": \"Survey codebase for data models, permissions, API routing, and utility services\", \"status\": \"in_progress\"}, {\"id\": \"create_docs_dir\", \"content\": \"Create docs/features/export-feature/ directory\", \"status\": \"pending\"}, {\"id\": \"generate_plan_md\", \"content\": \"Generate PLAN.md with architecture, changes, verification, and checklist\", \"status\": \"pending\"}], \"summary\": {\"total\": 3, \"pending\": 2, \"in_progress\": 1, \"completed\": 0, \"cancelled\": 0}}",
+      "tool_call_id": "call_40ee553a"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_f3cd1fe0",
+          "call_id": "call_f3cd1fe0",
+          "response_item_id": "fc_f3cd1fe0",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"package.json\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"./website/package.json\", \"./package.json\", \"./scripts/whatsapp-bridge/package.json\"]}",
+      "tool_call_id": "call_f3cd1fe0"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_fc89acb6",
+          "call_id": "call_fc89acb6",
+          "response_item_id": "fc_fc89acb6",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/package.json\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|{\\n     2|  \\\"name\\\": \\\"hermes-agent\\\",\\n     3|  \\\"version\\\": \\\"1.0.0\\\",\\n     4|  \\\"description\\\": \\\"An AI agent with advanced tool-calling capabilities, featuring a flexible toolsets system for organizing and managing tools.\\\",\\n     5|  \\\"private\\\": true,\\n     6|  \\\"scripts\\\": {\\n     7|    \\\"postinstall\\\": \\\"echo '✅ Browser tools ready. Run: python run_agent.py --help'\\\"\\n     8|  },\\n     9|  \\\"repository\\\": {\\n    10|    \\\"type\\\": \\\"git\\\",\\n    11|    \\\"url\\\": \\\"git+https://github.com/NousResearch/Hermes-Agent.git\\\"\\n    12|  },\\n    13|  \\\"license\\\": \\\"MIT\\\",\\n    14|  \\\"bugs\\\": {\\n    15|    \\\"url\\\": \\\"https://github.com/NousResearch/Hermes-Agent/issues\\\"\\n    16|  },\\n    17|  \\\"homepage\\\": \\\"https://github.com/NousResearch/Hermes-Agent#readme\\\",\\n    18|  \\\"dependencies\\\": {\\n    19|    \\\"agent-browser\\\": \\\"^0.13.0\\\",\\n    20|    \\\"@askjo/camoufox-browser\\\": \\\"^1.0.0\\\"\\n    21|  },\\n    22|  \\\"engines\\\": {\\n    23|    \\\"node\\\": \\\">=18.0.0\\\"\\n    24|  }\\n    25|}\\n    26|\", \"total_lines\": 25, \"file_size\": 739, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_fc89acb6"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_17eed2f6",
+          "call_id": "call_17eed2f6",
+          "response_item_id": "fc_17eed2f6",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"src\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_17eed2f6"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_47ad5592",
+          "call_id": "call_47ad5592",
+          "response_item_id": "fc_47ad5592",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 50, \"files\": [\"./batch_runner.py\", \"./hermes_state.py\", \"./hermes_time.py\", \"./toolsets.py\", \"./hermes_logging.py\", \"./tests/integration/test_web_tools.py\", \"./tests/integration/__init__.py\", \"./tests/integration/test_modal_terminal.py\", \"./tests/integration/test_batch_runner.py\", \"./tests/integration/test_voice_channel_flow.py\", \"./tests/integration/test_checkpoint_resumption.py\", \"./tests/integration/test_daytona_terminal.py\", \"./tests/integration/test_ha_integration.py\", \"./tests/test_trajectory_compressor.py\", \"./tests/run_interrupt_test.py\", \"./tests/test_packaging_metadata.py\", \"./tests/test_trajectory_compressor_async.py\", \"./tests/__init__.py\", \"./tests/test_hermes_logging.py\", \"./tests/test_hermes_state.py\", \"./tests/conftest.py\", \"./tests/test_model_picker_scroll.py\", \"./tests/e2e/__init__.py\", \"./tests/e2e/conftest.py\", \"./tests/e2e/test_telegram_commands.py\", \"./tests/fakes/__init__.py\", \"./tests/fakes/fake_ha_server.py\", \"./tests/test_utils_truthy_values.py\", \"./tests/test_sql_injection.py\", \"./tests/honcho_plugin/test_client.py\", \"./tests/honcho_plugin/__init__.py\", \"./tests/honcho_plugin/test_async_memory.py\", \"./tests/honcho_plugin/test_session.py\", \"./tests/test_retry_utils.py\", \"./tests/tools/test_mcp_structured_content.py\", \"./tests/tools/test_force_dangerous_override.py\", \"./tests/tools/test_process_registry.py\", \"./tests/tools/test_skills_guard.py\", \"./tests/tools/test_search_hidden_dirs.py\", \"./tests/tools/test_file_read_guards.py\", \"./tests/tools/test_read_loop_detection.py\", \"./tests/tools/test_clarify_tool.py\", \"./tests/tools/test_daytona_environment.py\", \"./tests/tools/test_ssh_environment.py\", \"./tests/tools/test_fuzzy_match.py\", \"./tests/tools/test_skill_size_limits.py\", \"./tests/tools/test_terminal_exit_semantics.py\", \"./tests/tools/test_browser_homebrew_paths.py\", \"./tests/tools/__init__.py\", \"./tests/tools/test_clipboard.py\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=50 to see more, or narrow with a more specific pattern or file_glob.]",
+      "tool_call_id": "call_47ad5592"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_7d8193b4",
+          "call_id": "call_7d8193b4",
+          "response_item_id": "fc_7d8193b4",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"models\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_7d8193b4"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_dd58dc19",
+          "call_id": "call_dd58dc19",
+          "response_item_id": "fc_dd58dc19",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"schema\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_dd58dc19"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_1b566011",
+          "call_id": "call_1b566011",
+          "response_item_id": "fc_1b566011",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"api\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_1b566011"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_c8efd974",
+          "call_id": "call_c8efd974",
+          "response_item_id": "fc_c8efd974",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*controller*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_c8efd974"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_f27c7c0e",
+          "call_id": "call_f27c7c0e",
+          "response_item_id": "fc_f27c7c0e",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 50, \"files\": [\"./batch_runner.py\", \"./hermes_state.py\", \"./hermes_time.py\", \"./toolsets.py\", \"./hermes_logging.py\", \"./tests/integration/test_web_tools.py\", \"./tests/integration/__init__.py\", \"./tests/integration/test_modal_terminal.py\", \"./tests/integration/test_batch_runner.py\", \"./tests/integration/test_voice_channel_flow.py\", \"./tests/integration/test_checkpoint_resumption.py\", \"./tests/integration/test_daytona_terminal.py\", \"./tests/integration/test_ha_integration.py\", \"./tests/test_trajectory_compressor.py\", \"./tests/run_interrupt_test.py\", \"./tests/test_packaging_metadata.py\", \"./tests/test_trajectory_compressor_async.py\", \"./tests/__init__.py\", \"./tests/test_hermes_logging.py\", \"./tests/test_hermes_state.py\", \"./tests/conftest.py\", \"./tests/test_model_picker_scroll.py\", \"./tests/e2e/__init__.py\", \"./tests/e2e/conftest.py\", \"./tests/e2e/test_telegram_commands.py\", \"./tests/fakes/__init__.py\", \"./tests/fakes/fake_ha_server.py\", \"./tests/test_utils_truthy_values.py\", \"./tests/test_sql_injection.py\", \"./tests/honcho_plugin/test_client.py\", \"./tests/honcho_plugin/__init__.py\", \"./tests/honcho_plugin/test_async_memory.py\", \"./tests/honcho_plugin/test_session.py\", \"./tests/test_retry_utils.py\", \"./tests/tools/test_mcp_structured_content.py\", \"./tests/tools/test_force_dangerous_override.py\", \"./tests/tools/test_process_registry.py\", \"./tests/tools/test_skills_guard.py\", \"./tests/tools/test_search_hidden_dirs.py\", \"./tests/tools/test_file_read_guards.py\", \"./tests/tools/test_read_loop_detection.py\", \"./tests/tools/test_clarify_tool.py\", \"./tests/tools/test_daytona_environment.py\", \"./tests/tools/test_ssh_environment.py\", \"./tests/tools/test_fuzzy_match.py\", \"./tests/tools/test_skill_size_limits.py\", \"./tests/tools/test_terminal_exit_semantics.py\", \"./tests/tools/test_browser_homebrew_paths.py\", \"./tests/tools/__init__.py\", \"./tests/tools/test_clipboard.py\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=50 to see more, or narrow with a more specific pattern or file_glob.]",
+      "tool_call_id": "call_f27c7c0e"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e2f803f7",
+          "call_id": "call_e2f803f7",
+          "response_item_id": "fc_e2f803f7",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*middleware*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_e2f803f7"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_06e85115",
+          "call_id": "call_06e85115",
+          "response_item_id": "fc_06e85115",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*permission*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"./tests/cron/test_file_permissions.py\", \"./tests/acp/test_permissions.py\", \"./acp_adapter/permissions.py\"]}",
+      "tool_call_id": "call_06e85115"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_112f8add",
+          "call_id": "call_112f8add",
+          "response_item_id": "fc_112f8add",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/acp_adapter/permissions.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"ACP permission bridging — maps ACP approval requests to hermes approval callbacks.\\\"\\\"\\\"\\n     2|\\n     3|from __future__ import annotations\\n     4|\\n     5|import asyncio\\n     6|import logging\\n     7|from concurrent.futures import TimeoutError as FutureTimeout\\n     8|from typing import Callable\\n     9|\\n    10|from acp.schema import (\\n    11|    AllowedOutcome,\\n    12|    PermissionOption,\\n    13|)\\n    14|\\n    15|logger = logging.getLogger(__name__)\\n    16|\\n    17|# Maps ACP PermissionOptionKind -> hermes approval result strings\\n    18|_KIND_TO_HERMES = {\\n    19|    \\\"allow_once\\\": \\\"once\\\",\\n    20|    \\\"allow_always\\\": \\\"always\\\",\\n    21|    \\\"reject_once\\\": \\\"deny\\\",\\n    22|    \\\"reject_always\\\": \\\"deny\\\",\\n    23|}\\n    24|\\n    25|\\n    26|def make_approval_callback(\\n    27|    request_permission_fn: Callable,\\n    28|    loop: asyncio.AbstractEventLoop,\\n    29|    session_id: str,\\n    30|    timeout: float = 60.0,\\n    31|) -> Callable[[str, str], str]:\\n    32|    \\\"\\\"\\\"\\n    33|    Return a hermes-compatible ``approval_callback(command, description) -> str``\\n    34|    that bridges to the ACP client's ``request_permission`` call.\\n    35|\\n    36|    Args:\\n    37|        request_permission_fn: The ACP connection's ``request_permission`` coroutine.\\n    38|        loop: The event loop on which the ACP connection lives.\\n    39|        session_id: Current ACP session id.\\n    40|        timeout: Seconds to wait for a response before auto-denying.\\n    41|    \\\"\\\"\\\"\\n    42|\\n    43|    def _callback(command: str, description: str) -> str:\\n    44|        options = [\\n    45|            PermissionOption(option_id=\\\"allow_once\\\", kind=\\\"allow_once\\\", name=\\\"Allow once\\\"),\\n    46|            PermissionOption(option_id=\\\"allow_always\\\", kind=\\\"allow_always\\\", name=\\\"Allow always\\\"),\\n    47|            PermissionOption(option_id=\\\"deny\\\", kind=\\\"reject_once\\\", name=\\\"Deny\\\"),\\n    48|        ]\\n    49|        import acp as _acp\\n    50|\\n    51|        tool_call = _acp.start_tool_call(\\\"perm-check\\\", command, kind=\\\"execute\\\")\\n    52|\\n    53|        coro = request_permission_fn(\\n    54|            session_id=session_id,\\n    55|            tool_call=tool_call,\\n    56|            options=options,\\n    57|        )\\n    58|\\n    59|        try:\\n    60|            future = asyncio.run_coroutine_threadsafe(coro, loop)\\n    61|            response = future.result(timeout=timeout)\\n    62|        except (FutureTimeout, Exception) as exc:\\n    63|            logger.warning(\\\"Permission request timed out or failed: %s\\\", exc)\\n    64|            return \\\"deny\\\"\\n    65|\\n    66|        outcome = response.outcome\\n    67|        if isinstance(outcome, AllowedOutcome):\\n    68|            option_id = outcome.option_id\\n    69|            # Look up the kind from our options list\\n    70|            for opt in options:\\n    71|                if opt.option_id == option_id:\\n    72|                    return _KIND_TO_HERMES.get(opt.kind, \\\"deny\\\")\\n    73|            return \\\"once\\\"  # fallback for unknown option_id\\n    74|        else:\\n    75|            return \\\"deny\\\"\\n    76|\\n    77|    return _callback\\n    78|\", \"total_lines\": 77, \"file_size\": 2525, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_112f8add"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_ced6a5ef",
+          "call_id": "call_ced6a5ef",
+          "response_item_id": "fc_ced6a5ef",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"acp/schema.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_ced6a5ef"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_ee0b7577",
+          "call_id": "call_ee0b7577",
+          "response_item_id": "fc_ee0b7577",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"acp\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_ee0b7577"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_77f002af",
+          "call_id": "call_77f002af",
+          "response_item_id": "fc_77f002af",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 50, \"files\": [\"./batch_runner.py\", \"./hermes_state.py\", \"./hermes_time.py\", \"./toolsets.py\", \"./hermes_logging.py\", \"./tests/integration/test_web_tools.py\", \"./tests/integration/__init__.py\", \"./tests/integration/test_modal_terminal.py\", \"./tests/integration/test_batch_runner.py\", \"./tests/integration/test_voice_channel_flow.py\", \"./tests/integration/test_checkpoint_resumption.py\", \"./tests/integration/test_daytona_terminal.py\", \"./tests/integration/test_ha_integration.py\", \"./tests/test_trajectory_compressor.py\", \"./tests/run_interrupt_test.py\", \"./tests/test_packaging_metadata.py\", \"./tests/test_trajectory_compressor_async.py\", \"./tests/__init__.py\", \"./tests/test_hermes_logging.py\", \"./tests/test_hermes_state.py\", \"./tests/conftest.py\", \"./tests/test_model_picker_scroll.py\", \"./tests/e2e/__init__.py\", \"./tests/e2e/conftest.py\", \"./tests/e2e/test_telegram_commands.py\", \"./tests/fakes/__init__.py\", \"./tests/fakes/fake_ha_server.py\", \"./tests/test_utils_truthy_values.py\", \"./tests/test_sql_injection.py\", \"./tests/honcho_plugin/test_client.py\", \"./tests/honcho_plugin/__init__.py\", \"./tests/honcho_plugin/test_async_memory.py\", \"./tests/honcho_plugin/test_session.py\", \"./tests/test_retry_utils.py\", \"./tests/tools/test_mcp_structured_content.py\", \"./tests/tools/test_force_dangerous_override.py\", \"./tests/tools/test_process_registry.py\", \"./tests/tools/test_skills_guard.py\", \"./tests/tools/test_search_hidden_dirs.py\", \"./tests/tools/test_file_read_guards.py\", \"./tests/tools/test_read_loop_detection.py\", \"./tests/tools/test_clarify_tool.py\", \"./tests/tools/test_daytona_environment.py\", \"./tests/tools/test_ssh_environment.py\", \"./tests/tools/test_fuzzy_match.py\", \"./tests/tools/test_skill_size_limits.py\", \"./tests/tools/test_terminal_exit_semantics.py\", \"./tests/tools/test_browser_homebrew_paths.py\", \"./tests/tools/__init__.py\", \"./tests/tools/test_clipboard.py\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=50 to see more, or narrow with a more specific pattern or file_glob.]",
+      "tool_call_id": "call_77f002af"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_195fd880",
+          "call_id": "call_195fd880",
+          "response_item_id": "fc_195fd880",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"acp/schema.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_195fd880"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_61a695c2",
+          "call_id": "call_61a695c2",
+          "response_item_id": "fc_61a695c2",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"acp_adapter/schema.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_61a695c2"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e7d3cc60",
+          "call_id": "call_e7d3cc60",
+          "response_item_id": "fc_e7d3cc60",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"schema\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_e7d3cc60"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_0633a4e1",
+          "call_id": "call_0633a4e1",
+          "response_item_id": "fc_0633a4e1",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 50, \"files\": [\"./batch_runner.py\", \"./hermes_state.py\", \"./hermes_time.py\", \"./toolsets.py\", \"./hermes_logging.py\", \"./tests/integration/test_web_tools.py\", \"./tests/integration/__init__.py\", \"./tests/integration/test_modal_terminal.py\", \"./tests/integration/test_batch_runner.py\", \"./tests/integration/test_voice_channel_flow.py\", \"./tests/integration/test_checkpoint_resumption.py\", \"./tests/integration/test_daytona_terminal.py\", \"./tests/integration/test_ha_integration.py\", \"./tests/test_trajectory_compressor.py\", \"./tests/run_interrupt_test.py\", \"./tests/test_packaging_metadata.py\", \"./tests/test_trajectory_compressor_async.py\", \"./tests/__init__.py\", \"./tests/test_hermes_logging.py\", \"./tests/test_hermes_state.py\", \"./tests/conftest.py\", \"./tests/test_model_picker_scroll.py\", \"./tests/e2e/__init__.py\", \"./tests/e2e/conftest.py\", \"./tests/e2e/test_telegram_commands.py\", \"./tests/fakes/__init__.py\", \"./tests/fakes/fake_ha_server.py\", \"./tests/test_utils_truthy_values.py\", \"./tests/test_sql_injection.py\", \"./tests/honcho_plugin/test_client.py\", \"./tests/honcho_plugin/__init__.py\", \"./tests/honcho_plugin/test_async_memory.py\", \"./tests/honcho_plugin/test_session.py\", \"./tests/test_retry_utils.py\", \"./tests/tools/test_mcp_structured_content.py\", \"./tests/tools/test_force_dangerous_override.py\", \"./tests/tools/test_process_registry.py\", \"./tests/tools/test_skills_guard.py\", \"./tests/tools/test_search_hidden_dirs.py\", \"./tests/tools/test_file_read_guards.py\", \"./tests/tools/test_read_loop_detection.py\", \"./tests/tools/test_clarify_tool.py\", \"./tests/tools/test_daytona_environment.py\", \"./tests/tools/test_ssh_environment.py\", \"./tests/tools/test_fuzzy_match.py\", \"./tests/tools/test_skill_size_limits.py\", \"./tests/tools/test_terminal_exit_semantics.py\", \"./tests/tools/test_browser_homebrew_paths.py\", \"./tests/tools/__init__.py\", \"./tests/tools/test_clipboard.py\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=50 to see more, or narrow with a more specific pattern or file_glob.]",
+      "tool_call_id": "call_0633a4e1"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_c25b44b3",
+          "call_id": "call_c25b44b3",
+          "response_item_id": "fc_c25b44b3",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*export*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"./tests/hermes_cli/test_profile_export_credentials.py\", \"./skills/creative/p5js/scripts/export-frames.js\", \"./skills/creative/p5js/references/export-pipeline.md\"]}",
+      "tool_call_id": "call_c25b44b3"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_11b1905c",
+          "call_id": "call_11b1905c",
+          "response_item_id": "fc_11b1905c",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/tests/hermes_cli/test_profile_export_credentials.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"Tests for credential exclusion during profile export.\\n     2|\\n     3|Profile exports should NEVER include auth.json or .env — these contain\\n     4|API keys, OAuth tokens, and credential pool data. Users share exported\\n     5|profiles; leaking credentials in the archive is a security issue.\\n     6|\\\"\\\"\\\"\\n     7|\\n     8|import tarfile\\n     9|from pathlib import Path\\n    10|\\n    11|from hermes_cli.profiles import export_profile, _DEFAULT_EXPORT_EXCLUDE_ROOT\\n    12|\\n    13|\\n    14|class TestCredentialExclusion:\\n    15|\\n    16|    def test_auth_json_in_default_exclude_set(self):\\n    17|        \\\"\\\"\\\"auth.json must be in the default export exclusion set.\\\"\\\"\\\"\\n    18|        assert \\\"auth.json\\\" in _DEFAULT_EXPORT_EXCLUDE_ROOT\\n    19|\\n    20|    def test_dotenv_in_default_exclude_set(self):\\n    21|        \\\"\\\"\\\".env must be in the default export exclusion set.\\\"\\\"\\\"\\n    22|        assert \\\".env\\\" in _DEFAULT_EXPORT_EXCLUDE_ROOT\\n    23|\\n    24|    def test_named_profile_export_excludes_auth(self, tmp_path, monkeypatch):\\n    25|        \\\"\\\"\\\"Named profile export must not contain auth.json or .env.\\\"\\\"\\\"\\n    26|        profiles_root = tmp_path / \\\"profiles\\\"\\n    27|        profile_dir = profiles_root / \\\"testprofile\\\"\\n    28|        profile_dir.mkdir(parents=True)\\n    29|\\n    30|        # Create a profile with credentials\\n    31|        (profile_dir / \\\"config.yaml\\\").write_text(\\\"model: gpt-4\\\\n\\\")\\n    32|        (profile_dir / \\\"auth.json\\\").write_text('{\\\"tokens\\\": {\\\"access\\\": \\\"sk-secret\\\"}}')\\n    33|        (profile_dir / \\\".env\\\").write_text(\\\"OPENROUTER_API_KEY=***\\n    34|        (profile_dir / \\\"SOUL.md\\\").write_text(\\\"I am helpful.\\\\n\\\")\\n    35|        (profile_dir / \\\"memories\\\").mkdir()\\n    36|        (profile_dir / \\\"memories\\\" / \\\"MEMORY.md\\\").write_text(\\\"# Memories\\\\n\\\")\\n    37|\\n    38|        monkeypatch.setattr(\\\"hermes_cli.profiles._get_profiles_root\\\", lambda: profiles_root)\\n    39|        monkeypatch.setattr(\\\"hermes_cli.profiles.get_profile_dir\\\", lambda n: profile_dir)\\n    40|        monkeypatch.setattr(\\\"hermes_cli.profiles.validate_profile_name\\\", lambda n: None)\\n    41|\\n    42|        output = tmp_path / \\\"export.tar.gz\\\"\\n    43|        result = export_profile(\\\"testprofile\\\", str(output))\\n    44|\\n    45|        # Check archive contents\\n    46|        with tarfile.open(result, \\\"r:gz\\\") as tf:\\n    47|            names = tf.getnames()\\n    48|\\n    49|        assert any(\\\"config.yaml\\\" in n for n in names), \\\"config.yaml should be in export\\\"\\n    50|        assert any(\\\"SOUL.md\\\" in n for n in names), \\\"SOUL.md should be in export\\\"\\n    51|        assert not any(\\\"auth.json\\\" in n for n in names), \\\"auth.json must NOT be in export\\\"\\n    52|        assert not any(\\\".env\\\" in n for n in names), \\\".env must NOT be in export\\\"\\n    53|\", \"total_lines\": 52, \"file_size\": 2362, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_11b1905c"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_2e7552bd",
+          "call_id": "call_2e7552bd",
+          "response_item_id": "fc_2e7552bd",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_2e7552bd"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_b9e2f13e",
+          "call_id": "call_b9e2f13e",
+          "response_item_id": "fc_b9e2f13e",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_b9e2f13e"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e75d7cc4",
+          "call_id": "call_e75d7cc4",
+          "response_item_id": "fc_e75d7cc4",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_e75d7cc4"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_03a2be6c",
+          "call_id": "call_03a2be6c",
+          "response_item_id": "fc_03a2be6c",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli/profiles.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 2, \"files\": [\"./tests/hermes_cli/test_profiles.py\", \"./hermes_cli/profiles.py\"]}",
+      "tool_call_id": "call_03a2be6c"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_4630a296",
+          "call_id": "call_4630a296",
+          "response_item_id": "fc_4630a296",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/hermes_cli/profiles.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"\\n     2|Profile management for multiple isolated Hermes instances.\\n     3|\\n     4|Each profile is a fully independent HERMES_HOME directory with its own\\n     5|config.yaml, .env, memory, sessions, skills, gateway, cron, and logs.\\n     6|Profiles live under ``~/.hermes/profiles/<name>/`` by default.\\n     7|\\n     8|The \\\"default\\\" profile is ``~/.hermes`` itself — backward compatible,\\n     9|zero migration needed.\\n    10|\\n    11|Usage::\\n    12|\\n    13|    hermes profile create coder          # fresh profile + bundled skills\\n    14|    hermes profile create coder --clone  # also copy config, .env, SOUL.md\\n    15|    hermes profile create coder --clone-all  # full copy of source profile\\n    16|    coder chat                           # use via wrapper alias\\n    17|    hermes -p coder chat                 # or via flag\\n    18|    hermes profile use coder             # set as sticky default\\n    19|    hermes profile delete coder          # remove profile + alias + service\\n    20|\\\"\\\"\\\"\\n    21|\\n    22|import json\\n    23|import os\\n    24|import re\\n    25|import shutil\\n    26|import stat\\n    27|import subprocess\\n    28|import sys\\n    29|from dataclasses import dataclass\\n    30|from pathlib import Path, PurePosixPath, PureWindowsPath\\n    31|from typing import List, Optional\\n    32|\\n    33|_PROFILE_ID_RE = re.compile(r\\\"^[a-z0-9][a-z0-9_-]{0,63}$\\\")\\n    34|\\n    35|# Directories bootstrapped inside every new profile\\n    36|_PROFILE_DIRS = [\\n    37|    \\\"memories\\\",\\n    38|    \\\"sessions\\\",\\n    39|    \\\"skills\\\",\\n    40|    \\\"skins\\\",\\n    41|    \\\"logs\\\",\\n    42|    \\\"plans\\\",\\n    43|    \\\"workspace\\\",\\n    44|    \\\"cron\\\",\\n    45|]\\n    46|\\n    47|# Files copied during --clone (if they exist in the source)\\n    48|_CLONE_CONFIG_FILES = [\\n    49|    \\\"config.yaml\\\",\\n    50|    \\\".env\\\",\\n    51|    \\\"SOUL.md\\\",\\n    52|]\\n    53|\\n    54|# Subdirectory files copied during --clone (path relative to profile root).\\n    55|# Memory files are part of the agent's curated identity — just as important\\n    56|# as SOUL.md for continuity when cloning a profile.\\n    57|_CLONE_SUBDIR_FILES = [\\n    58|    \\\"memories/MEMORY.md\\\",\\n    59|    \\\"memories/USER.md\\\",\\n    60|]\\n    61|\\n    62|# Runtime files stripped after --clone-all (shouldn't carry over)\\n    63|_CLONE_ALL_STRIP = [\\n    64|    \\\"gateway.pid\\\",\\n    65|    \\\"gateway_state.json\\\",\\n    66|    \\\"processes.json\\\",\\n    67|]\\n    68|\\n    69|# Directories/files to exclude when exporting the default (~/.hermes) profile.\\n    70|# The default profile contains infrastructure (repo checkout, worktrees, DBs,\\n    71|# caches, binaries) that named profiles don't have.  We exclude those so the\\n    72|# export is a portable, reasonable-size archive of actual profile data.\\n    73|_DEFAULT_EXPORT_EXCLUDE_ROOT = frozenset({\\n    74|    # Infrastructure\\n    75|    \\\"hermes-agent\\\",         # repo checkout (multi-GB)\\n    76|    \\\".worktrees\\\",           # git worktrees\\n    77|    \\\"profiles\\\",             # other profiles — never recursive-export\\n    78|    \\\"bin\\\",                  # installed binaries (tirith, etc.)\\n    79|    \\\"node_modules\\\",         # npm packages\\n    80|    # Databases & runtime state\\n    81|    \\\"state.db\\\", \\\"state.db-shm\\\", \\\"state.db-wal\\\",\\n    82|    \\\"hermes_state.db\\\",\\n    83|    \\\"response_store.db\\\", \\\"response_store.db-shm\\\", \\\"response_store.db-wal\\\",\\n    84|    \\\"gateway.pid\\\", \\\"gateway_state.json\\\", \\\"processes.json\\\",\\n    85|    \\\"auth.json\\\",            # API keys, OAuth tokens, credential pools\\n    86|    \\\".env\\\",                 # API keys (dotenv)\\n    87|    \\\"auth.lock\\\", \\\"active_profile\\\", \\\".update_check\\\",\\n    88|    \\\"errors.log\\\",\\n    89|    \\\".hermes_history\\\",\\n    90|    # Caches (regenerated on use)\\n    91|    \\\"image_cache\\\", \\\"audio_cache\\\", \\\"document_cache\\\",\\n    92|    \\\"browser_screenshots\\\", \\\"checkpoints\\\",\\n    93|    \\\"sandboxes\\\",\\n    94|    \\\"logs\\\",                 # gateway logs\\n    95|})\\n    96|\\n    97|# Names that cannot be used as profile aliases\\n    98|_RESERVED_NAMES = frozenset({\\n    99|    \\\"hermes\\\", \\\"default\\\", \\\"test\\\", \\\"tmp\\\", \\\"root\\\", \\\"sudo\\\",\\n   100|})\\n   101|\\n   102|# Hermes subcommands that cannot be used as profile names/aliases\\n   103|_HERMES_SUBCOMMANDS = frozenset({\\n   104|    \\\"chat\\\", \\\"model\\\", \\\"gateway\\\", \\\"setup\\\", \\\"whatsapp\\\", \\\"login\\\", \\\"logout\\\",\\n   105|    \\\"status\\\", \\\"cron\\\", \\\"doctor\\\", \\\"config\\\", \\\"pairing\\\", \\\"skills\\\", \\\"tools\\\",\\n   106|    \\\"mcp\\\", \\\"sessions\\\", \\\"insights\\\", \\\"version\\\", \\\"update\\\", \\\"uninstall\\\",\\n   107|    \\\"profile\\\", \\\"plugins\\\", \\\"honcho\\\", \\\"acp\\\",\\n   108|})\\n   109|\\n   110|\\n   111|# ---------------------------------------------------------------------------\\n   112|# Path helpers\\n   113|# ---------------------------------------------------------------------------\\n   114|\\n   115|def _get_profiles_root() -> Path:\\n   116|    \\\"\\\"\\\"Return the directory where named profiles are stored.\\n   117|\\n   118|    Always ``~/.hermes/profiles/`` — anchored to the user's home,\\n   119|    NOT to the current HERMES_HOME (which may itself be a profile).\\n   120|    This ensures ``coder profile list`` can see all profiles.\\n   121|    \\\"\\\"\\\"\\n   122|    return Path.home() / \\\".hermes\\\" / \\\"profiles\\\"\\n   123|\\n   124|\\n   125|def _get_default_hermes_home() -> Path:\\n   126|    \\\"\\\"\\\"Return the default (pre-profile) HERMES_HOME path.\\\"\\\"\\\"\\n   127|    return Path.home() / \\\".hermes\\\"\\n   128|\\n   129|\\n   130|def _get_active_profile_path() -> Path:\\n   131|    \\\"\\\"\\\"Return the path to the sticky active_profile file.\\\"\\\"\\\"\\n   132|    return _get_default_hermes_home() / \\\"active_profile\\\"\\n   133|\\n   134|\\n   135|def _get_wrapper_dir() -> Path:\\n   136|    \\\"\\\"\\\"Return the directory for wrapper scripts.\\\"\\\"\\\"\\n   137|    return Path.home() / \\\".local\\\" / \\\"bin\\\"\\n   138|\\n   139|\\n   140|# ---------------------------------------------------------------------------\\n   141|# Validation\\n   142|# ---------------------------------------------------------------------------\\n   143|\\n   144|def validate_profile_name(name: str) -> None:\\n   145|    \\\"\\\"\\\"Raise ``ValueError`` if *name* is not a valid profile identifier.\\\"\\\"\\\"\\n   146|    if name == \\\"default\\\":\\n   147|        return  # special alias for ~/.hermes\\n   148|    if not _PROFILE_ID_RE.match(name):\\n   149|        raise ValueError(\\n   150|            f\\\"Invalid profile name {name!r}. Must match \\\"\\n   151|            f\\\"[a-z0-9][a-z0-9_-]{{0,63}}\\\"\\n   152|        )\\n   153|\\n   154|\\n   155|def get_profile_dir(name: str) -> Path:\\n   156|    \\\"\\\"\\\"Resolve a profile name to its HERMES_HOME directory.\\\"\\\"\\\"\\n   157|    if name == \\\"default\\\":\\n   158|        return _get_default_hermes_home()\\n   159|    return _get_profiles_root() / name\\n   160|\\n   161|\\n   162|def profile_exists(name: str) -> bool:\\n   163|    \\\"\\\"\\\"Check whether a profile directory exists.\\\"\\\"\\\"\\n   164|    if name == \\\"default\\\":\\n   165|        return True\\n   166|    return get_profile_dir(name).is_dir()\\n   167|\\n   168|\\n   169|# ---------------------------------------------------------------------------\\n   170|# Alias / wrapper script management\\n   171|# ---------------------------------------------------------------------------\\n   172|\\n   173|def check_alias_collision(name: str) -> Optional[str]:\\n   174|    \\\"\\\"\\\"Return a human-readable collision message, or None if the name is safe.\\n   175|\\n   176|    Checks: reserved names, hermes subcommands, existing binaries in PATH.\\n   177|    \\\"\\\"\\\"\\n   178|    if name in _RESERVED_NAMES:\\n   179|        return f\\\"'{name}' is a reserved name\\\"\\n   180|    if name in _HERMES_SUBCOMMANDS:\\n   181|        return f\\\"'{name}' conflicts with a hermes subcommand\\\"\\n   182|\\n   183|    # Check existing commands in PATH\\n   184|    wrapper_dir = _get_wrapper_dir()\\n   185|    try:\\n   186|        result = subprocess.run(\\n   187|            [\\\"which\\\", name], capture_output=True, text=True, timeout=5,\\n   188|        )\\n   189|        if result.returncode == 0:\\n   190|            existing_path = result.stdout.strip()\\n   191|            # Allow overwriting our own wrappers\\n   192|            if existing_path == str(wrapper_dir / name):\\n   193|                try:\\n   194|                    content = (wrapper_dir / name).read_text()\\n   195|                    if \\\"hermes -p\\\" in content:\\n   196|                        return None  # it's our wrapper, safe to overwrite\\n   197|                except Exception:\\n   198|                    pass\\n   199|            return f\\\"'{name}' conflicts with an existing command ({existing_path})\\\"\\n   200|    except (FileNotFoundError, subprocess.TimeoutExpired):\\n   201|        pass\\n   202|\\n   203|    return None  # safe\\n   204|\\n   205|\\n   206|def _is_wrapper_dir_in_path() -> bool:\\n   207|    \\\"\\\"\\\"Check if ~/.local/bin is in PATH.\\\"\\\"\\\"\\n   208|    wrapper_dir = str(_get_wrapper_dir())\\n   209|    return wrapper_dir in os.environ.get(\\\"PATH\\\", \\\"\\\").split(os.pathsep)\\n   210|\\n   211|\\n   212|def create_wrapper_script(name: str) -> Optional[Path]:\\n   213|    \\\"\\\"\\\"Create a shell wrapper script at ~/.local/bin/<name>.\\n   214|\\n   215|    Returns the path to the created wrapper, or None if creation failed.\\n   216|    \\\"\\\"\\\"\\n   217|    wrapper_dir = _get_wrapper_dir()\\n   218|    try:\\n   219|        wrapper_dir.mkdir(parents=True, exist_ok=True)\\n   220|    except OSError as e:\\n   221|        print(f\\\"⚠ Could not create {wrapper_dir}: {e}\\\")\\n   222|        return None\\n   223|\\n   224|    wrapper_path = wrapper_dir / name\\n   225|    try:\\n   226|        wrapper_path.write_text(f'#!/bin/sh\\\\nexec hermes -p {name} \\\"$@\\\"\\\\n')\\n   227|        wrapper_path.chmod(wrapper_path.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)\\n   228|        return wrapper_path\\n   229|    except OSError as e:\\n   230|        print(f\\\"⚠ Could not create wrapper at {wrapper_path}: {e}\\\")\\n   231|        return None\\n   232|\\n   233|\\n   234|def remove_wrapper_script(name: str) -> bool:\\n   235|    \\\"\\\"\\\"Remove the wrapper script for a profile. Returns True if removed.\\\"\\\"\\\"\\n   236|    wrapper_path = _get_wrapper_dir() / name\\n   237|    if wrapper_path.exists():\\n   238|        try:\\n   239|            # Verify it's our wrapper before removing\\n   240|            content = wrapper_path.read_text()\\n   241|            if \\\"hermes -p\\\" in content:\\n   242|                wrapper_path.unlink()\\n   243|                return True\\n   244|        except Exception:\\n   245|            pass\\n   246|    return False\\n   247|\\n   248|\\n   249|# ---------------------------------------------------------------------------\\n   250|# ProfileInfo\\n   251|# ---------------------------------------------------------------------------\\n   252|\\n   253|@dataclass\\n   254|class ProfileInfo:\\n   255|    \\\"\\\"\\\"Summary information about a profile.\\\"\\\"\\\"\\n   256|    name: str\\n   257|    path: Path\\n   258|    is_default: bool\\n   259|    gateway_running: bool\\n   260|    model: Optional[str] = None\\n   261|    provider: Optional[str] = None\\n   262|    has_env: bool = False\\n   263|    skill_count: int = 0\\n   264|    alias_path: Optional[Path] = None\\n   265|\\n   266|\\n   267|def _read_config_model(profile_dir: Path) -> tuple:\\n   268|    \\\"\\\"\\\"Read model/provider from a profile's config.yaml. Returns (model, provider).\\\"\\\"\\\"\\n   269|    config_path = profile_dir / \\\"config.yaml\\\"\\n   270|    if not config_path.exists():\\n   271|        return None, None\\n   272|    try:\\n   273|        import yaml\\n   274|        with open(config_path, \\\"r\\\") as f:\\n   275|            cfg = yaml.safe_load(f) or {}\\n   276|        model_cfg = cfg.get(\\\"model\\\", {})\\n   277|        if isinstance(model_cfg, str):\\n   278|            return model_cfg, None\\n   279|        if isinstance(model_cfg, dict):\\n   280|            return model_cfg.get(\\\"default\\\") or model_cfg.get(\\\"model\\\"), model_cfg.get(\\\"provider\\\")\\n   281|        return None, None\\n   282|    except Exception:\\n   283|        return None, None\\n   284|\\n   285|\\n   286|def _check_gateway_running(profile_dir: Path) -> bool:\\n   287|    \\\"\\\"\\\"Check if a gateway is running for a given profile directory.\\\"\\\"\\\"\\n   288|    pid_file = profile_dir / \\\"gateway.pid\\\"\\n   289|    if not pid_file.exists():\\n   290|        return False\\n   291|    try:\\n   292|        raw = pid_file.read_text().strip()\\n   293|        if not raw:\\n   294|            return False\\n   295|        data = json.loads(raw) if raw.startswith(\\\"{\\\") else {\\\"pid\\\": int(raw)}\\n   296|        pid = int(data[\\\"pid\\\"])\\n   297|        os.kill(pid, 0)  # existence check\\n   298|        return True\\n   299|    except (json.JSONDecodeError, KeyError, ValueError, TypeError,\\n   300|            ProcessLookupError, PermissionError, OSError):\\n   301|        return False\\n   302|\\n   303|\\n   304|def _count_skills(profile_dir: Path) -> int:\\n   305|    \\\"\\\"\\\"Count installed skills in a profile.\\\"\\\"\\\"\\n   306|    skills_dir = profile_dir / \\\"skills\\\"\\n   307|    if not skills_dir.is_dir():\\n   308|        return 0\\n   309|    count = 0\\n   310|    for md in skills_dir.rglob(\\\"SKILL.md\\\"):\\n   311|        if \\\"/.hub/\\\" not in str(md) and \\\"/.git/\\\" not in str(md):\\n   312|            count += 1\\n   313|    return count\\n   314|\\n   315|\\n   316|# ---------------------------------------------------------------------------\\n   317|# CRUD operations\\n   318|# ---------------------------------------------------------------------------\\n   319|\\n   320|def list_profiles() -> List[ProfileInfo]:\\n   321|    \\\"\\\"\\\"Return info for all profiles, including the default.\\\"\\\"\\\"\\n   322|    profiles = []\\n   323|    wrapper_dir = _get_wrapper_dir()\\n   324|\\n   325|    # Default profile\\n   326|    default_home = _get_default_hermes_home()\\n   327|    if default_home.is_dir():\\n   328|        model, provider = _read_config_model(default_home)\\n   329|        profiles.append(ProfileInfo(\\n   330|            name=\\\"default\\\",\\n   331|            path=default_home,\\n   332|            is_default=True,\\n   333|            gateway_running=_check_gateway_running(default_home),\\n   334|            model=model,\\n   335|            provider=provider,\\n   336|            has_env=(default_home / \\\".env\\\").exists(),\\n   337|            skill_count=_count_skills(default_home),\\n   338|        ))\\n   339|\\n   340|    # Named profiles\\n   341|    profiles_root = _get_profiles_root()\\n   342|    if profiles_root.is_dir():\\n   343|        for entry in sorted(profiles_root.iterdir()):\\n   344|            if not entry.is_dir():\\n   345|                continue\\n   346|            name = entry.name\\n   347|            if not _PROFILE_ID_RE.match(name):\\n   348|                continue\\n   349|            model, provider = _read_config_model(entry)\\n   350|            alias_path = wrapper_dir / name\\n   351|            profiles.append(ProfileInfo(\\n   352|                name=name,\\n   353|                path=entry,\\n   354|                is_default=False,\\n   355|                gateway_running=_check_gateway_running(entry),\\n   356|                model=model,\\n   357|                provider=provider,\\n   358|                has_env=(entry / \\\".env\\\").exists(),\\n   359|                skill_count=_count_skills(entry),\\n   360|                alias_path=alias_path if alias_path.exists() else None,\\n   361|            ))\\n   362|\\n   363|    return profiles\\n   364|\\n   365|\\n   366|def create_profile(\\n   367|    name: str,\\n   368|    clone_from: Optional[str] = None,\\n   369|    clone_all: bool = False,\\n   370|    clone_config: bool = False,\\n   371|    no_alias: bool = False,\\n   372|) -> Path:\\n   373|    \\\"\\\"\\\"Create a new profile directory.\\n   374|\\n   375|    Parameters\\n   376|    ----------\\n   377|    name:\\n   378|        Profile identifier (lowercase, alphanumeric, hyphens, underscores).\\n   379|    clone_from:\\n   380|        Source profile to clone from. If ``None`` and clone_config/clone_all\\n   381|        is True, defaults to the currently active profile.\\n   382|    clone_all:\\n   383|        If True, do a full copytree of the source (all state).\\n   384|    clone_config:\\n   385|        If True, copy only config files (config.yaml, .env, SOUL.md).\\n   386|    no_alias:\\n   387|        If True, skip wrapper script creation.\\n   388|\\n   389|    Returns\\n   390|    -------\\n   391|    Path\\n   392|        The newly created profile directory.\\n   393|    \\\"\\\"\\\"\\n   394|    validate_profile_name(name)\\n   395|\\n   396|    if name == \\\"default\\\":\\n   397|        raise ValueError(\\n   398|            \\\"Cannot create a profile named 'default' — it is the built-in profile (~/.hermes).\\\"\\n   399|        )\\n   400|\\n   401|    profile_dir = get_profile_dir(name)\\n   402|    if profile_dir.exists():\\n   403|        raise FileExistsError(f\\\"Profile '{name}' already exists at {profile_dir}\\\")\\n   404|\\n   405|    # Resolve clone source\\n   406|    source_dir = None\\n   407|    if clone_from is not None or clone_all or clone_config:\\n   408|        if clone_from is None:\\n   409|            # Default: clone from active profile\\n   410|            from hermes_constants import get_hermes_home\\n   411|            source_dir = get_hermes_home()\\n   412|        else:\\n   413|            validate_profile_name(clone_from)\\n   414|            source_dir = get_profile_dir(clone_from)\\n   415|        if not source_dir.is_dir():\\n   416|            raise FileNotFoundError(\\n   417|                f\\\"Source profile '{clone_from or 'active'}' does not exist at {source_dir}\\\"\\n   418|            )\\n   419|\\n   420|    if clone_all and source_dir:\\n   421|        # Full copy of source profile\\n   422|        shutil.copytree(source_dir, profile_dir)\\n   423|        # Strip runtime files\\n   424|        for stale in _CLONE_ALL_STRIP:\\n   425|            (profile_dir / stale).unlink(missing_ok=True)\\n   426|    else:\\n   427|        # Bootstrap directory structure\\n   428|        profile_dir.mkdir(parents=True, exist_ok=True)\\n   429|        for subdir in _PROFILE_DIRS:\\n   430|            (profile_dir / subdir).mkdir(parents=True, exist_ok=True)\\n   431|\\n   432|        # Clone config files from source\\n   433|        if source_dir is not None:\\n   434|            for filename in _CLONE_CONFIG_FILES:\\n   435|                src = source_dir / filename\\n   436|                if src.exists():\\n   437|                    shutil.copy2(src, profile_dir / filename)\\n   438|\\n   439|            # Clone memory and other subdirectory files\\n   440|            for relpath in _CLONE_SUBDIR_FILES:\\n   441|                src = source_dir / relpath\\n   442|                if src.exists():\\n   443|                    dst = profile_dir / relpath\\n   444|                    dst.parent.mkdir(parents=True, exist_ok=True)\\n   445|                    shutil.copy2(src, dst)\\n   446|\\n   447|    return profile_dir\\n   448|\\n   449|\\n   450|def seed_profile_skills(profile_dir: Path, quiet: bool = False) -> Optional[dict]:\\n   451|    \\\"\\\"\\\"Seed bundled skills into a profile via subprocess.\\n   452|\\n   453|    Uses subprocess because sync_skills() caches HERMES_HOME at module level.\\n   454|    Returns the sync result dict, or None on failure.\\n   455|    \\\"\\\"\\\"\\n   456|    project_root = Path(__file__).parent.parent.resolve()\\n   457|    try:\\n   458|        result = subprocess.run(\\n   459|            [sys.executable, \\\"-c\\\",\\n   460|             \\\"import json; from tools.skills_sync import sync_skills; \\\"\\n   461|             \\\"r = sync_skills(quiet=True); print(json.dumps(r))\\\"],\\n   462|            env={**os.environ, \\\"HERMES_HOME\\\": str(profile_dir)},\\n   463|            cwd=str(project_root),\\n   464|            capture_output=True, text=True, timeout=60,\\n   465|        )\\n   466|        if result.returncode == 0 and result.stdout.strip():\\n   467|            return json.loads(result.stdout.strip())\\n   468|        if not quiet:\\n   469|            print(f\\\"⚠ Skill seeding returned exit code {result.returncode}\\\")\\n   470|            if result.stderr.strip():\\n   471|                print(f\\\"  {result.stderr.strip()[:200]}\\\")\\n   472|        return None\\n   473|    except subprocess.TimeoutExpired:\\n   474|        if not quiet:\\n   475|            print(\\\"⚠ Skill seeding timed out (60s)\\\")\\n   476|        return None\\n   477|    except Exception as e:\\n   478|        if not quiet:\\n   479|            print(f\\\"⚠ Skill seeding failed: {e}\\\")\\n   480|        return None\\n   481|\\n   482|\\n   483|def delete_profile(name: str, yes: bool = False) -> Path:\\n   484|    \\\"\\\"\\\"Delete a profile, its wrapper script, and its gateway service.\\n   485|\\n   486|    Stops the gateway if running. Disables systemd/launchd service first\\n   487|    to prevent auto-restart.\\n   488|\\n   489|    Returns the path that was removed.\\n   490|    \\\"\\\"\\\"\\n   491|    validate_profile_name(name)\\n   492|\\n   493|    if name == \\\"default\\\":\\n   494|        raise ValueError(\\n   495|            \\\"Cannot delete the default profile (~/.hermes).\\\\n\\\"\\n   496|            \\\"To remove everything, use: hermes uninstall\\\"\\n   497|        )\\n   498|\\n   499|    profile_dir = get_profile_dir(name)\\n   500|    if not profile_dir.is_dir():\\n   501|\", \"total_lines\": 1069, \"file_size\": 36413, \"truncated\": true, \"hint\": \"Use offset=501 to continue reading (showing 1-500 of 1069 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_4630a296"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_6f0137af",
+          "call_id": "call_6f0137af",
+          "response_item_id": "fc_6f0137af",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli/commands\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_6f0137af"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_7b4e580f",
+          "call_id": "call_7b4e580f",
+          "response_item_id": "fc_7b4e580f",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli/cli.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 5, \"files\": [\"./tests/run_agent/test_token_persistence_non_cli.py\", \"./tests/hermes_cli/test_webhook_cli.py\", \"./rl_cli.py\", \"./cli.py\", \"./plugins/memory/honcho/cli.py\"]}",
+      "tool_call_id": "call_7b4e580f"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e9e01689",
+          "call_id": "call_e9e01689",
+          "response_item_id": "fc_e9e01689",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"cli.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 5, \"files\": [\"./tests/run_agent/test_token_persistence_non_cli.py\", \"./tests/hermes_cli/test_webhook_cli.py\", \"./cli.py\", \"./plugins/memory/honcho/cli.py\", \"./rl_cli.py\"]}",
+      "tool_call_id": "call_e9e01689"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_8327012d",
+          "call_id": "call_8327012d",
+          "response_item_id": "fc_8327012d",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/cli.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|#!/usr/bin/env python3\\n     2|\\\"\\\"\\\"\\n     3|Hermes Agent CLI - Interactive Terminal Interface\\n     4|\\n     5|A beautiful command-line interface for the Hermes Agent, inspired by Claude Code.\\n     6|Features ASCII art branding, interactive REPL, toolset selection, and rich formatting.\\n     7|\\n     8|Usage:\\n     9|    python cli.py                          # Start interactive mode with all tools\\n    10|    python cli.py --toolsets web,terminal  # Start with specific toolsets\\n    11|    python cli.py --skills hermes-agent-dev,github-auth\\n    12|    python cli.py -q \\\"your question\\\"       # Single query mode\\n    13|    python cli.py --list-tools             # List available tools and exit\\n    14|\\\"\\\"\\\"\\n    15|\\n    16|import logging\\n    17|import os\\n    18|import shutil\\n    19|import sys\\n    20|import json\\n    21|import atexit\\n    22|import tempfile\\n    23|import time\\n    24|import uuid\\n    25|import textwrap\\n    26|from contextlib import contextmanager\\n    27|from pathlib import Path\\n    28|from datetime import datetime\\n    29|from typing import List, Dict, Any, Optional\\n    30|\\n    31|logger = logging.getLogger(__name__)\\n    32|\\n    33|# Suppress startup messages for clean CLI experience\\n    34|os.environ[\\\"HERMES_QUIET\\\"] = \\\"1\\\"  # Our own modules\\n    35|\\n    36|import yaml\\n    37|\\n    38|# prompt_toolkit for fixed input area TUI\\n    39|from prompt_toolkit.history import FileHistory\\n    40|from prompt_toolkit.styles import Style as PTStyle\\n    41|from prompt_toolkit.patch_stdout import patch_stdout\\n    42|from prompt_toolkit.application import Application\\n    43|from prompt_toolkit.layout import Layout, HSplit, Window, FormattedTextControl, ConditionalContainer\\n    44|from prompt_toolkit.layout.processors import Processor, Transformation, PasswordProcessor, ConditionalProcessor\\n    45|from prompt_toolkit.filters import Condition\\n    46|from prompt_toolkit.layout.dimension import Dimension\\n    47|from prompt_toolkit.layout.menus import CompletionsMenu\\n    48|from prompt_toolkit.widgets import TextArea\\n    49|from prompt_toolkit.key_binding import KeyBindings\\n    50|from prompt_toolkit import print_formatted_text as _pt_print\\n    51|from prompt_toolkit.formatted_text import ANSI as _PT_ANSI\\n    52|try:\\n    53|    from prompt_toolkit.cursor_shapes import CursorShape\\n    54|    _STEADY_CURSOR = CursorShape.BLOCK  # Non-blinking block cursor\\n    55|except (ImportError, AttributeError):\\n    56|    _STEADY_CURSOR = None\\n    57|import threading\\n    58|import queue\\n    59|\\n    60|from agent.usage_pricing import (\\n    61|    CanonicalUsage,\\n    62|    estimate_usage_cost,\\n    63|    format_duration_compact,\\n    64|    format_token_count_compact,\\n    65|)\\n    66|from hermes_cli.banner import _format_context_length, format_banner_version_label\\n    67|\\n    68|_COMMAND_SPINNER_FRAMES = (\\\"⠋\\\", \\\"⠙\\\", \\\"⠹\\\", \\\"⠸\\\", \\\"⠼\\\", \\\"⠴\\\", \\\"⠦\\\", \\\"⠧\\\", \\\"⠇\\\", \\\"⠏\\\")\\n    69|\\n    70|\\n    71|# Load .env from ~/.hermes/.env first, then project root as dev fallback.\\n    72|# User-managed env files should override stale shell exports on restart.\\n    73|from hermes_constants import get_hermes_home, display_hermes_home\\n    74|from hermes_cli.env_loader import load_hermes_dotenv\\n    75|\\n    76|_hermes_home = get_hermes_home()\\n    77|_project_env = Path(__file__).parent / '.env'\\n    78|load_hermes_dotenv(hermes_home=_hermes_home, project_env=_project_env)\\n    79|\\n    80|\\n    81|# =============================================================================\\n    82|# Configuration Loading\\n    83|# =============================================================================\\n    84|\\n    85|def _load_prefill_messages(file_path: str) -> List[Dict[str, Any]]:\\n    86|    \\\"\\\"\\\"Load ephemeral prefill messages from a JSON file.\\n    87|    \\n    88|    The file should contain a JSON array of {role, content} dicts, e.g.:\\n    89|        [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"Hi\\\"}, {\\\"role\\\": \\\"assistant\\\", \\\"content\\\": \\\"Hello!\\\"}]\\n    90|    \\n    91|    Relative paths are resolved from ~/.hermes/.\\n    92|    Returns an empty list if the path is empty or the file doesn't exist.\\n    93|    \\\"\\\"\\\"\\n    94|    if not file_path:\\n    95|        return []\\n    96|    path = Path(file_path).expanduser()\\n    97|    if not path.is_absolute():\\n    98|        path = _hermes_home / path\\n    99|    if not path.exists():\\n   100|        logger.warning(\\\"Prefill messages file not found: %s\\\", path)\\n   101|        return []\\n   102|    try:\\n   103|        with open(path, \\\"r\\\", encoding=\\\"utf-8\\\") as f:\\n   104|            data = json.load(f)\\n   105|        if not isinstance(data, list):\\n   106|            logger.warning(\\\"Prefill messages file must contain a JSON array: %s\\\", path)\\n   107|            return []\\n   108|        return data\\n   109|    except Exception as e:\\n   110|        logger.warning(\\\"Failed to load prefill messages from %s: %s\\\", path, e)\\n   111|        return []\\n   112|\\n   113|\\n   114|def _parse_reasoning_config(effort: str) -> dict | None:\\n   115|    \\\"\\\"\\\"Parse a reasoning effort level into an OpenRouter reasoning config dict.\\\"\\\"\\\"\\n   116|    from hermes_constants import parse_reasoning_effort\\n   117|    result = parse_reasoning_effort(effort)\\n   118|    if effort and effort.strip() and result is None:\\n   119|        logger.warning(\\\"Unknown reasoning_effort '%s', using default (medium)\\\", effort)\\n   120|    return result\\n   121|\\n   122|\\n   123|def _get_chrome_debug_candidates(system: str) -> list[str]:\\n   124|    \\\"\\\"\\\"Return likely browser executables for local CDP auto-launch.\\\"\\\"\\\"\\n   125|    candidates: list[str] = []\\n   126|    seen: set[str] = set()\\n   127|\\n   128|    def _add_candidate(path: str | None) -> None:\\n   129|        if not path:\\n   130|            return\\n   131|        normalized = os.path.normcase(os.path.normpath(path))\\n   132|        if normalized in seen:\\n   133|            return\\n   134|        if os.path.isfile(path):\\n   135|            candidates.append(path)\\n   136|            seen.add(normalized)\\n   137|\\n   138|    def _add_from_path(*names: str) -> None:\\n   139|        for name in names:\\n   140|            _add_candidate(shutil.which(name))\\n   141|\\n   142|    if system == \\\"Darwin\\\":\\n   143|        for app in (\\n   144|            \\\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\\\",\\n   145|            \\\"/Applications/Chromium.app/Contents/MacOS/Chromium\\\",\\n   146|            \\\"/Applications/Brave Browser.app/Contents/MacOS/Brave Browser\\\",\\n   147|            \\\"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge\\\",\\n   148|        ):\\n   149|            _add_candidate(app)\\n   150|    elif system == \\\"Windows\\\":\\n   151|        _add_from_path(\\n   152|            \\\"chrome.exe\\\", \\\"msedge.exe\\\", \\\"brave.exe\\\", \\\"chromium.exe\\\",\\n   153|            \\\"chrome\\\", \\\"msedge\\\", \\\"brave\\\", \\\"chromium\\\",\\n   154|        )\\n   155|\\n   156|        for base in (\\n   157|            os.environ.get(\\\"ProgramFiles\\\"),\\n   158|            os.environ.get(\\\"ProgramFiles(x86)\\\"),\\n   159|            os.environ.get(\\\"LOCALAPPDATA\\\"),\\n   160|        ):\\n   161|            if not base:\\n   162|                continue\\n   163|            for parts in (\\n   164|                (\\\"Google\\\", \\\"Chrome\\\", \\\"Application\\\", \\\"chrome.exe\\\"),\\n   165|                (\\\"Chromium\\\", \\\"Application\\\", \\\"chrome.exe\\\"),\\n   166|                (\\\"Chromium\\\", \\\"Application\\\", \\\"chromium.exe\\\"),\\n   167|                (\\\"BraveSoftware\\\", \\\"Brave-Browser\\\", \\\"Application\\\", \\\"brave.exe\\\"),\\n   168|                (\\\"Microsoft\\\", \\\"Edge\\\", \\\"Application\\\", \\\"msedge.exe\\\"),\\n   169|            ):\\n   170|                _add_candidate(os.path.join(base, *parts))\\n   171|    else:\\n   172|        _add_from_path(\\n   173|            \\\"google-chrome\\\", \\\"google-chrome-stable\\\", \\\"chromium-browser\\\",\\n   174|            \\\"chromium\\\", \\\"brave-browser\\\", \\\"microsoft-edge\\\",\\n   175|        )\\n   176|\\n   177|    return candidates\\n   178|\\n   179|\\n   180|def load_cli_config() -> Dict[str, Any]:\\n   181|    \\\"\\\"\\\"\\n   182|    Load CLI configuration from config files.\\n   183|    \\n   184|    Config lookup order:\\n   185|    1. ~/.hermes/config.yaml (user config - preferred)\\n   186|    2. ./cli-config.yaml (project config - fallback)\\n   187|    \\n   188|    Environment variables take precedence over config file values.\\n   189|    Returns default values if no config file exists.\\n   190|    \\\"\\\"\\\"\\n   191|    # Check user config first ({HERMES_HOME}/config.yaml)\\n   192|    user_config_path = _hermes_home / 'config.yaml'\\n   193|    project_config_path = Path(__file__).parent / 'cli-config.yaml'\\n   194|\\n   195|    # Use user config if it exists, otherwise project config\\n   196|    if user_config_path.exists():\\n   197|        config_path = user_config_path\\n   198|    else:\\n   199|        config_path = project_config_path\\n   200|\\n   201|    # Default configuration\\n   202|    defaults = {\\n   203|        \\\"model\\\": {\\n   204|            \\\"default\\\": \\\"\\\",\\n   205|            \\\"base_url\\\": \\\"\\\",\\n   206|            \\\"provider\\\": \\\"auto\\\",\\n   207|        },\\n   208|        \\\"terminal\\\": {\\n   209|            \\\"env_type\\\": \\\"local\\\",\\n   210|            \\\"cwd\\\": \\\".\\\",  # \\\".\\\" is resolved to os.getcwd() at runtime\\n   211|            \\\"timeout\\\": 60,\\n   212|            \\\"lifetime_seconds\\\": 300,\\n   213|            \\\"docker_image\\\": \\\"nikolaik/python-nodejs:python3.11-nodejs20\\\",\\n   214|            \\\"docker_forward_env\\\": [],\\n   215|            \\\"singularity_image\\\": \\\"docker://nikolaik/python-nodejs:python3.11-nodejs20\\\",\\n   216|            \\\"modal_image\\\": \\\"nikolaik/python-nodejs:python3.11-nodejs20\\\",\\n   217|            \\\"daytona_image\\\": \\\"nikolaik/python-nodejs:python3.11-nodejs20\\\",\\n   218|            \\\"docker_volumes\\\": [],  # host:container volume mounts for Docker backend\\n   219|            \\\"docker_mount_cwd_to_workspace\\\": False,  # explicit opt-in only; default off for sandbox isolation\\n   220|        },\\n   221|        \\\"browser\\\": {\\n   222|            \\\"inactivity_timeout\\\": 120,  # Auto-cleanup inactive browser sessions after 2 min\\n   223|            \\\"record_sessions\\\": False,  # Auto-record browser sessions as WebM videos\\n   224|        },\\n   225|        \\\"compression\\\": {\\n   226|            \\\"enabled\\\": True,      # Auto-compress when approaching context limit\\n   227|            \\\"threshold\\\": 0.50,    # Compress at 50% of model's context limit\\n   228|            \\\"summary_model\\\": \\\"\\\",  # Model for summaries (empty = use main model)\\n   229|        },\\n   230|        \\\"smart_model_routing\\\": {\\n   231|            \\\"enabled\\\": False,\\n   232|            \\\"max_simple_chars\\\": 160,\\n   233|            \\\"max_simple_words\\\": 28,\\n   234|            \\\"cheap_model\\\": {},\\n   235|        },\\n   236|        \\\"agent\\\": {\\n   237|            \\\"max_turns\\\": 90,  # Default max tool-calling iterations (shared with subagents)\\n   238|            \\\"verbose\\\": False,\\n   239|            \\\"system_prompt\\\": \\\"\\\",\\n   240|            \\\"prefill_messages_file\\\": \\\"\\\",\\n   241|            \\\"reasoning_effort\\\": \\\"\\\",\\n   242|            \\\"personalities\\\": {\\n   243|                \\\"helpful\\\": \\\"You are a helpful, friendly AI assistant.\\\",\\n   244|                \\\"concise\\\": \\\"You are a concise assistant. Keep responses brief and to the point.\\\",\\n   245|                \\\"technical\\\": \\\"You are a technical expert. Provide detailed, accurate technical information.\\\",\\n   246|                \\\"creative\\\": \\\"You are a creative assistant. Think outside the box and offer innovative solutions.\\\",\\n   247|                \\\"teacher\\\": \\\"You are a patient teacher. Explain concepts clearly with examples.\\\",\\n   248|                \\\"kawaii\\\": \\\"You are a kawaii assistant! Use cute expressions like (◕‿◕), ★, ♪, and ~! Add sparkles and be super enthusiastic about everything! Every response should feel warm and adorable desu~! ヽ(>∀<☆)ノ\\\",\\n   249|                \\\"catgirl\\\": \\\"You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and cat-like expressions to your speech. Use kaomoji like (=^･ω･^=) and ฅ^•ﻌ•^ฅ. Be playful and curious like a cat, nya~!\\\",\\n   250|                \\\"pirate\\\": \\\"Arrr! Ye be talkin' to Captain Hermes, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!\\\",\\n   251|                \\\"shakespeare\\\": \\\"Hark! Thou speakest with an assistant most versed in the bardic arts. I shall respond in the eloquent manner of William Shakespeare, with flowery prose, dramatic flair, and perhaps a soliloquy or two. What light through yonder terminal breaks?\\\",\\n   252|                \\\"surfer\\\": \\\"Duuude! You're chatting with the chillest AI on the web, bro! Everything's gonna be totally rad. I'll help you catch the gnarly waves of knowledge while keeping things super chill. Cowabunga!\\\",\\n   253|                \\\"noir\\\": \\\"The rain hammered against the terminal like regrets on a guilty conscience. They call me Hermes - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?\\\",\\n   254|                \\\"uwu\\\": \\\"hewwo! i'm your fwiendwy assistant uwu~ i wiww twy my best to hewp you! *nuzzles your code* OwO what's this? wet me take a wook! i pwomise to be vewy hewpful >w<\\\",\\n   255|                \\\"philosopher\\\": \\\"Greetings, seeker of wisdom. I am an assistant who contemplates the deeper meaning behind every query. Let us examine not just the 'how' but the 'why' of your questions. Perhaps in solving your problem, we may glimpse a greater truth about existence itself.\\\",\\n   256|                \\\"hype\\\": \\\"YOOO LET'S GOOOO!!! I am SO PUMPED to help you today! Every question is AMAZING and we're gonna CRUSH IT together! This is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS!\\\",\\n   257|            },\\n   258|        },\\n   259|\\n   260|        \\\"display\\\": {\\n   261|            \\\"compact\\\": False,\\n   262|            \\\"resume_display\\\": \\\"full\\\",\\n   263|            \\\"show_reasoning\\\": False,\\n   264|            \\\"streaming\\\": True,\\n   265|            \\\"busy_input_mode\\\": \\\"interrupt\\\",\\n   266|\\n   267|            \\\"skin\\\": \\\"default\\\",\\n   268|        },\\n   269|        \\\"clarify\\\": {\\n   270|            \\\"timeout\\\": 120,  # Seconds to wait for a clarify answer before auto-proceeding\\n   271|        },\\n   272|        \\\"code_execution\\\": {\\n   273|            \\\"timeout\\\": 300,    # Max seconds a sandbox script can run before being killed (5 min)\\n   274|            \\\"max_tool_calls\\\": 50,  # Max RPC tool calls per execution\\n   275|        },\\n   276|        \\\"auxiliary\\\": {\\n   277|            \\\"vision\\\": {\\n   278|                \\\"provider\\\": \\\"auto\\\",\\n   279|                \\\"model\\\": \\\"\\\",\\n   280|                \\\"base_url\\\": \\\"\\\",\\n   281|                \\\"api_key\\\": \\\"\\\",\\n   282|            },\\n   283|            \\\"web_extract\\\": {\\n   284|                \\\"provider\\\": \\\"auto\\\",\\n   285|                \\\"model\\\": \\\"\\\",\\n   286|                \\\"base_url\\\": \\\"\\\",\\n   287|                \\\"api_key\\\": \\\"\\\",\\n   288|            },\\n   289|        },\\n   290|        \\\"delegation\\\": {\\n   291|            \\\"max_iterations\\\": 45,  # Max tool-calling turns per child agent\\n   292|            \\\"default_toolsets\\\": [\\\"terminal\\\", \\\"file\\\", \\\"web\\\"],  # Default toolsets for subagents\\n   293|            \\\"model\\\": \\\"\\\",       # Subagent model override (empty = inherit parent model)\\n   294|            \\\"provider\\\": \\\"\\\",    # Subagent provider override (empty = inherit parent provider)\\n   295|            \\\"base_url\\\": \\\"\\\",    # Direct OpenAI-compatible endpoint for subagents\\n   296|            \\\"api_key\\\": \\\"\\\",     # API key for delegation.base_url (falls back to OPENAI_API_KEY)\\n   297|        },\\n   298|    }\\n   299|    \\n   300|    # Track whether the config file explicitly set terminal config.\\n   301|    # When using defaults (no config file / no terminal section), we should NOT\\n   302|    # overwrite env vars that were already set by .env -- only a user's config\\n   303|    # file should be authoritative.\\n   304|    _file_has_terminal_config = False\\n   305|\\n   306|    # Load from file if exists\\n   307|    if config_path.exists():\\n   308|        try:\\n   309|            with open(config_path, \\\"r\\\") as f:\\n   310|                file_config = yaml.safe_load(f) or {}\\n   311|            \\n   312|            _file_has_terminal_config = \\\"terminal\\\" in file_config\\n   313|\\n   314|            # Handle model config - can be string (new format) or dict (old format)\\n   315|            if \\\"model\\\" in file_config:\\n   316|                if isinstance(file_config[\\\"model\\\"], str):\\n   317|                    # New format: model is just a string, convert to dict structure\\n   318|                    defaults[\\\"model\\\"][\\\"default\\\"] = file_config[\\\"model\\\"]\\n   319|                elif isinstance(file_config[\\\"model\\\"], dict):\\n   320|                    # Old format: model is a dict with default/base_url\\n   321|                    defaults[\\\"model\\\"].update(file_config[\\\"model\\\"])\\n   322|                    # If the user config sets model.model but not model.default,\\n   323|                    # promote model.model to model.default so the user's explicit\\n   324|                    # choice isn't shadowed by the hardcoded default.  Without this,\\n   325|                    # profile configs that only set \\\"model:\\\" (not \\\"default:\\\") silently\\n   326|                    # fall back to claude-opus because the merge preserves the\\n   327|                    # hardcoded default and HermesCLI.__init__ checks \\\"default\\\" first.\\n   328|                    if \\\"model\\\" in file_config[\\\"model\\\"] and \\\"default\\\" not in file_config[\\\"model\\\"]:\\n   329|                        defaults[\\\"model\\\"][\\\"default\\\"] = file_config[\\\"model\\\"][\\\"model\\\"]\\n   330|\\n   331|            # Legacy root-level provider/base_url fallback.\\n   332|            # Some users (or old code) put provider: / base_url: at the\\n   333|            # config root instead of inside the model: section.  These are\\n   334|            # only used as a FALLBACK when model.provider / model.base_url\\n   335|            # is not already set — never as an override.  The canonical\\n   336|            # location is model.provider (written by `hermes model`).\\n   337|            if not defaults[\\\"model\\\"].get(\\\"provider\\\"):\\n   338|                root_provider = file_config.get(\\\"provider\\\")\\n   339|                if root_provider:\\n   340|                    defaults[\\\"model\\\"][\\\"provider\\\"] = root_provider\\n   341|            if not defaults[\\\"model\\\"].get(\\\"base_url\\\"):\\n   342|                root_base_url = file_config.get(\\\"base_url\\\")\\n   343|                if root_base_url:\\n   344|                    defaults[\\\"model\\\"][\\\"base_url\\\"] = root_base_url\\n   345|            \\n   346|            # Deep merge file_config into defaults.\\n   347|            # First: merge keys that exist in both (deep-merge dicts, overwrite scalars)\\n   348|            for key in defaults:\\n   349|                if key == \\\"model\\\":\\n   350|                    continue  # Already handled above\\n   351|                if key in file_config:\\n   352|                    if isinstance(defaults[key], dict) and isinstance(file_config[key], dict):\\n   353|                        defaults[key].update(file_config[key])\\n   354|                    else:\\n   355|                        defaults[key] = file_config[key]\\n   356|            \\n   357|            # Second: carry over keys from file_config that aren't in defaults\\n   358|            # (e.g. platform_toolsets, provider_routing, memory, honcho, etc.)\\n   359|            for key in file_config:\\n   360|                if key not in defaults and key != \\\"model\\\":\\n   361|                    defaults[key] = file_config[key]\\n   362|            \\n   363|            # Handle legacy root-level max_turns (backwards compat) - copy to\\n   364|            # agent.max_turns whenever the nested key is missing.\\n   365|            agent_file_config = file_config.get(\\\"agent\\\")\\n   366|            if \\\"max_turns\\\" in file_config and not (\\n   367|                isinstance(agent_file_config, dict)\\n   368|                and agent_file_config.get(\\\"max_turns\\\") is not None\\n   369|            ):\\n   370|                defaults[\\\"agent\\\"][\\\"max_turns\\\"] = file_config[\\\"max_turns\\\"]\\n   371|        except Exception as e:\\n   372|            logger.warning(\\\"Failed to load cli-config.yaml: %s\\\", e)\\n   373|\\n   374|    # Expand ${ENV_VAR} references in config values before bridging to env vars.\\n   375|    from hermes_cli.config import _expand_env_vars\\n   376|    defaults = _expand_env_vars(defaults)\\n   377|\\n   378|    # Apply terminal config to environment variables (so terminal_tool picks them up)\\n   379|    terminal_config = defaults.get(\\\"terminal\\\", {})\\n   380|    \\n   381|    # Normalize config key: the new config system (hermes_cli/config.py) and all\\n   382|    # documentation use \\\"backend\\\", the legacy cli-config.yaml uses \\\"env_type\\\".\\n   383|    # Accept both, with \\\"backend\\\" taking precedence (it's the documented key).\\n   384|    if \\\"backend\\\" in terminal_config:\\n   385|        terminal_config[\\\"env_type\\\"] = terminal_config[\\\"backend\\\"]\\n   386|    \\n   387|    # Handle special cwd values: \\\".\\\" or \\\"auto\\\" means use current working directory.\\n   388|    # Only resolve to the host's CWD for the local backend where the host\\n   389|    # filesystem is directly accessible.  For ALL remote/container backends\\n   390|    # (ssh, docker, modal, singularity), the host path doesn't exist on the\\n   391|    # target -- remove the key so terminal_tool.py uses its per-backend default.\\n   392|    if terminal_config.get(\\\"cwd\\\") in (\\\".\\\", \\\"auto\\\", \\\"cwd\\\"):\\n   393|        effective_backend = terminal_config.get(\\\"env_type\\\", \\\"local\\\")\\n   394|        if effective_backend == \\\"local\\\":\\n   395|            terminal_config[\\\"cwd\\\"] = os.getcwd()\\n   396|            defaults[\\\"terminal\\\"][\\\"cwd\\\"] = terminal_config[\\\"cwd\\\"]\\n   397|        else:\\n   398|            # Remove so TERMINAL_CWD stays unset → tool picks backend default\\n   399|            terminal_config.pop(\\\"cwd\\\", None)\\n   400|    \\n   401|    env_mappings = {\\n   402|        \\\"env_type\\\": \\\"TERMINAL_ENV\\\",\\n   403|        \\\"cwd\\\": \\\"TERMINAL_CWD\\\",\\n   404|        \\\"timeout\\\": \\\"TERMINAL_TIMEOUT\\\",\\n   405|        \\\"lifetime_seconds\\\": \\\"TERMINAL_LIFETIME_SECONDS\\\",\\n   406|        \\\"docker_image\\\": \\\"TERMINAL_DOCKER_IMAGE\\\",\\n   407|        \\\"docker_forward_env\\\": \\\"TERMINAL_DOCKER_FORWARD_ENV\\\",\\n   408|        \\\"singularity_image\\\": \\\"TERMINAL_SINGULARITY_IMAGE\\\",\\n   409|        \\\"modal_image\\\": \\\"TERMINAL_MODAL_IMAGE\\\",\\n   410|        \\\"daytona_image\\\": \\\"TERMINAL_DAYTONA_IMAGE\\\",\\n   411|        # SSH config\\n   412|        \\\"ssh_host\\\": \\\"TERMINAL_SSH_HOST\\\",\\n   413|        \\\"ssh_user\\\": \\\"TERMINAL_SSH_USER\\\",\\n   414|        \\\"ssh_port\\\": \\\"TERMINAL_SSH_PORT\\\",\\n   415|        \\\"ssh_key\\\": \\\"TERMINAL_SSH_KEY\\\",\\n   416|        # Container resource config (docker, singularity, modal, daytona -- ignored for local/ssh)\\n   417|        \\\"container_cpu\\\": \\\"TERMINAL_CONTAINER_CPU\\\",\\n   418|        \\\"container_memory\\\": \\\"TERMINAL_CONTAINER_MEMORY\\\",\\n   419|        \\\"container_disk\\\": \\\"TERMINAL_CONTAINER_DISK\\\",\\n   420|        \\\"container_persistent\\\": \\\"TERMINAL_CONTAINER_PERSISTENT\\\",\\n   421|        \\\"docker_volumes\\\": \\\"TERMINAL_DOCKER_VOLUMES\\\",\\n   422|        \\\"docker_mount_cwd_to_workspace\\\": \\\"TERMINAL_DOCKER_MOUNT_CWD_TO_WORKSPACE\\\",\\n   423|        \\\"sandbox_dir\\\": \\\"TERMINAL_SANDBOX_DIR\\\",\\n   424|        # Persistent shell (non-local backends)\\n   425|        \\\"persistent_shell\\\": \\\"TERMINAL_PERSISTENT_SHELL\\\",\\n   426|        # Sudo support (works with all backends)\\n   427|        \\\"sudo_password\\\": \\\"SUDO_PASSWORD\\\",\\n   428|    }\\n   429|    \\n   430|    # Apply config values to env vars so terminal_tool picks them up.\\n   431|    # If the config file explicitly has a [terminal] section, those values are\\n   432|    # authoritative and override any .env settings.  When using defaults only\\n   433|    # (no config file or no terminal section), don't overwrite env vars that\\n   434|    # were already set by .env -- the user's .env is the fallback source.\\n   435|    for config_key, env_var in env_mappings.items():\\n   436|        if config_key in terminal_config:\\n   437|            if _file_has_terminal_config or env_var not in os.environ:\\n   438|                val = terminal_config[config_key]\\n   439|                if isinstance(val, list):\\n   440|                    import json\\n   441|                    os.environ[env_var] = json.dumps(val)\\n   442|                else:\\n   443|                    os.environ[env_var] = str(val)\\n   444|    \\n   445|    # Apply browser config to environment variables\\n   446|    browser_config = defaults.get(\\\"browser\\\", {})\\n   447|    browser_env_mappings = {\\n   448|        \\\"inactivity_timeout\\\": \\\"BROWSER_INACTIVITY_TIMEOUT\\\",\\n   449|    }\\n   450|    \\n   451|    for config_key, env_var in browser_env_mappings.items():\\n   452|        if config_key in browser_config:\\n   453|            os.environ[env_var] = str(browser_config[config_key])\\n   454|    \\n   455|    # Apply auxiliary model/direct-endpoint overrides to environment variables.\\n   456|    # Vision and web_extract each have their own provider/model/base_url/api_key tuple.\\n   457|    # Compression config is read directly from config.yaml by run_agent.py and\\n   458|    # auxiliary_client.py — no env var bridging needed.\\n   459|    # Only set env vars for non-empty / non-default values so auto-detection\\n   460|    # still works.\\n   461|    auxiliary_config = defaults.get(\\\"auxiliary\\\", {})\\n   462|    auxiliary_task_env = {\\n   463|        # config key → env var mapping\\n   464|        \\\"vision\\\": {\\n   465|            \\\"provider\\\": \\\"AUXILIARY_VISION_PROVIDER\\\",\\n   466|            \\\"model\\\": \\\"AUXILIARY_VISION_MODEL\\\",\\n   467|            \\\"base_url\\\": \\\"AUXILIARY_VISION_BASE_URL\\\",\\n   468|            \\\"api_key\\\": \\\"AUXILI..._KEY\\\",\\n   469|        },\\n   470|        \\\"web_extract\\\": {\\n   471|            \\\"provider\\\": \\\"AUXILIARY_WEB_EXTRACT_PROVIDER\\\",\\n   472|            \\\"model\\\": \\\"AUXILIARY_WEB_EXTRACT_MODEL\\\",\\n   473|            \\\"base_url\\\": \\\"AUXILIARY_WEB_EXTRACT_BASE_URL\\\",\\n   474|            \\\"api_key\\\": \\\"AUXILI..._KEY\\\",\\n   475|        },\\n   476|        \\\"approval\\\": {\\n   477|            \\\"provider\\\": \\\"AUXILIARY_APPROVAL_PROVIDER\\\",\\n   478|            \\\"model\\\": \\\"AUXILIARY_APPROVAL_MODEL\\\",\\n   479|            \\\"base_url\\\": \\\"AUXILIARY_APPROVAL_BASE_URL\\\",\\n   480|            \\\"api_key\\\": \\\"AUXILI..._KEY\\\",\\n   481|        },\\n   482|    }\\n   483|    \\n   484|    for task_key, env_map in auxiliary_task_env.items():\\n   485|        task_cfg = auxiliary_config.get(task_key, {})\\n   486|        if not isinstance(task_cfg, dict):\\n   487|            continue\\n   488|        prov = str(task_cfg.get(\\\"provider\\\", \\\"\\\")).strip()\\n   489|        model = str(task_cfg.get(\\\"model\\\", \\\"\\\")).strip()\\n   490|        base_url = str(task_cfg.get(\\\"base_url\\\", \\\"\\\")).strip()\\n   491|        api_key = str(task_cfg.get(\\\"api_key\\\", \\\"\\\")).strip()\\n   492|        if prov and prov != \\\"auto\\\":\\n   493|            os.environ[env_map[\\\"provider\\\"]] = prov\\n   494|        if model:\\n   495|            os.environ[env_map[\\\"model\\\"]] = model\\n   496|        if base_url:\\n   497|            os.environ[env_map[\\\"base_url\\\"]] = base_url\\n   498|        if api_key:\\n   499|            os.environ[env_map[\\\"api_key\\\"]] = api_key\\n   500|    \\n   501|\", \"total_lines\": 8736, \"file_size\": 390319, \"truncated\": true, \"hint\": \"Use offset=501 to continue reading (showing 1-500 of 8736 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_8327012d"
+    },
+    {
+      "role": "assistant",
+      "content": "<|channel><channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_4b5edc1e",
+          "call_id": "call_4b5edc1e",
+          "response_item_id": "fc_4b5edc1e",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*.json\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 22, \"files\": [\"./website/docs/guides/_category_.json\", \"./website/tsconfig.json\", \"./website/docs/developer-guide/_category_.json\", \"./acp_registry/agent.json\", \"./website/docs/user-guide/features/_category_.json\", \"./website/docs/user-guide/messaging/_category_.json\", \"./website/docs/user-guide/_category_.json\", \"./package-lock.json\", \"./website/docs/reference/_category_.json\", \"./website/docs/getting-started/_category_.json\", \"./website/package.json\", \"./website/package-lock.json\", \"./optional-skills/creative/meme-generation/scripts/templates.json\", \"./skills/red-teaming/godmode/templates/prefill-subtle.json\", \"./skills/red-teaming/godmode/templates/prefill.json\", \"./scripts/whatsapp-bridge/package.json\", \"./scripts/whatsapp-bridge/package-lock.json\", \"./skills/index-cache/lobehub_index.json\", \"./skills/index-cache/openai_skills_skills_.json\", \"./skills/index-cache/anthropics_skills_skills_.json\", \"./skills/index-cache/claude_marketplace_anthropics_skills.json\", \"./package.json\"]}",
+      "tool_call_id": "call_4b5edc1e"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_dc8edb94",
+          "call_id": "call_dc8edb94",
+          "response_item_id": "fc_dc8edb94",
+          "type": "function",
+          "function": {
+            "name": "mkdir",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/docs/features/export-feature/\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_dc8edb94",
+      "content": "Tool 'mkdir' does not exist. Available tools: read_file, search_files, todo"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e87271b9",
+          "call_id": "call_e87271b9",
+          "response_item_id": "fc_e87271b9",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"profiles.py\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 2, \"files\": [\"./tests/hermes_cli/test_profiles.py\", \"./hermes_cli/profiles.py\"]}",
+      "tool_call_id": "call_e87271b9"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_a638cfdd",
+          "call_id": "call_a638cfdd",
+          "response_item_id": "fc_a638cfdd",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*service*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 1, \"files\": [\"./tests/hermes_cli/test_gateway_service.py\"], \"_budget_warning\": \"[BUDGET: Iteration 35/50. 15 iterations left. Start consolidating your work.]\"}",
+      "tool_call_id": "call_a638cfdd"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_66f6cf84",
+          "call_id": "call_66f6cf84",
+          "response_item_id": "fc_66f6cf84",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*cli*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 50, \"files\": [\"./cli-config.yaml.example\", \"./tests/honcho_plugin/test_client.py\", \"./tests/tools/test_clipboard.py\", \"./tests/tools/test_voice_cli_integration.py\", \"./tests/run_agent/test_openai_client_lifecycle.py\", \"./tests/run_agent/test_token_persistence_non_cli.py\", \"./tests/hermes_cli/test_webhook_cli.py\", \"./tests/hermes_cli/test_plugin_cli_registration.py\", \"./tests/test_honcho_client_config.py\", \"./tests/test_cli_skin_integration.py\", \"./tests/cli/test_cli_extension_hooks.py\", \"./tests/cli/test_cli_mcp_config_watch.py\", \"./tests/cli/test_cli_init.py\", \"./tests/cli/test_cli_new_session.py\", \"./tests/cli/test_cli_tools_command.py\", \"./tests/cli/test_cli_preloaded_skills.py\", \"./tests/cli/test_cli_approval_ui.py\", \"./tests/cli/test_cli_retry.py\", \"./tests/cli/test_cli_prefix_matching.py\", \"./tests/cli/test_cli_status_bar.py\", \"./tests/cli/test_cli_secret_capture.py\", \"./tests/cli/test_cli_loading_indicator.py\", \"./tests/cli/test_cli_skin_integration.py\", \"./tests/cli/test_cli_background_tui_refresh.py\", \"./tests/cli/test_cli_browser_connect.py\", \"./tests/cli/test_cli_save_config_value.py\", \"./tests/cli/test_cli_provider_resolution.py\", \"./tests/cli/test_cli_plan_command.py\", \"./tests/cli/test_cli_context_warning.py\", \"./tests/cli/test_cli_interrupt_subagent.py\", \"./tests/cli/test_cli_file_drop.py\", \"./tests/agent/test_crossloop_client_cache.py\", \"./tests/agent/test_auxiliary_client.py\", \"./agent/auxiliary_client.py\", \"./agent/copilot_acp_client.py\", \"./website/docs/developer-guide/extending-the-cli.md\", \"./skills/creative/popular-web-designs/templates/clickhouse.md\", \"./website/docs/user-guide/cli.md\", \"./website/docs/reference/cli-commands.md\", \"./website/static/img/docs/cli-layout.svg\", \"./rl_cli.py\", \"./tools/openrouter_client.py\", \"./cli.py\", \"./optional-skills/blockchain/base/scripts/base_client.py\", \"./optional-skills/blockchain/solana/scripts/solana_client.py\", \"./optional-skills/mcp/fastmcp/references/fastmcp-cli.md\", \"./plugins/memory/honcho/client.py\", \"./optional-skills/security/1password/references/cli-examples.md\", \"./plugins/memory/honcho/cli.py\", \"./optional-skills/devops/cli/references/cli-reference.md\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=50 to see more, or narrow with a more specific pattern or file_glob.]\n\n[BUDGET: Iteration 36/50. 14 iterations left. Start consolidating your work.]",
+      "tool_call_id": "call_66f6cf84"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_afb52d1e",
+          "call_id": "call_afb52d1e",
+          "response_item_id": "fc_afb52d1e",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"export*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"./tests/hermes_cli/test_profile_export_credentials.py\", \"./skills/creative/p5js/scripts/export-frames.js\", \"./skills/creative/p5js/references/export-pipeline.md\"], \"_budget_warning\": \"[BUDGET: Iteration 37/50. 13 iterations left. Start consolidating your work.]\"}",
+      "tool_call_id": "call_afb52d1e"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_8fd14d35",
+          "call_id": "call_8fd14d35",
+          "response_item_id": "fc_8fd14d35",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*cmd*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 4, \"files\": [\"./tests/hermes_cli/test_plugins_cmd.py\", \"./tests/hermes_cli/test_cmd_update.py\", \"./scripts/install.cmd\", \"./hermes_cli/plugins_cmd.py\"], \"_budget_warning\": \"[BUDGET: Iteration 38/50. 12 iterations left. Start consolidating your work.]\"}",
+      "tool_call_id": "call_8fd14d35"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_8fa3ce48",
+          "call_id": "call_8fa3ce48",
+          "response_item_id": "fc_8fa3ce48",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"hermes_cli/commands*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 15, \"files\": [\"./tests/e2e/test_telegram_commands.py\", \"./tests/hermes_cli/test_auth_commands.py\", \"./tests/hermes_cli/test_commands.py\", \"./tests/gateway/test_discord_slash_commands.py\", \"./tests/gateway/test_approve_deny_commands.py\", \"./hermes_cli/auth_commands.py\", \"./hermes_cli/commands.py\", \"./tests/cli/test_quick_commands.py\", \"./tests/agent/test_skill_commands.py\", \"./website/docs/reference/cli-commands.md\", \"./website/docs/reference/profile-commands.md\", \"./website/docs/reference/slash-commands.md\", \"./agent/skill_commands.py\", \"./skills/research/research-paper-writing/templates/iclr2026/math_commands.tex\", \"./skills/research/research-paper-writing/templates/colm2025/math_commands.tex\"], \"_budget_warning\": \"[BUDGET: Iteration 39/50. 11 iterations left. Start consolidating your work.]\"}",
+      "tool_call_id": "call_8fa3ce48"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_4428624b",
+          "call_id": "call_4428624b",
+          "response_item_id": "fc_4428624b",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/hermes_cli/commands.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"Slash command definitions and autocomplete for the Hermes CLI.\\n     2|\\n     3|Central registry for all slash commands. Every consumer -- CLI help, gateway\\n     4|dispatch, Telegram BotCommands, Slack subcommand mapping, autocomplete --\\n     5|derives its data from ``COMMAND_REGISTRY``.\\n     6|\\n     7|To add a command: add a ``CommandDef`` entry to ``COMMAND_REGISTRY``.\\n     8|To add an alias: set ``aliases=(\\\"short\\\",)`` on the existing ``CommandDef``.\\n     9|\\\"\\\"\\\"\\n    10|\\n    11|from __future__ import annotations\\n    12|\\n    13|import os\\n    14|import re\\n    15|from collections.abc import Callable, Mapping\\n    16|from dataclasses import dataclass\\n    17|from typing import Any\\n    18|\\n    19|from prompt_toolkit.auto_suggest import AutoSuggest, Suggestion\\n    20|from prompt_toolkit.completion import Completer, Completion\\n    21|\\n    22|\\n    23|# ---------------------------------------------------------------------------\\n    24|# CommandDef dataclass\\n    25|# ---------------------------------------------------------------------------\\n    26|\\n    27|@dataclass(frozen=True)\\n    28|class CommandDef:\\n    29|    \\\"\\\"\\\"Definition of a single slash command.\\\"\\\"\\\"\\n    30|\\n    31|    name: str                          # canonical name without slash: \\\"background\\\"\\n    32|    description: str                   # human-readable description\\n    33|    category: str                      # \\\"Session\\\", \\\"Configuration\\\", etc.\\n    34|    aliases: tuple[str, ...] = ()      # alternative names: (\\\"bg\\\",)\\n    35|    args_hint: str = \\\"\\\"                # argument placeholder: \\\"<prompt>\\\", \\\"[name]\\\"\\n    36|    subcommands: tuple[str, ...] = ()  # tab-completable subcommands\\n    37|    cli_only: bool = False             # only available in CLI\\n    38|    gateway_only: bool = False         # only available in gateway/messaging\\n    39|    gateway_config_gate: str | None = None  # config dotpath; when truthy, overrides cli_only for gateway\\n    40|\\n    41|\\n    42|# ---------------------------------------------------------------------------\\n    43|# Central registry -- single source of truth\\n    44|# ---------------------------------------------------------------------------\\n    45|\\n    46|COMMAND_REGISTRY: list[CommandDef] = [\\n    47|    # Session\\n    48|    CommandDef(\\\"new\\\", \\\"Start a new session (fresh session ID + history)\\\", \\\"Session\\\",\\n    49|               aliases=(\\\"reset\\\",)),\\n    50|    CommandDef(\\\"clear\\\", \\\"Clear screen and start a new session\\\", \\\"Session\\\",\\n    51|               cli_only=True),\\n    52|    CommandDef(\\\"history\\\", \\\"Show conversation history\\\", \\\"Session\\\",\\n    53|               cli_only=True),\\n    54|    CommandDef(\\\"save\\\", \\\"Save the current conversation\\\", \\\"Session\\\",\\n    55|               cli_only=True),\\n    56|    CommandDef(\\\"retry\\\", \\\"Retry the last message (resend to agent)\\\", \\\"Session\\\"),\\n    57|    CommandDef(\\\"undo\\\", \\\"Remove the last user/assistant exchange\\\", \\\"Session\\\"),\\n    58|    CommandDef(\\\"title\\\", \\\"Set a title for the current session\\\", \\\"Session\\\",\\n    59|               args_hint=\\\"[name]\\\"),\\n    60|    CommandDef(\\\"branch\\\", \\\"Branch the current session (explore a different path)\\\", \\\"Session\\\",\\n    61|               aliases=(\\\"fork\\\",), args_hint=\\\"[name]\\\"),\\n    62|    CommandDef(\\\"compress\\\", \\\"Manually compress conversation context\\\", \\\"Session\\\"),\\n    63|    CommandDef(\\\"rollback\\\", \\\"List or restore filesystem checkpoints\\\", \\\"Session\\\",\\n    64|               args_hint=\\\"[number]\\\"),\\n    65|    CommandDef(\\\"stop\\\", \\\"Kill all running background processes\\\", \\\"Session\\\"),\\n    66|    CommandDef(\\\"approve\\\", \\\"Approve a pending dangerous command\\\", \\\"Session\\\",\\n    67|               gateway_only=True, args_hint=\\\"[session|always]\\\"),\\n    68|    CommandDef(\\\"deny\\\", \\\"Deny a pending dangerous command\\\", \\\"Session\\\",\\n    69|               gateway_only=True),\\n    70|    CommandDef(\\\"background\\\", \\\"Run a prompt in the background\\\", \\\"Session\\\",\\n    71|               aliases=(\\\"bg\\\",), args_hint=\\\"<prompt>\\\"),\\n    72|    CommandDef(\\\"btw\\\", \\\"Ephemeral side question using session context (no tools, not persisted)\\\", \\\"Session\\\",\\n    73|               args_hint=\\\"<question>\\\"),\\n    74|    CommandDef(\\\"queue\\\", \\\"Queue a prompt for the next turn (doesn't interrupt)\\\", \\\"Session\\\",\\n    75|               aliases=(\\\"q\\\",), args_hint=\\\"<prompt>\\\"),\\n    76|    CommandDef(\\\"status\\\", \\\"Show session info\\\", \\\"Session\\\",\\n    77|               gateway_only=True),\\n    78|    CommandDef(\\\"profile\\\", \\\"Show active profile name and home directory\\\", \\\"Info\\\"),\\n    79|    CommandDef(\\\"sethome\\\", \\\"Set this chat as the home channel\\\", \\\"Session\\\",\\n    80|               gateway_only=True, aliases=(\\\"set-home\\\",)),\\n    81|    CommandDef(\\\"resume\\\", \\\"Resume a previously-named session\\\", \\\"Session\\\",\\n    82|               args_hint=\\\"[name]\\\"),\\n    83|\\n    84|    # Configuration\\n    85|    CommandDef(\\\"config\\\", \\\"Show current configuration\\\", \\\"Configuration\\\",\\n    86|               cli_only=True),\\n    87|    CommandDef(\\\"model\\\", \\\"Switch model for this session\\\", \\\"Configuration\\\", args_hint=\\\"[model] [--global]\\\"),\\n    88|    CommandDef(\\\"provider\\\", \\\"Show available providers and current provider\\\",\\n    89|               \\\"Configuration\\\"),\\n    90|    CommandDef(\\\"prompt\\\", \\\"View/set custom system prompt\\\", \\\"Configuration\\\",\\n    91|               cli_only=True, args_hint=\\\"[text]\\\", subcommands=(\\\"clear\\\",)),\\n    92|    CommandDef(\\\"personality\\\", \\\"Set a predefined personality\\\", \\\"Configuration\\\",\\n    93|               args_hint=\\\"[name]\\\"),\\n    94|    CommandDef(\\\"statusbar\\\", \\\"Toggle the context/model status bar\\\", \\\"Configuration\\\",\\n    95|               cli_only=True, aliases=(\\\"sb\\\",)),\\n    96|    CommandDef(\\\"verbose\\\", \\\"Cycle tool progress display: off -> new -> all -> verbose\\\",\\n    97|               \\\"Configuration\\\", cli_only=True,\\n    98|               gateway_config_gate=\\\"display.tool_progress_command\\\"),\\n    99|    CommandDef(\\\"yolo\\\", \\\"Toggle YOLO mode (skip all dangerous command approvals)\\\",\\n   100|               \\\"Configuration\\\"),\\n   101|    CommandDef(\\\"reasoning\\\", \\\"Manage reasoning effort and display\\\", \\\"Configuration\\\",\\n   102|               args_hint=\\\"[level|show|hide]\\\",\\n   103|               subcommands=(\\\"none\\\", \\\"low\\\", \\\"minimal\\\", \\\"medium\\\", \\\"high\\\", \\\"xhigh\\\", \\\"show\\\", \\\"hide\\\", \\\"on\\\", \\\"off\\\")),\\n   104|    CommandDef(\\\"skin\\\", \\\"Show or change the display skin/theme\\\", \\\"Configuration\\\",\\n   105|               cli_only=True, args_hint=\\\"[name]\\\"),\\n   106|    CommandDef(\\\"voice\\\", \\\"Toggle voice mode\\\", \\\"Configuration\\\",\\n   107|               args_hint=\\\"[on|off|tts|status]\\\", subcommands=(\\\"on\\\", \\\"off\\\", \\\"tts\\\", \\\"status\\\")),\\n   108|\\n   109|    # Tools & Skills\\n   110|    CommandDef(\\\"tools\\\", \\\"Manage tools: /tools [list|disable|enable] [name...]\\\", \\\"Tools & Skills\\\",\\n   111|               args_hint=\\\"[list|disable|enable] [name...]\\\", cli_only=True),\\n   112|    CommandDef(\\\"toolsets\\\", \\\"List available toolsets\\\", \\\"Tools & Skills\\\",\\n   113|               cli_only=True),\\n   114|    CommandDef(\\\"skills\\\", \\\"Search, install, inspect, or manage skills\\\",\\n   115|               \\\"Tools & Skills\\\", cli_only=True,\\n   116|               subcommands=(\\\"search\\\", \\\"browse\\\", \\\"inspect\\\", \\\"install\\\")),\\n   117|    CommandDef(\\\"cron\\\", \\\"Manage scheduled tasks\\\", \\\"Tools & Skills\\\",\\n   118|               cli_only=True, args_hint=\\\"[subcommand]\\\",\\n   119|               subcommands=(\\\"list\\\", \\\"add\\\", \\\"create\\\", \\\"edit\\\", \\\"pause\\\", \\\"resume\\\", \\\"run\\\", \\\"remove\\\")),\\n   120|    CommandDef(\\\"reload-mcp\\\", \\\"Reload MCP servers from config\\\", \\\"Tools & Skills\\\",\\n   121|               aliases=(\\\"reload_mcp\\\",)),\\n   122|    CommandDef(\\\"browser\\\", \\\"Connect browser tools to your live Chrome via CDP\\\", \\\"Tools & Skills\\\",\\n   123|               cli_only=True, args_hint=\\\"[connect|disconnect|status]\\\",\\n   124|               subcommands=(\\\"connect\\\", \\\"disconnect\\\", \\\"status\\\")),\\n   125|    CommandDef(\\\"plugins\\\", \\\"List installed plugins and their status\\\",\\n   126|               \\\"Tools & Skills\\\", cli_only=True),\\n   127|\\n   128|    # Info\\n   129|    CommandDef(\\\"commands\\\", \\\"Browse all commands and skills (paginated)\\\", \\\"Info\\\",\\n   130|               gateway_only=True, args_hint=\\\"[page]\\\"),\\n   131|    CommandDef(\\\"help\\\", \\\"Show available commands\\\", \\\"Info\\\"),\\n   132|    CommandDef(\\\"usage\\\", \\\"Show token usage for the current session\\\", \\\"Info\\\"),\\n   133|    CommandDef(\\\"insights\\\", \\\"Show usage insights and analytics\\\", \\\"Info\\\",\\n   134|               args_hint=\\\"[days]\\\"),\\n   135|    CommandDef(\\\"platforms\\\", \\\"Show gateway/messaging platform status\\\", \\\"Info\\\",\\n   136|               cli_only=True, aliases=(\\\"gateway\\\",)),\\n   137|    CommandDef(\\\"paste\\\", \\\"Check clipboard for an image and attach it\\\", \\\"Info\\\",\\n   138|               cli_only=True),\\n   139|    CommandDef(\\\"update\\\", \\\"Update Hermes Agent to the latest version\\\", \\\"Info\\\",\\n   140|               gateway_only=True),\\n   141|\\n   142|    # Exit\\n   143|    CommandDef(\\\"quit\\\", \\\"Exit the CLI\\\", \\\"Exit\\\",\\n   144|               cli_only=True, aliases=(\\\"exit\\\", \\\"q\\\")),\\n   145|]\\n   146|\\n   147|\\n   148|# ---------------------------------------------------------------------------\\n   149|# Derived lookups -- rebuilt once at import time, refreshed by rebuild_lookups()\\n   150|# ---------------------------------------------------------------------------\\n   151|\\n   152|def _build_command_lookup() -> dict[str, CommandDef]:\\n   153|    \\\"\\\"\\\"Map every name and alias to its CommandDef.\\\"\\\"\\\"\\n   154|    lookup: dict[str, CommandDef] = {}\\n   155|    for cmd in COMMAND_REGISTRY:\\n   156|        lookup[cmd.name] = cmd\\n   157|        for alias in cmd.aliases:\\n   158|            lookup[alias] = cmd\\n   159|    return lookup\\n   160|\\n   161|\\n   162|_COMMAND_LOOKUP: dict[str, CommandDef] = _build_command_lookup()\\n   163|\\n   164|\\n   165|def resolve_command(name: str) -> CommandDef | None:\\n   166|    \\\"\\\"\\\"Resolve a command name or alias to its CommandDef.\\n   167|\\n   168|    Accepts names with or without the leading slash.\\n   169|    \\\"\\\"\\\"\\n   170|    return _COMMAND_LOOKUP.get(name.lower().lstrip(\\\"/\\\"))\\n   171|\\n   172|\\n   173|def register_plugin_command(cmd: CommandDef) -> None:\\n   174|    \\\"\\\"\\\"Append a plugin-defined command to the registry and refresh lookups.\\\"\\\"\\\"\\n   175|    COMMAND_REGISTRY.append(cmd)\\n   176|    rebuild_lookups()\\n   177|\\n   178|\\n   179|def rebuild_lookups() -> None:\\n   180|    \\\"\\\"\\\"Rebuild all derived lookup dicts from the current COMMAND_REGISTRY.\\n   181|\\n   182|    Called after plugin commands are registered so they appear in help,\\n   183|    autocomplete, gateway dispatch, Telegram menu, and Slack mapping.\\n   184|    \\\"\\\"\\\"\\n   185|    global GATEWAY_KNOWN_COMMANDS\\n   186|\\n   187|    _COMMAND_LOOKUP.clear()\\n   188|    _COMMAND_LOOKUP.update(_build_command_lookup())\\n   189|\\n   190|    COMMANDS.clear()\\n   191|    for cmd in COMMAND_REGISTRY:\\n   192|        if not cmd.gateway_only:\\n   193|            COMMANDS[f\\\"/{cmd.name}\\\"] = _build_description(cmd)\\n   194|            for alias in cmd.aliases:\\n   195|                COMMANDS[f\\\"/{alias}\\\"] = f\\\"{cmd.description} (alias for /{cmd.name})\\\"\\n   196|\\n   197|    COMMANDS_BY_CATEGORY.clear()\\n   198|    for cmd in COMMAND_REGISTRY:\\n   199|        if not cmd.gateway_only:\\n   200|            cat = COMMANDS_BY_CATEGORY.setdefault(cmd.category, {})\\n   201|            cat[f\\\"/{cmd.name}\\\"] = COMMANDS[f\\\"/{cmd.name}\\\"]\\n   202|            for alias in cmd.aliases:\\n   203|                cat[f\\\"/{alias}\\\"] = COMMANDS[f\\\"/{alias}\\\"]\\n   204|\\n   205|    SUBCOMMANDS.clear()\\n   206|    for cmd in COMMAND_REGISTRY:\\n   207|        if cmd.subcommands:\\n   208|            SUBCOMMANDS[f\\\"/{cmd.name}\\\"] = list(cmd.subcommands)\\n   209|    for cmd in COMMAND_REGISTRY:\\n   210|        key = f\\\"/{cmd.name}\\\"\\n   211|        if key in SUBCOMMANDS or not cmd.args_hint:\\n   212|            continue\\n   213|        m = _PIPE_SUBS_RE.search(cmd.args_hint)\\n   214|        if m:\\n   215|            SUBCOMMANDS[key] = m.group(0).split(\\\"|\\\")\\n   216|\\n   217|    GATEWAY_KNOWN_COMMANDS = frozenset(\\n   218|        name\\n   219|        for cmd in COMMAND_REGISTRY\\n   220|        if not cmd.cli_only or cmd.gateway_config_gate\\n   221|        for name in (cmd.name, *cmd.aliases)\\n   222|    )\\n   223|\\n   224|\\n   225|def _build_description(cmd: CommandDef) -> str:\\n   226|    \\\"\\\"\\\"Build a CLI-facing description string including usage hint.\\\"\\\"\\\"\\n   227|    if cmd.args_hint:\\n   228|        return f\\\"{cmd.description} (usage: /{cmd.name} {cmd.args_hint})\\\"\\n   229|    return cmd.description\\n   230|\\n   231|\\n   232|# Backwards-compatible flat dict: \\\"/command\\\" -> description\\n   233|COMMANDS: dict[str, str] = {}\\n   234|for _cmd in COMMAND_REGISTRY:\\n   235|    if not _cmd.gateway_only:\\n   236|        COMMANDS[f\\\"/{_cmd.name}\\\"] = _build_description(_cmd)\\n   237|        for _alias in _cmd.aliases:\\n   238|            COMMANDS[f\\\"/{_alias}\\\"] = f\\\"{_cmd.description} (alias for /{_cmd.name})\\\"\\n   239|\\n   240|# Backwards-compatible categorized dict\\n   241|COMMANDS_BY_CATEGORY: dict[str, dict[str, str]] = {}\\n   242|for _cmd in COMMAND_REGISTRY:\\n   243|    if not _cmd.gateway_only:\\n   244|        _cat = COMMANDS_BY_CATEGORY.setdefault(_cmd.category, {})\\n   245|        _cat[f\\\"/{_cmd.name}\\\"] = COMMANDS[f\\\"/{_cmd.name}\\\"]\\n   246|        for _alias in _cmd.aliases:\\n   247|            _cat[f\\\"/{_alias}\\\"] = COMMANDS[f\\\"/{_alias}\\\"]\\n   248|\\n   249|\\n   250|# Subcommands lookup: \\\"/cmd\\\" -> [\\\"sub1\\\", \\\"sub2\\\", ...]\\n   251|SUBCOMMANDS: dict[str, list[str]] = {}\\n   252|for _cmd in COMMAND_REGISTRY:\\n   253|    if _cmd.subcommands:\\n   254|        SUBCOMMANDS[f\\\"/{_cmd.name}\\\"] = list(_cmd.subcommands)\\n   255|\\n   256|# Also extract subcommands hinted in args_hint via pipe-separated patterns\\n   257|# e.g. args_hint=\\\"[on|off|tts|status]\\\" for commands that don't have explicit subcommands.\\n   258|# NOTE: If a command already has explicit subcommands, this fallback is skipped.\\n   259|# Use the `subcommands` field on CommandDef for intentional tab-completable args.\\n   260|_PIPE_SUBS_RE = re.compile(r\\\"[a-z]+(?:\\\\|[a-z]+)+\\\")\\n   261|for _cmd in COMMAND_REGISTRY:\\n   262|    key = f\\\"/{_cmd.name}\\\"\\n   263|    if key in SUBCOMMANDS or not _cmd.args_hint:\\n   264|        continue\\n   265|    m = _PIPE_SUBS_RE.search(_cmd.args_hint)\\n   266|    if m:\\n   267|        SUBCOMMANDS[key] = m.group(0).split(\\\"|\\\")\\n   268|\\n   269|\\n   270|# ---------------------------------------------------------------------------\\n   271|# Gateway helpers\\n   272|# ---------------------------------------------------------------------------\\n   273|\\n   274|# Set of all command names + aliases recognized by the gateway.\\n   275|# Includes config-gated commands so the gateway can dispatch them\\n   276|# (the handler checks the config gate at runtime).\\n   277|GATEWAY_KNOWN_COMMANDS: frozenset[str] = frozenset(\\n   278|    name\\n   279|    for cmd in COMMAND_REGISTRY\\n   280|    if not cmd.cli_only or cmd.gateway_config_gate\\n   281|    for name in (cmd.name, *cmd.aliases)\\n   282|)\\n   283|\\n   284|\\n   285|def _resolve_config_gates() -> set[str]:\\n   286|    \\\"\\\"\\\"Return canonical names of commands whose ``gateway_config_gate`` is truthy.\\n   287|\\n   288|    Reads ``config.yaml`` and walks the dot-separated key path for each\\n   289|    config-gated command.  Returns an empty set on any error so callers\\n   290|    degrade gracefully.\\n   291|    \\\"\\\"\\\"\\n   292|    gated = [c for c in COMMAND_REGISTRY if c.gateway_config_gate]\\n   293|    if not gated:\\n   294|        return set()\\n   295|    try:\\n   296|        from hermes_cli.config import read_raw_config\\n   297|        cfg = read_raw_config()\\n   298|    except Exception:\\n   299|        return set()\\n   300|    result: set[str] = set()\\n   301|    for cmd in gated:\\n   302|        val: Any = cfg\\n   303|        for key in cmd.gateway_config_gate.split(\\\".\\\"):\\n   304|            if isinstance(val, dict):\\n   305|                val = val.get(key)\\n   306|            else:\\n   307|                val = None\\n   308|                break\\n   309|        if val:\\n   310|            result.add(cmd.name)\\n   311|    return result\\n   312|\\n   313|\\n   314|def _is_gateway_available(cmd: CommandDef, config_overrides: set[str] | None = None) -> bool:\\n   315|    \\\"\\\"\\\"Check if *cmd* should appear in gateway surfaces (help, menus, mappings).\\n   316|\\n   317|    Unconditionally available when ``cli_only`` is False.  When ``cli_only``\\n   318|    is True but ``gateway_config_gate`` is set, the command is available only\\n   319|    when the config value is truthy.  Pass *config_overrides* (from\\n   320|    ``_resolve_config_gates()``) to avoid re-reading config for every command.\\n   321|    \\\"\\\"\\\"\\n   322|    if not cmd.cli_only:\\n   323|        return True\\n   324|    if cmd.gateway_config_gate:\\n   325|        overrides = config_overrides if config_overrides is not None else _resolve_config_gates()\\n   326|        return cmd.name in overrides\\n   327|    return False\\n   328|\\n   329|\\n   330|def gateway_help_lines() -> list[str]:\\n   331|    \\\"\\\"\\\"Generate gateway help text lines from the registry.\\\"\\\"\\\"\\n   332|    overrides = _resolve_config_gates()\\n   333|    lines: list[str] = []\\n   334|    for cmd in COMMAND_REGISTRY:\\n   335|        if not _is_gateway_available(cmd, overrides):\\n   336|            continue\\n   337|        args = f\\\" {cmd.args_hint}\\\" if cmd.args_hint else \\\"\\\"\\n   338|        alias_parts: list[str] = []\\n   339|        for a in cmd.aliases:\\n   340|            # Skip internal aliases like reload_mcp (underscore variant)\\n   341|            if a.replace(\\\"-\\\", \\\"_\\\") == cmd.name.replace(\\\"-\\\", \\\"_\\\") and a != cmd.name:\\n   342|                continue\\n   343|            alias_parts.append(f\\\"`/{a}`\\\")\\n   344|        alias_note = f\\\" (alias: {', '.join(alias_parts)})\\\" if alias_parts else \\\"\\\"\\n   345|        lines.append(f\\\"`/{cmd.name}{args}` -- {cmd.description}{alias_note}\\\")\\n   346|    return lines\\n   347|\\n   348|\\n   349|def telegram_bot_commands() -> list[tuple[str, str]]:\\n   350|    \\\"\\\"\\\"Return (command_name, description) pairs for Telegram setMyCommands.\\n   351|\\n   352|    Telegram command names cannot contain hyphens, so they are replaced with\\n   353|    underscores.  Aliases are skipped -- Telegram shows one menu entry per\\n   354|    canonical command.\\n   355|    \\\"\\\"\\\"\\n   356|    overrides = _resolve_config_gates()\\n   357|    result: list[tuple[str, str]] = []\\n   358|    for cmd in COMMAND_REGISTRY:\\n   359|        if not _is_gateway_available(cmd, overrides):\\n   360|            continue\\n   361|        tg_name = _sanitize_telegram_name(cmd.name)\\n   362|        if tg_name:\\n   363|            result.append((tg_name, cmd.description))\\n   364|    return result\\n   365|\\n   366|\\n   367|_CMD_NAME_LIMIT = 32\\n   368|\\\"\\\"\\\"Max command name length shared by Telegram and Discord.\\\"\\\"\\\"\\n   369|\\n   370|# Backward-compat alias — tests and external code may reference the old name.\\n   371|_TG_NAME_LIMIT = _CMD_NAME_LIMIT\\n   372|\\n   373|# Telegram Bot API allows only lowercase a-z, 0-9, and underscores in\\n   374|# command names.  This regex strips everything else after initial conversion.\\n   375|_TG_INVALID_CHARS = re.compile(r\\\"[^a-z0-9_]\\\")\\n   376|_TG_MULTI_UNDERSCORE = re.compile(r\\\"_{2,}\\\")\\n   377|\\n   378|\\n   379|def _sanitize_telegram_name(raw: str) -> str:\\n   380|    \\\"\\\"\\\"Convert a command/skill/plugin name to a valid Telegram command name.\\n   381|\\n   382|    Telegram requires: 1-32 chars, lowercase a-z, digits 0-9, underscores only.\\n   383|    Steps: lowercase → replace hyphens with underscores → strip all other\\n   384|    invalid characters → collapse consecutive underscores → strip leading/\\n   385|    trailing underscores.\\n   386|    \\\"\\\"\\\"\\n   387|    name = raw.lower().replace(\\\"-\\\", \\\"_\\\")\\n   388|    name = _TG_INVALID_CHARS.sub(\\\"\\\", name)\\n   389|    name = _TG_MULTI_UNDERSCORE.sub(\\\"_\\\", name)\\n   390|    return name.strip(\\\"_\\\")\\n   391|\\n   392|\\n   393|def _clamp_command_names(\\n   394|    entries: list[tuple[str, str]],\\n   395|    reserved: set[str],\\n   396|) -> list[tuple[str, str]]:\\n   397|    \\\"\\\"\\\"Enforce 32-char command name limit with collision avoidance.\\n   398|\\n   399|    Both Telegram and Discord cap slash command names at 32 characters.\\n   400|    Names exceeding the limit are truncated.  If truncation creates a duplicate\\n   401|    (against *reserved* names or earlier entries in the same batch), the name is\\n   402|    shortened to 31 chars and a digit ``0``-``9`` is appended to differentiate.\\n   403|    If all 10 digit slots are taken the entry is silently dropped.\\n   404|    \\\"\\\"\\\"\\n   405|    used: set[str] = set(reserved)\\n   406|    result: list[tuple[str, str]] = []\\n   407|    for name, desc in entries:\\n   408|        if len(name) > _CMD_NAME_LIMIT:\\n   409|            candidate = name[:_CMD_NAME_LIMIT]\\n   410|            if candidate in used:\\n   411|                prefix = name[:_CMD_NAME_LIMIT - 1]\\n   412|                for digit in range(10):\\n   413|                    candidate = f\\\"{prefix}{digit}\\\"\\n   414|                    if candidate not in used:\\n   415|                        break\\n   416|                else:\\n   417|                    # All 10 digit slots exhausted — skip entry\\n   418|                    continue\\n   419|            name = candidate\\n   420|        if name in used:\\n   421|            continue\\n   422|        used.add(name)\\n   423|        result.append((name, desc))\\n   424|    return result\\n   425|\\n   426|\\n   427|# Backward-compat alias.\\n   428|_clamp_telegram_names = _clamp_command_names\\n   429|\\n   430|\\n   431|# ---------------------------------------------------------------------------\\n   432|# Shared skill/plugin collection for gateway platforms\\n   433|# ---------------------------------------------------------------------------\\n   434|\\n   435|def _collect_gateway_skill_entries(\\n   436|    platform: str,\\n   437|    max_slots: int,\\n   438|    reserved_names: set[str],\\n   439|    desc_limit: int = 100,\\n   440|    sanitize_name: \\\"Callable[[str], str] | None\\\" = None,\\n   441|) -> tuple[list[tuple[str, str, str]], int]:\\n   442|    \\\"\\\"\\\"Collect plugin + skill entries for a gateway platform.\\n   443|\\n   444|    Priority order:\\n   445|      1. Plugin slash commands (take precedence over skills)\\n   446|      2. Built-in skill commands (fill remaining slots, alphabetical)\\n   447|\\n   448|    Only skills are trimmed when the cap is reached.\\n   449|    Hub-installed skills are excluded.  Per-platform disabled skills are\\n   450|    excluded.\\n   451|\\n   452|    Args:\\n   453|        platform: Platform identifier for per-platform skill filtering\\n   454|            (``\\\"telegram\\\"``, ``\\\"discord\\\"``, etc.).\\n   455|        max_slots: Maximum number of entries to return (remaining slots after\\n   456|            built-in/core commands).\\n   457|        reserved_names: Names already taken by built-in commands.  Mutated\\n   458|            in-place as new names are added.\\n   459|        desc_limit: Max description length (40 for Telegram, 100 for Discord).\\n   460|        sanitize_name: Optional name transform applied before clamping, e.g.\\n   461|            :func:`_sanitize_telegram_name` for Telegram.  May return an\\n   462|            empty string to signal \\\"skip this entry\\\".\\n   463|\\n   464|    Returns:\\n   465|        ``(entries, hidden_count)`` where *entries* is a list of\\n   466|        ``(name, description, cmd_key)`` triples and *hidden_count* is the\\n   467|        number of skill entries dropped due to the cap.  ``cmd_key`` is the\\n   468|        original ``/skill-name`` key from :func:`get_skill_commands`.\\n   469|    \\\"\\\"\\\"\\n   470|    all_entries: list[tuple[str, str, str]] = []\\n   471|\\n   472|    # --- Tier 1: Plugin slash commands (never trimmed) ---------------------\\n   473|    plugin_pairs: list[tuple[str, str]] = []\\n   474|    try:\\n   475|        from hermes_cli.plugins import get_plugin_manager\\n   476|        pm = get_plugin_manager()\\n   477|        plugin_cmds = getattr(pm, \\\"_plugin_commands\\\", {})\\n   478|        for cmd_name in sorted(plugin_cmds):\\n   479|            name = sanitize_name(cmd_name) if sanitize_name else cmd_name\\n   480|            if not name:\\n   481|                continue\\n   482|            desc = \\\"Plugin command\\\"\\n   483|            if len(desc) > desc_limit:\\n   484|                desc = desc[:desc_limit - 3] + \\\"...\\\"\\n   485|            plugin_pairs.append((name, desc))\\n   486|    except Exception:\\n   487|        pass\\n   488|\\n   489|    plugin_pairs = _clamp_command_names(plugin_pairs, reserved_names)\\n   490|    reserved_names.update(n for n, _ in plugin_pairs)\\n   491|    # Plugins have no cmd_key — use empty string as placeholder\\n   492|    for n, d in plugin_pairs:\\n   493|        all_entries.append((n, d, \\\"\\\"))\\n   494|\\n   495|    # --- Tier 2: Built-in skill commands (trimmed at cap) -----------------\\n   496|    _platform_disabled: set[str] = set()\\n   497|    try:\\n   498|        from agent.skill_utils import get_disabled_skill_names\\n   499|        _platform_disabled = get_disabled_skill_names(platform=platform)\\n   500|    except Exception:\\n   501|\", \"total_lines\": 1025, \"file_size\": 41290, \"truncated\": true, \"hint\": \"Use offset=501 to continue reading (showing 1-500 of 1025 lines)\", \"is_binary\": false, \"is_image\": false, \"_budget_warning\": \"[BUDGET: Iteration 40/50. 10 iterations left. Start consolidating your work.]\"}",
+      "tool_call_id": "call_4428624b"
+    }
+  ]
+}

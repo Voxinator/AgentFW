@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 9,
+  "TASK_ID": "T5",
+  "TASK_CLASS": "structured",
+  "PARENT_SESSION_ID": "20260419_180146_c6a909",
+  "CHILD_SESSION_ID": "20260419_180153_6e9c84",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180153_6e9c84.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180146_c6a909.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-09.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "structured",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Investigate and fix intermittent stale data issue in the Chief of Staff Dashboard after 'Save' operations. \n\n1. Identify the 'Save' flow: Locate the React components and API calls responsible for data mutation (likely in src/components/ and src/api/). \n2. Analyze the state management: Check how the dashboard fetches and caches data (e.g., React Query, useEffect, or local state). Look for race conditions or missing invalidation logic.\n3. Check the backend/API: If the dashboard calls a local or remote API, verify if the API returns the updated object or if there's a delay in persistence that causes the subsequent fetch to return old data.\n4. Reproduce: Attempt to create a script or manual test sequence that triggers the race condition.\n5. Fix: Implement proper cache invalidation (e.g., `queryClient.invalidateQueries`) or ensure the UI updates optimistically/immediately with the returned payload.\n6. Verify: Confirm the fix by ensuring data is always fresh after a save.\n\nFiles to investigate: Files in /media/psf/Projects/chief-of-staff-dashboard/src/."
+}

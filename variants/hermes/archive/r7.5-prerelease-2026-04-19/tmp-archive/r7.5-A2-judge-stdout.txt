@@ -1,0 +1,87 @@
+
+╭───────────── Hermes Agent v0.8.0 (2026.4.8) · upstream 6af04474 ─────────────╮
+│                                       Available Tools                        │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     clarify: clarify                       │
+│    ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀     dashboard_tasks:                       │
+│    ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀     dashboard_task_complete, ...           │
+│    ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀     delegation: delegate_task,             │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     delegate_worker, ...                   │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     file: read_file, search_files          │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     homeassistant: ha_call_service,        │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     ha_get_state, ...                      │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     image_gen: image_generate              │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     moa: mixture_of_agents                 │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     rl: rl_check_status, rl_edit_config,   │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     ...                                    │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     (and 2 more toolsets...)               │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                            │
+│    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     Available Skills                       │
+│                                       autonomous-ai-agents: claude-code,     │
+│  gemma-4-26b-a4b-it-mlx-8bit · Nous   codex, opencode                        │
+│               Research                creative: ascii-art, ascii-video,      │
+│            /home/parallels            excalidraw, manim-video...             │
+│    Session: 20260419_173212_bc1e3a    dashboard-building:                    │
+│                                       chief-of-staff-dashboard-build,        │
+│                                       email-calendar-...                     │
+│                                       data-science: jupyter-live-kernel      │
+│                                       devops: webhook-subscriptions          │
+│                                       discord-workflow:                      │
+│                                       discord-thread-best-practices,         │
+│                                       discord-thread-v...                    │
+│                                       email: himalaya                        │
+│                                       gaming: minecraft-modpack-server,      │
+│                                       pokemon-player                         │
+│                                       general: ai-income-advancement,        │
+│                                       dogfood, gstack-harness-...            │
+│                                       github: codebase-inspection,           │
+│                                       github-auth, github-code-r...          │
+│                                       hermes-agent: error-handling,          │
+│                                       memory-consolidation                   │
+│                                       leisure: find-nearby                   │
+│                                       mcp: mcporter, native-mcp              │
+│                                       media: gif-search, heartmula,          │
+│                                       songsee, youtube-content               │
+│                                       memory: memory-chunking                │
+│                                       mlops: audiocraft-audio-generation,    │
+│                                       axolotl, clip, dsp...                  │
+│                                       mlops-research: gstack-hybrid,         │
+│                                       hybrid-agentic-harness-gstack          │
+│                                       note-taking: obsidian                  │
+│                                       productivity: atlassian,               │
+│                                       google-bot-authentication,             │
+│                                       google-wo...                           │
+│                                       red-teaming: godmode                   │
+│                                       research: arxiv, blogwatcher,          │
+│                                       llm-wiki, ml-paper-writing,...         │
+│                                       smart-home: openhue                    │
+│                                       social-media: xitter                   │
+│                                       software-development: code-review,     │
+│                                       plan, requesting-code-review, suba...  │
+│                                       web-data-extraction:                   │
+│                                       claude-projects-scrape                 │
+│                                                                              │
+│                                       7 tools · 97 skills · /help for        │
+│                                       commands                               │
+│                                       ⚠ 1408 commits behind — run hermes     │
+│                                       update to update                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Query: what is 2+2?
+Initializing agent...
+────────────────────────────────────────
+
+  ┊ 🔀 preparing delegate_worker_v2…
+❌ Error during OpenAI-compatible API call #1: unhashable type: 'slice'
+ ─  ⚕ Hermes  ───────────────────────────────────────────────────────────────── 
+                                                                                
+   I apologize, but I encountered repeated errors: Error during                 
+   OpenAI-compatible API call #1: unhashable type: 'slice'                      
+                                                                                
+ ────────────────────────────────────────────────────────────────────────────── 
+
+Resume this session with:
+  hermes --resume 20260419_173212_bc1e3a
+
+Session:        20260419_173212_bc1e3a
+Duration:       9s
+Messages:       4 (1 user, 2 tool calls)

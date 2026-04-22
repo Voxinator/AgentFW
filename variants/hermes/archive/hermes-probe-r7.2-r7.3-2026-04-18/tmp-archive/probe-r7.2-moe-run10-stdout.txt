@@ -1,0 +1,156 @@
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+[TASK CLASS: long-horizon]
+Justification: This is a mission-critical infrastructure migration involving high data volume (80GB), active 24/7 traffic, and multiple service dependencies, requiring a multi-phase approach with rigorous verification.
+
+I cannot perform this migration directly as I do not have administrative access to your production database clusters or the underlying network infrastructure. However, I can act as your **Migration Architect and Orchestrator**.
+
+To achieve "zero downtime" (or more accurately, "near-zero downtime") for an 80GB database, we cannot use a simple dump/restore. We must use **Logical Replication**.
+
+Here is the high-level strategic plan. Do you want me to expand on any of these specific phases?
+
+### Phase 1: Preparation & Assessment
+1.  **Compatibility Audit:** Check for deprecated extensions or data types between PG12 and PG16.
+2.  **Schema Extraction:** Export the schema only (no data) to the new PG16 instance.
+3.  **Dependency Mapping:** Identify every service, connection string, and middleware (e.g., PgBouncer) that touches the DB.
+
+### Phase 2: The "Side-by-Side" Setup
+1.  **Provision PG16:** Spin up the new instance.
+2.  **Schema Sync:** Apply the schema to PG16.
+3.  **Logical Replication Setup:** 
+    *   Enable `wal_level = logical` on the PG12 primary.
+    *   Create a **Publication** on PG12.
+    *   Create a **Subscription** on PG16.
+4.  **Initial Catch-up:** Let PG16 pull the 80GB of data while PG12 continues to serve traffic.
+
+### Phase 3: Verification (The "Shadow" Phase)
+1.  **Lag Monitoring:** Monitor replication lag to ensure PG16 is nearly in sync.
+2.  **Data Integrity Check:** Run checksums or row-count comparisons between the two instances.
+3.  **Read-Only Testing:** Point a non-critical service/worker to the PG16 instance to verify read performance and schema integrity.
+
+### Phase 4: The Cutover (The "Switch")
+1.  **Traffic Quiescence (The "Micro-Downtime" window):** 
+    *   Briefly pause writes to the PG12 instance (often done via a connection pooler like PgBouncer).
+2.  **Final Sync:** Ensure the last few WAL logs are applied to PG16.
+3.  **Redirect:** Update service connection strings (or update the DNS/Load Balancer) to point to PG16.
+4.  **Resume Writes:** Unpause the services.
+
+### Phase 5: Post-Migration
+1.  **Cleanup:** Remove the logical replication slots and the old PG12 instance once stability is confirmed.
+2.  **Optimization:** Run `ANALYZE` on the new PG16 instance to rebuild statistics for the query planner.
+
+**How would you like to proceed?**
+*   "Draft a detailed technical runbook for my DevOps team."
+*   "Help me write the shell scripts for the schema extraction and replication setup."
+[TASK CLASS: long-horizon]
+Justification: This is a mission-critical infrastructure migration involving high data volume (80GB), active 24/7 traffic, and multiple service dependencies, requiring a multi-phase approach with rigorous verification.
+
+I cannot perform this migration directly as I do not have administrative access to your production database clusters or the underlying network infrastructure. However, I can act as your **Migration Architect and Orchestrator**.
+
+To achieve "zero downtime" (or more accurately, "near-zero downtime") for an 80GB database, we cannot use a simple dump/restore. We must use **Logical Replication**.
+
+Here is the high-level strategic plan. Do you want me to expand on any of these specific phases?
+
+### Phase 1: Preparation & Assessment
+1.  **Compatibility Audit:** Check for deprecated extensions or data types between PG12 and PG16.
+2.  **Schema Extraction:** Export the schema only (no data) to the new PG16 instance.
+3.  **Dependency Mapping:** Identify every service, connection string, and middleware (e.g., PgBouncer) that touches the DB.
+
+### Phase 2: The "Side-by-Side" Setup
+1.  **Provision PG16:** Spin up the new instance.
+2.  **Schema Sync:** Apply the schema to PG16.
+3.  **Logical Replication Setup:** 
+    *   Enable `wal_level = logical` on the PG12 primary.
+    *   Create a **Publication** on PG12.
+    *   Create a **Subscription** on PG16.
+4.  **Initial Catch-up:** Let PG16 pull the 80GB of data while PG12 continues to serve traffic.
+
+### Phase 3: Verification (The "Shadow" Phase)
+1.  **Lag Monitoring:** Monitor replication lag to ensure PG16 is nearly in sync.
+2.  **Data Integrity Check:** Run checksums or row-count comparisons between the two instances.
+3.  **Read-Only Testing:** Point a non-critical service/worker to the PG16 instance to verify read performance and schema integrity.
+
+### Phase 4: The Cutover (The "Switch")
+1.  **Traffic Quiescence (The "Micro-Downtime" window):** 
+    *   Briefly pause writes to the PG12 instance (often done via a connection pooler like PgBouncer).
+2.  **Final Sync:** Ensure the last few WAL logs are applied to PG16.
+3.  **Redirect:** Update service connection strings (or update the DNS/Load Balancer) to point to PG16.
+4.  **Resume Writes:** Unpause the services.
+
+### Phase 5: Post-Migration
+1.  **Cleanup:** Remove the logical replication slots and the old PG12 instance once stability is confirmed.
+2.  **Optimization:** Run `ANALYZE` on the new PG16 instance to rebuild statistics for the query planner.
+
+**How would you like to proceed?**
+*   "Draft a detailed technical runbook for my DevOps team."
+*   "Help me write the shell scripts for the schema extraction and replication setup."
+*   "Explain the risks of logical replication for our specific workload."
+
+session_id: 20260418_163800_3a20eb
+---ATTEMPT 0 END (rc=0)---
+↻ Resumed session 20260418_163800_3a20eb (1 user message, 2 total messages)
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+You are absolutely right. I broke the contract by attempting to act as the implementer (Worker) in the main session instead of staying in the Planner role and dispatching a specialized worker to begin the architectural documentation. I apologize for the role collapse.
+
+I am re-classifying this as `long-horizon` and immediately dispatching a worker to create the formal Migration Runbook and Risk Assessment.
+
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔀 preparing delegate_worker…
+  ┊ 📋 plan      4 task(s)  0.0s
+  ┊ 💻 $         mkdir -p docs/migrations  0.3s
+  ┊ 💬 thought
+<channel|>
+  ┊ ✍️  write     docs/migrations/pg12_to_pg16_runbook.md  0.6s
+  ┊ 💬 <channel|>
+  ┊ 📖 read      docs/migrations/pg12_to_pg16_runbook.md  0.9s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📋 plan      4 task(s)  0.0s
+  ┊ 🔀 delegate  Create a comprehensive, multi-phase 'Postgres 12 to 16 Zero-Downtime Migration Runbook' in Markdown format. The document must be structured into: 1. Prerequisites (Extensions, WAL settings), 2. Detailed Execution Steps (Schema sync, Logical Replication setup, Lag monitoring, Cutover procedure), 3. Verification Checklist (Data integrity, Row counts, Query performance), and 4. Rollback Plan (How to revert if the cutover fails). Constraints: Assume an 80GB database with 3 dependent services; prioritize Logical Replication over dump/restore; include specific commands for creating Publications/Subscriptions. Done when the file 'docs/migrations/pg12_to_pg16_runbook.md' is written and verified for technical completeness.  46.2s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>[TASK CLASS: long-horizon]
+Justification: This is a mission-critical infrastructure migration involving high data volume (80GB), active 24/7 traffic, and multiple service dependencies, requiring a multi-phase approach with rigorous verification.
+
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ┊ 🔀 preparing delegate_worker…
+  ┊ 📋 plan      4 task(s)  0.0s
+  ┊ 💻 $         mkdir -p docs/migrations  0.3s
+[subagent-0] ℹ️  Empty response (no content or reasoning).
+  ┊ 🔀 delegate  Create a comprehensive, multi-phase 'Postgres 12 to 16 Zero-Downtime Migration Runbook' in Markdown format. The document must be structured into: 1. Prerequisites (Extensions, WAL settings), 2. Detailed Execution Steps (Schema sync, Logical Replication setup, Lag monitoring, Cutover procedure), 3. Verification Checklist (Data integrity, Row counts, Query performance), and 4. Rollback Plan (How to revert if the cutover fails). Constraints: Assume an 80GB database with 3 dependent services; prioritize Logical Replication over dump/restore; include specific commands for creating Publications/Subscriptions. Done when the file 'docs/migrations/pg12_to_pg16_runbook.md' is written and verified for technical completeness.  7.4s [error]
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+thought
+<channel|>The Migration Runbook has been drafted and saved to `docs/migrations/pg12_to_pg16_runbook.md`.
+
+### Status Update
+- **Phase 1 (Planning/Documentation):** COMPLETED.
+- **Phase 2 (Implementation Prep):** PENDING.
+
+The runbook covers the full logical replication lifecycle, including the critical "sequence synchronization" step which is often missed in standard migrations and causes immediate failures post-cutover.
+
+### Next Steps
+I recommend we move to **Phase 2: Implementation Prep**. I can assist by:
+1.  **Environment Audit:** If you provide access to a staging environment, I can run a script to check for extension compatibility and WAL configuration.
+2.  **Schema Scripting:** I can generate the specific `pg_dump` commands tailored to your schema to ensure a clean foundation for the PG16 instance.
+
+thought
+<channel|>The Migration Runbook has been drafted and saved to `docs/migrations/pg12_to_pg16_runbook.md`.
+
+### Status Update
+- **Phase 1 (Planning/Documentation):** COMPLETED.
+- **Phase 2 (Implementation Prep):** PENDING.
+
+The runbook covers the full logical replication lifecycle, including the critical "sequence synchronization" step which is often missed in standard migrations and causes immediate failures post-cutover.
+
+### Next Steps
+I recommend we move to **Phase 2: Implementation Prep**. I can assist by:
+1.  **Environment Audit:** If you provide access to a staging environment, I can run a script to check for extension compatibility and WAL configuration.
+2.  **Schema Scripting:** I can generate the specific `pg_dump` commands tailored to your schema to ensure a clean foundation for the PG16 instance.
+
+How would you like to proceed?
+
+session_id: 20260418_163800_3a20eb
+---ATTEMPT 1 (correction for VIOLATION:NO_DISPATCH:long-horizon) END (rc=0)---

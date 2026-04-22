@@ -1,0 +1,82 @@
+call:write_file{content:<|"|># Migration Plan: PostgreSQL 12 to PostgreSQL 16 (Zero-Downtime)
+
+## 1. Executive Summary
+This document outlines the strategy for migrating an 80GB production database from PostgreSQL 12 to PostgreSQL 16 using logical replication to ensure minimal service interruption.
+
+## 2. Logical Replication Setup
+Since physical replication is not compatible between major versions, logical replication will be used.
+
+### Prerequisites
+- **Source (PG12):** `wal_level` must be set to `logical`.
+- **Source (PG12):** `max_replication_slots` and `max_wal_senders` must be sufficient.
+- **Target (PG16):** Fresh installation with identical schema.
+
+### Setup Steps
+1. **Enable Logical Replication on PG12:**
+   - Update `postgresql.conf`: `wal_level = logical`.
+   - Restart PG12.
+2. **Create Publication on PG12:**
+   - `CREATE PUBLICATION migration_pub FOR ALL TABLES;`
+3. **Configure Target (PG16):**
+   - Create the database and apply the schema.
+4. **Create Subscription on PG16:**
+   - `CREATE SUBSCRIPTION migration_sub CONNECTION 'host=<PG12_IP> port=5432 user=<user> password=<pass> dbname=<db>' PUBLICATION migration_pub;`
+5. **Monitor Initial Sync:**
+   - Monitor `pg_stat_replication` on PG12 and `pg_subscription_rel` on PG16.
+
+## 3. Schema Migration Strategy
+To ensure consistency, the schema must be identical before replication begins.
+
+1. **Schema Extraction:** Use `pg_dump --schema-only` from PG12.
+2. **Sanitization:** Remove owner/privilege statements if necessary to match the new environment.
+3. **Application:** Apply the schema to PG16.
+4. **Sequence Management:** Logical replication does *not* replicate sequences. Sequences must be manually updated during the cutover.
+
+## 4. Service Cutover Sequence
+The cutover involves three dependent services: `Service-A` (API), `Service-B` (Worker), and `Service-C` (Reporting).
+
+1. **Phase 1: Quiesce Writes:**
+   - Briefly stop or put `Service-A` and `Service-B` into maintenance mode (read-only).
+2. **Phase 2: Final Sync & Sequence Update:**
+   - Verify replication lag is zero.
+   - Capture current sequence values from PG12: `SELECT last_value FROM <sequence_name>;`.
+   - Apply sequence values to PG16: `SELECT setval('<sequence_name>', <value>);`.
+3. **Phase 3: Connection Redirection:**
+   - Update connection strings/DNS for services to point to PG16.
+4. **Phase 4: Service Restart:**
+   - Restart `Service-A`, `Service-B`, and `Service-C` in order to pick up new configurations.
+
+## 5. Rollback Procedures
+### Scenario: High Replication Lag or Connection Spikes
+- **Detection:** Monitor `pg_stat_replication` lag (MB/GB) and PG16 CPU/IO load.
+- **Action:** If lag exceeds 5GB or CPU > 90% for 5 minutes:
+  1. Abort the cutover.
+  2. Keep services pointed at PG12.
+  3. Drop the subscription on PG16 to release resources.
+
+### Scenario: Post-Cutover Data Inconsistency
+- **Detection:** Checksum mismatches or application-level errors.
+- **Action:**
+  1. Immediately point services back to PG12 (which is still in read-write mode if not properly quiesced, or needs point-in-time recovery if writes occurred).
+  2. *Note:* If writes occurred on PG16, manual reconciliation or a fresh re-sync is required.
+
+## 6. Phased Execution Timeline
+| Phase | Duration | Task |
+| :--- | :--- | :--- |
+| T-Minus 48h | 2h | Pre-migration health check & backup verification |
+| T-Minus 24h | 1h | Schema extraction and PG16 provisioning |
+| T-0 | 30m | Start Logical Replication |
+| T+2h | 4h | Monitor replication lag & stability |
+| T+6h (Window) | 15m | **Maintenance Window Start** (Quiesce services) |
+| T+6h 15m | 10m | Final sequence sync & Service redirection |
+| T+6h 25m | 5m | Service Restart & Smoke Tests |
+| T+7h | - | **Maintenance Window End** |
+
+## 7. Risk Assessment
+| Risk | Impact | Mitigation |
+| :--- | :--- | :--- |
+| **Replication Lag** | High | Monitor continuously; ensure network bandwidth is sufficient for 80GB. |
+| **Sequence Mismatch** | Medium | Explicitly script `setval` updates during cutover. |
+| **Large Transaction Blocking** | Medium | Avoid long-running transactions on PG12 during the sync phase. |
+| **Schema Drift** | High | Use `pg_dump --schema-only` to ensure exact parity. |
+<|"|>,path:<|"|>/home/parallels/.hermes/hermes-agent/migrations/pg12-to-pg16/PLAN.md<|"|>}<tool_call|>

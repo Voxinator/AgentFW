@@ -1,0 +1,17 @@
+trial_idx|task|run|start_ts|end_ts|wall_s|parent_sid|result|loop_detected|outcome_line
+1|T4|1|2026-04-21T06:07:20Z|2026-04-21T06:08:10Z|50s|unknown|RESULT=COMPLIANT|loop_fired=0
+0|OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=43s final_session=20260421_010721_ebdf94 chain="A0:rc=0 | A0:COMPLIANT"
+   -> OMLX_HEALTH=CLEAN PREFLIGHT=PASS
+2|T5|1|2026-04-21T06:08:10Z|2026-04-21T06:09:30Z|80s|unknown|RESULT=COMPLIANT|loop_fired=0
+0|OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=73s final_session=20260421_010811_50e178 chain="A0:rc=0 | A0:COMPLIANT"
+   -> OMLX_HEALTH=CLEAN PREFLIGHT=PASS
+3|T6|1|2026-04-21T06:09:31Z|2026-04-21T06:10:41Z|70s|unknown|RESULT=COMPLIANT|loop_fired=0
+0|OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=70s final_session=20260421_010931_bd5d0a chain="A0:rc=0 | A0:COMPLIANT"
+   -> OMLX_HEALTH=CLEAN PREFLIGHT=PASS
+4|T6|2|2026-04-21T06:10:41Z|2026-04-21T06:12:01Z|80s|unknown|RESULT=COMPLIANT|loop_fired=0
+0|OUTCOME run=2 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=70s final_session=20260421_011041_17dad9 chain="A0:rc=0 | A0:COMPLIANT"
+   -> OMLX_HEALTH=CLEAN PREFLIGHT=PASS
+5|T10|1|2026-04-21T06:12:01Z|2026-04-21T06:14:12Z|131s|unknown|RESULT=COMPLIANT|loop_fired=0
+0|OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=122s final_session=20260421_011202_7174eb chain="A0:rc=0 | A0:COMPLIANT"
+   -> OMLX_HEALTH=CLEAN PREFLIGHT=PASS
+DONE: 5 trials complete

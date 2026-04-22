@@ -1,0 +1,23 @@
+{
+  "session_id": "20260421_003400_7713ed",
+  "model": "gemma-4-26B-A4B-it-MLX-8bit",
+  "base_url": "http://10.211.55.2:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-04-21T00:34:00.471375",
+  "last_updated": "2026-04-21T00:34:01.580180",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nConversation started: Tuesday, April 21, 2026 12:34 AM\nModel: gemma-4-26B-A4B-it-MLX-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal.",
+  "tools": [],
+  "message_count": 2,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Run `ls -R /media/psf/Projects/chief-of-staff-dashboard` and return the literal text output from the terminal."
+    },
+    {
+      "role": "assistant",
+      "content": "<|tool_call>_call:shell_execute{command: \"ls -R /media/psf/Projects/chief-of-staff-dashboard\"}<tool_call|>",
+      "reasoning": null,
+      "finish_reason": "stop"
+    }
+  ]
+}

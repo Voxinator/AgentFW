@@ -1,0 +1,9 @@
+[GATE: agent_dispatch] PASS (AGENT_DISPATCH_AVAILABLE=1)
+  free_mem_gb=47.1 (threshold >=20)
+  swap_used_gb=3.0 (threshold <=5.5)
+  omlx_active_sessions=0 (threshold <=1)
+  omlx_loaded_count=0 (advisory)
+[GATE: omlx] PASS (OMLX_HEALTH=CLEAN)
+[GATE: tripwire] PASS (all 4 canonical)
+[GATE: vm_idle] PASS (no hermes chat)
+PREFLIGHT=PASS

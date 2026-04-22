@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 15,
+  "TASK_ID": "T6",
+  "TASK_CLASS": "long-horizon",
+  "PARENT_SESSION_ID": "20260419_180651_6426f2",
+  "CHILD_SESSION_ID": "20260419_180656_260680",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180656_260680.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180651_6426f2.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-15.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "long-horizon",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Begin the 'Data Export Feature' implementation. This is a multi-stage project involving API development (CSV, JSON, PDF), permission logic (ownership checks), test suite creation, and documentation updates. \n\nPhase 1: Discovery & Planning.\n1. Search the codebase to identify existing data models, API structures, and permission/auth middleware patterns.\n2. Identify existing export utilities or libraries (e.g., json2csv, pdfkit, etc.) to avoid reinventing the wheel.\n3. Create a project harness in `docs/features/data-export/` containing:\n   - `PLAN.md`: A detailed phased roadmap (API design, Permission layer, Format implementations, Testing, Docs).\n   - `PROGRESS.md`: To track task completion.\n   - `CONTEXT.md`: To capture architectural decisions.\n4. Propose the API endpoint structure (e.g., `GET /api/v1/export?format=csv`).\n\nDeliverable: A complete planning suite in `docs/features/data-export/` and a confirmed technical approach."
+}

@@ -1,0 +1,20 @@
+total 204
+drwxr-xr-x 1 parallels parallels   576 Apr 17 21:45 .
+drwxrwxr-x 1 parallels parallels  1056 Apr 16 17:26 ..
+-rw-r--r-- 1 parallels parallels  7268 Apr 16 16:53 audit.ts
+-rw-r--r-- 1 parallels parallels 11384 Apr  5 12:30 calendar-sync.ts
+-rw-r--r-- 1 parallels parallels  1523 Apr  7 18:52 effort-types.ts
+-rw-r--r-- 1 parallels parallels  1181 Apr  5 12:28 google-auth.ts
+-rw-r--r-- 1 parallels parallels 28173 Apr  7 18:56 hermes.ts
+-rw-r--r-- 1 parallels parallels  3303 Apr  9 16:08 imported-tetris.ts
+-rw-r--r-- 1 parallels parallels 24570 Apr 16 16:53 index.ts
+-rw-r--r-- 1 parallels parallels 26309 Apr 16 18:11 jira-cache.ts
+-rw-r--r-- 1 parallels parallels  1661 Apr  7 19:11 manual-cards.ts
+-rw-r--r-- 1 parallels parallels  4023 Apr  5 12:29 setup-google.ts
+-rw-r--r-- 1 parallels parallels  6329 Apr  7 17:29 storage.ts
+drwxr-xr-x 1 parallels parallels    96 Apr 15 13:42 __tests__
+-rw-r--r-- 1 parallels parallels 45606 Apr 16 18:11 tetris-grid.ts
+-rw-r--r-- 1 parallels parallels  1608 Apr 16 16:52 tetris-suppressions.ts
+-rw-r--r-- 1 parallels parallels  1966 Apr  7 17:56 tetris.ts
+-rw-r--r-- 1 parallels parallels  5968 Apr  7 17:55 tools.ts
+---HA---

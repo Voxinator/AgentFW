@@ -1,0 +1,13 @@
+=== [19:47:40] starting probe-r7.3-l1-dense run1 (task T4) ===
+OUTCOME run=1 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=66s final_session=20260418_194741_60d2ac chain="A0:rc=0 | A0:COMPLIANT"
+=== [19:48:46] starting probe-r7.3-l1-dense run2 (task T4) ===
+OUTCOME run=2 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=80s final_session=20260418_194847_37b9d6 chain="A0:rc=0 | A0:COMPLIANT"
+=== [19:50:06] starting probe-r7.3-l1-dense run3 (task T4) ===
+OUTCOME run=3 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=77s final_session=20260418_195007_9db428 chain="A0:rc=0 | A0:COMPLIANT"
+=== [19:51:24] starting probe-r7.3-l1-dense run4 (task T4) ===
+OUTCOME run=4 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=97s final_session=20260418_195124_2c0a46 chain="A0:rc=0 | A0:COMPLIANT"
+=== [19:53:01] starting probe-r7.3-l1-dense run5 (task T4) ===
+OUTCOME run=5 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=157s final_session=20260418_195302_b5d506 chain="A0:rc=0 | A0:COMPLIANT"
+=== [19:55:38] starting probe-r7.3-l1-dense run6 (task T6) ===
+OUTCOME run=6 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=2 elapsed=1154s final_session=20260418_195539_c1b48b chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=124 | A1:COMPLIANT"
+=== [20:14:52] starting probe-r7.3-l1-dense run7 (task T6) ===

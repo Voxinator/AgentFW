@@ -1,0 +1,5 @@
+[probe-r7.2-dense run2] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense TIMEOUT=600s
+[probe-r7.2-dense run2] task: In /home/parallels/scratch/scratch.py there is a variable named `foo`. Rename it to `bar`. There is ...
+[probe-r7.2-dense run2] attempt 0: initial invocation
+[probe-r7.2-dense run2] session_id captured: 20260418_124205_47f815
+[probe-r7.2-dense run2] attempt 0 verdict: COMPLIANT

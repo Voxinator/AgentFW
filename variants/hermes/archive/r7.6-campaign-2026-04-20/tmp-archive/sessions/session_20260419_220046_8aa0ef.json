@@ -1,0 +1,604 @@
+{
+  "session_id": "20260419_220046_8aa0ef",
+  "model": "gemma-4-26B-A4B-it-MLX-8bit",
+  "base_url": "http://10.211.55.2:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-04-19T22:00:46.441987",
+  "last_updated": "2026-04-19T22:02:10.567643",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\n# Tool-use enforcement\nYou MUST use your tools to take action — do not describe what you would do or plan to do without actually doing it. When you say you will perform an action (e.g. 'I will run the tests', 'Let me check the file', 'I will create the project'), you MUST immediately make the corresponding tool call in the same response. Never end your turn with a promise of future action — execute it now.\nKeep working until the task is actually complete. Do not stop with a summary of what you plan to do next time. If you have tools available that can accomplish the task, use them instead of telling the user what you would do.\nEvery response should either (a) contain tool calls that make progress, or (b) deliver a final result to the user. Responses that only describe intentions without acting are not acceptable.\n\n# Google model operational directives\nFollow these operational rules strictly:\n- **Absolute paths:** Always construct and use absolute file paths for all file system operations. Combine the project root with relative paths.\n- **Verify first:** Use read_file/search_files to check file contents and project structure before making changes. Never guess at file contents.\n- **Dependency checks:** Never assume a library is available. Check package.json, requirements.txt, Cargo.toml, etc. before importing.\n- **Conciseness:** Keep explanatory text brief — a few sentences, not paragraphs. Focus on actions and results over narration.\n- **Parallel tool calls:** When you need to perform multiple independent operations (e.g. reading several files), make all the tool calls in a single response rather than sequentially.\n- **Non-interactive commands:** Use flags like -y, --yes, --non-interactive to prevent CLI tools from hanging on prompts.\n- **Keep going:** Work autonomously until the task is fully resolved. Don't stop with a plan — execute it.\n\n\nConversation started: Sunday, April 19, 2026 10:00 PM\nModel: gemma-4-26B-A4B-it-MLX-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal.",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your SESSION-ONLY task list for planning and step-tracking during complex work. This list is ephemeral -- it does NOT persist across sessions.\n\nUse this for: breaking down multi-step tasks, tracking progress within a session.\nUse dashboard_task_* tools instead for: real action items, reminders, or anything Brian needs to see on his dashboard or track across sessions.\n\nCall with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          },
+          "required": []
+        }
+      }
+    }
+  ],
+  "message_count": 40,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Initiate the end-to-end development of a multi-format export feature (CSV, JSON, PDF). \n\nPhase 1: Discovery & Planning.\n1. Explore the codebase to identify the existing data retrieval layer, permission/auth middleware, and API documentation structure.\n2. Create a `PLAN.md` in a new directory `features/export-engine/` that outlines the implementation steps for:\n   - Data access layer (ensuring ownership-based filtering).\n   - Format generators (CSV, JSON, PDF).\n   - API endpoint implementation.\n   - Test suite (unit and integration).\n   - API documentation updates.\n3. Identify necessary dependencies (e.g., a PDF generation library like `pdfkit` or `jspdf`).\n\nDeliverable: A comprehensive `features/export-engine/PLAN.md` and a summary of the technical stack chosen for the export engine."
+    },
+    {
+      "role": "assistant",
+      "content": "PLAN: I will explore the codebase to identify the data retrieval layer, permission/auth middleware, and API documentation structure. Paths: /home/parallels/.hermes/hermes-agent. Stop when: I have identified the relevant patterns and directories for these components.",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_fcb690cf",
+          "call_id": "call_fcb690cf",
+          "response_item_id": "fc_fcb690cf",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*middleware*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_fcb690cf"
+    },
+    {
+      "role": "assistant",
+      "content": "thought",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_cc85bc7d",
+          "call_id": "call_cc85bc7d",
+          "response_item_id": "fc_cc85bc7d",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 50, \"files\": [\"./HERMES-canonical-backup.md\", \"./RELEASE_v0.6.0.md\", \"./hermes\", \"./batch_runner.py\", \"./toolsets.py.probe-r7.4-orig\", \"./hermes_state.py\", \"./cli-config.yaml.example\", \"./flake.lock\", \"./hermes_time.py\", \"./Dockerfile\", \"./flake.nix\", \"./HERMES.md\", \"./setup-hermes.sh\", \"./toolsets.py\", \"./hermes_logging.py\", \"./tests/integration/test_web_tools.py\", \"./tests/integration/__init__.py\", \"./tests/integration/test_modal_terminal.py\", \"./tests/integration/test_batch_runner.py\", \"./tests/integration/test_voice_channel_flow.py\", \"./tests/integration/test_checkpoint_resumption.py\", \"./tests/integration/test_daytona_terminal.py\", \"./tests/integration/test_ha_integration.py\", \"./tests/test_trajectory_compressor.py\", \"./tests/run_interrupt_test.py\", \"./tests/test_packaging_metadata.py\", \"./tests/test_trajectory_compressor_async.py\", \"./tests/__init__.py\", \"./tests/test_hermes_logging.py\", \"./tests/test_hermes_state.py\", \"./tests/conftest.py\", \"./tests/test_model_picker_scroll.py\", \"./tests/e2e/__init__.py\", \"./tests/e2e/conftest.py\", \"./tests/e2e/test_telegram_commands.py\", \"./tests/fakes/__init__.py\", \"./tests/fakes/fake_ha_server.py\", \"./tests/test_utils_truthy_values.py\", \"./tests/test_sql_injection.py\", \"./tests/honcho_plugin/test_client.py\", \"./tests/honcho_plugin/__init__.py\", \"./tests/honcho_plugin/test_async_memory.py\", \"./tests/honcho_plugin/test_session.py\", \"./tests/test_retry_utils.py\", \"./tests/tools/test_mcp_structured_content.py\", \"./tests/tools/test_force_dangerous_override.py\", \"./tests/tools/test_process_registry.py\", \"./tests/tools/test_skills_guard.py\", \"./tests/tools/test_search_hidden_dirs.py\", \"./tests/tools/test_file_read_guards.py\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=50 to see more, or narrow with a more specific pattern or file_glob.]",
+      "tool_call_id": "call_cc85bc7d"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_b44a6b14",
+          "call_id": "call_b44a6b14",
+          "response_item_id": "fc_b44a6b14",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*api*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 20, \"files\": [\"./tests/run_agent/test_strict_api_validation.py\", \"./tests/hermes_cli/test_api_key_providers.py\", \"./tests/skills/test_google_workspace_api.py\", \"./tests/gateway/test_api_server.py\", \"./tests/gateway/test_api_server_toolset.py\", \"./tests/gateway/test_api_server_jobs.py\", \"./website/docs/user-guide/features/api-server.md\", \"./skills/creative/popular-web-designs/templates/zapier.md\", \"./optional-skills/health/neuroskill-bci/references/api.md\", \"./skills/creative/p5js/references/core-api.md\", \"./gateway/platforms/api_server.py\", \"./optional-skills/mlops/saelens/references/api.md\", \"./optional-skills/mlops/slime/references/api-reference.md\", \"./skills/productivity/google-workspace/scripts/google_api.py\", \"./skills/github/github-repo-management/references/github-api-cheatsheet.md\", \"./skills/research/polymarket/references/api-endpoints.md\", \"./skills/mlops/training/axolotl/references/api.md\", \"./optional-skills/mcp/fastmcp/templates/api_wrapper.py\", \"./skills/mlops/evaluation/lm-evaluation-harness/references/api-evaluation.md\", \"./optional-skills/productivity/canvas/scripts/canvas_api.py\"]}",
+      "tool_call_id": "call_b44a6b14"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e625f193",
+          "call_id": "call_e625f193",
+          "response_item_id": "fc_e625f193",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"gateway/platforms/api_server.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"\\n     2|OpenAI-compatible API server platform adapter.\\n     3|\\n     4|Exposes an HTTP server with endpoints:\\n     5|- POST /v1/chat/completions        — OpenAI Chat Completions format (stateless; opt-in session continuity via X-Hermes-Session-Id header)\\n     6|- POST /v1/responses               — OpenAI Responses API format (stateful via previous_response_id)\\n     7|- GET  /v1/responses/{response_id} — Retrieve a stored response\\n     8|- DELETE /v1/responses/{response_id} — Delete a stored response\\n     9|- GET  /v1/models                  — lists hermes-agent as an available model\\n    10|- POST /v1/runs                    — start a run, returns run_id immediately (202)\\n    11|- GET  /v1/runs/{run_id}/events    — SSE stream of structured lifecycle events\\n    12|- GET  /health                     — health check\\n    13|\\n    14|Any OpenAI-compatible frontend (Open WebUI, LobeChat, LibreChat,\\n    15|AnythingLLM, NextChat, ChatBox, etc.) can connect to hermes-agent\\n    16|through this adapter by pointing at http://localhost:8642/v1.\\n    17|\\n    18|Requires:\\n    19|- aiohttp (already available in the gateway)\\n    20|\\\"\\\"\\\"\\n    21|\\n    22|import asyncio\\n    23|import hmac\\n    24|import json\\n    25|import logging\\n    26|import os\\n    27|import sqlite3\\n    28|import time\\n    29|import uuid\\n    30|from typing import Any, Dict, List, Optional\\n    31|\\n    32|try:\\n    33|    from aiohttp import web\\n    34|    AIOHTTP_AVAILABLE = True\\n    35|except ImportError:\\n    36|    AIOHTTP_AVAILABLE = False\\n    37|    web = None  # type: ignore[assignment]\\n    38|\\n    39|from gateway.config import Platform, PlatformConfig\\n    40|from gateway.platforms.base import (\\n    41|    BasePlatformAdapter,\\n    42|    SendResult,\\n    43|)\\n    44|\\n    45|logger = logging.getLogger(__name__)\\n    46|\\n    47|# Default settings\\n    48|DEFAULT_HOST = \\\"127.0.0.1\\\"\\n    49|DEFAULT_PORT = 8642\\n    50|MAX_STORED_RESPONSES = 100\\n    51|MAX_REQUEST_BYTES = 1_000_000  # 1 MB default limit for POST bodies\\n    52|\\n    53|\\n    54|def check_api_server_requirements() -> bool:\\n    55|    \\\"\\\"\\\"Check if API server dependencies are available.\\\"\\\"\\\"\\n    56|    return AIOHTTP_AVAILABLE\\n    57|\\n    58|\\n    59|class ResponseStore:\\n    60|    \\\"\\\"\\\"\\n    61|    SQLite-backed LRU store for Responses API state.\\n    62|\\n    63|    Each stored response includes the full internal conversation history\\n    64|    (with tool calls and results) so it can be reconstructed on subsequent\\n    65|    requests via previous_response_id.\\n    66|\\n    67|    Persists across gateway restarts.  Falls back to in-memory SQLite\\n    68|    if the on-disk path is unavailable.\\n    69|    \\\"\\\"\\\"\\n    70|\\n    71|    def __init__(self, max_size: int = MAX_STORED_RESPONSES, db_path: str = None):\\n    72|        self._max_size = max_size\\n    73|        if db_path is None:\\n    74|            try:\\n    75|                from hermes_cli.config import get_hermes_home\\n    76|                db_path = str(get_hermes_home() / \\\"response_store.db\\\")\\n    77|            except Exception:\\n    78|                db_path = \\\":memory:\\\"\\n    79|        try:\\n    80|            self._conn = sqlite3.connect(db_path, check_same_thread=False)\\n    81|        except Exception:\\n    82|            self._conn = sqlite3.connect(\\\":memory:\\\", check_same_thread=False)\\n    83|        self._conn.execute(\\\"PRAGMA journal_mode=WAL\\\")\\n    84|        self._conn.execute(\\n    85|            \\\"\\\"\\\"CREATE TABLE IF NOT EXISTS responses (\\n    86|                response_id TEXT PRIMARY KEY,\\n    87|                data TEXT NOT NULL,\\n    88|                accessed_at REAL NOT NULL\\n    89|            )\\\"\\\"\\\"\\n    90|        )\\n    91|        self._conn.execute(\\n    92|            \\\"\\\"\\\"CREATE TABLE IF NOT EXISTS conversations (\\n    93|                name TEXT PRIMARY KEY,\\n    94|                response_id TEXT NOT NULL\\n    95|            )\\\"\\\"\\\"\\n    96|        )\\n    97|        self._conn.commit()\\n    98|\\n    99|    def get(self, response_id: str) -> Optional[Dict[str, Any]]:\\n   100|        \\\"\\\"\\\"Retrieve a stored response by ID (updates access time for LRU).\\\"\\\"\\\"\\n   101|        row = self._conn.execute(\\n   102|            \\\"SELECT data FROM responses WHERE response_id = ?\\\", (response_id,)\\n   103|        ).fetchone()\\n   104|        if row is None:\\n   105|            return None\\n   106|        import time\\n   107|        self._conn.execute(\\n   108|            \\\"UPDATE responses SET accessed_at = ? WHERE response_id = ?\\\",\\n   109|            (time.time(), response_id),\\n   110|        )\\n   111|        self._conn.commit()\\n   112|        return json.loads(row[0])\\n   113|\\n   114|    def put(self, response_id: str, data: Dict[str, Any]) -> None:\\n   115|        \\\"\\\"\\\"Store a response, evicting the oldest if at capacity.\\\"\\\"\\\"\\n   116|        import time\\n   117|        self._conn.execute(\\n   118|            \\\"INSERT OR REPLACE INTO responses (response_id, data, accessed_at) VALUES (?, ?, ?)\\\",\\n   119|            (response_id, json.dumps(data, default=str), time.time()),\\n   120|        )\\n   121|        # Evict oldest entries beyond max_size\\n   122|        count = self._conn.execute(\\\"SELECT COUNT(*) FROM responses\\\").fetchone()[0]\\n   123|        if count > self._max_size:\\n   124|            self._conn.execute(\\n   125|                \\\"DELETE FROM responses WHERE response_id IN \\\"\\n   126|                \\\"(SELECT response_id FROM responses ORDER BY accessed_at ASC LIMIT ?)\\\",\\n   127|                (count - self._max_size,),\\n   128|            )\\n   129|        self._conn.commit()\\n   130|\\n   131|    def delete(self, response_id: str) -> bool:\\n   132|        \\\"\\\"\\\"Remove a response from the store. Returns True if found and deleted.\\\"\\\"\\\"\\n   133|        cursor = self._conn.execute(\\n   134|            \\\"DELETE FROM responses WHERE response_id = ?\\\", (response_id,)\\n   135|        )\\n   136|        self._conn.commit()\\n   137|        return cursor.rowcount > 0\\n   138|\\n   139|    def get_conversation(self, name: str) -> Optional[str]:\\n   140|        \\\"\\\"\\\"Get the latest response_id for a conversation name.\\\"\\\"\\\"\\n   141|        row = self._conn.execute(\\n   142|            \\\"SELECT response_id FROM conversations WHERE name = ?\\\", (name,)\\n   143|        ).fetchone()\\n   144|        return row[0] if row else None\\n   145|\\n   146|    def set_conversation(self, name: str, response_id: str) -> None:\\n   147|        \\\"\\\"\\\"Map a conversation name to its latest response_id.\\\"\\\"\\\"\\n   148|        self._conn.execute(\\n   149|            \\\"INSERT OR REPLACE INTO conversations (name, response_id) VALUES (?, ?)\\\",\\n   150|            (name, response_id),\\n   151|        )\\n   152|        self._conn.commit()\\n   153|\\n   154|    def close(self) -> None:\\n   155|        \\\"\\\"\\\"Close the database connection.\\\"\\\"\\\"\\n   156|        try:\\n   157|            self._conn.close()\\n   158|        except Exception:\\n   159|            pass\\n   160|\\n   161|    def __len__(self) -> int:\\n   162|        row = self._conn.execute(\\\"SELECT COUNT(*) FROM responses\\\").fetchone()\\n   163|        return row[0] if row else 0\\n   164|\\n   165|\\n   166|# ---------------------------------------------------------------------------\\n   167|# CORS middleware\\n   168|# ---------------------------------------------------------------------------\\n   169|\\n   170|_CORS_HEADERS = {\\n   171|    \\\"Access-Control-Allow-Methods\\\": \\\"GET, POST, DELETE, OPTIONS\\\",\\n   172|    \\\"Access-Control-Allow-Headers\\\": \\\"Authorization, Content-Type, Idempotency-Key\\\",\\n   173|}\\n   174|\\n   175|\\n   176|if AIOHTTP_AVAILABLE:\\n   177|    @web.middleware\\n   178|    async def cors_middleware(request, handler):\\n   179|        \\\"\\\"\\\"Add CORS headers for explicitly allowed origins; handle OPTIONS preflight.\\\"\\\"\\\"\\n   180|        adapter = request.app.get(\\\"api_server_adapter\\\")\\n   181|        origin = request.headers.get(\\\"Origin\\\", \\\"\\\")\\n   182|        cors_headers = None\\n   183|        if adapter is not None:\\n   184|            if not adapter._origin_allowed(origin):\\n   185|                return web.Response(status=403)\\n   186|            cors_headers = adapter._cors_headers_for_origin(origin)\\n   187|\\n   188|        if request.method == \\\"OPTIONS\\\":\\n   189|            if cors_headers is None:\\n   190|                return web.Response(status=403)\\n   191|            return web.Response(status=200, headers=cors_headers)\\n   192|\\n   193|        response = await handler(request)\\n   194|        if cors_headers is not None:\\n   195|            response.headers.update(cors_headers)\\n   196|        return response\\n   197|else:\\n   198|    cors_middleware = None  # type: ignore[assignment]\\n   199|\\n   200|\\n   201|def _openai_error(message: str, err_type: str = \\\"invalid_request_error\\\", param: str = None, code: str = None) -> Dict[str, Any]:\\n   202|    \\\"\\\"\\\"OpenAI-style error envelope.\\\"\\\"\\\"\\n   203|    return {\\n   204|        \\\"error\\\": {\\n   205|            \\\"message\\\": message,\\n   206|            \\\"type\\\": err_type,\\n   207|            \\\"param\\\": param,\\n   208|            \\\"code\\\": code,\\n   209|        }\\n   210|    }\\n   211|\\n   212|\\n   213|if AIOHTTP_AVAILABLE:\\n   214|    @web.middleware\\n   215|    async def body_limit_middleware(request, handler):\\n   216|        \\\"\\\"\\\"Reject overly large request bodies early based on Content-Length.\\\"\\\"\\\"\\n   217|        if request.method in (\\\"POST\\\", \\\"PUT\\\", \\\"PATCH\\\"):\\n   218|            cl = request.headers.get(\\\"Content-Length\\\")\\n   219|            if cl is not None:\\n   220|                try:\\n   221|                    if int(cl) > MAX_REQUEST_BYTES:\\n   222|                        return web.json_response(_openai_error(\\\"Request body too large.\\\", code=\\\"body_too_large\\\"), status=413)\\n   223|                except ValueError:\\n   224|                    return web.json_response(_openai_error(\\\"Invalid Content-Length header.\\\", code=\\\"invalid_content_length\\\"), status=400)\\n   225|        return await handler(request)\\n   226|else:\\n   227|    body_limit_middleware = None  # type: ignore[assignment]\\n   228|\\n   229|_SECURITY_HEADERS = {\\n   230|    \\\"X-Content-Type-Options\\\": \\\"nosniff\\\",\\n   231|    \\\"Referrer-Policy\\\": \\\"no-referrer\\\",\\n   232|}\\n   233|\\n   234|\\n   235|if AIOHTTP_AVAILABLE:\\n   236|    @web.middleware\\n   237|    async def security_headers_middleware(request, handler):\\n   238|        \\\"\\\"\\\"Add security headers to all responses (including errors).\\\"\\\"\\\"\\n   239|        response = await handler(request)\\n   240|        for k, v in _SECURITY_HEADERS.items():\\n   241|            response.headers.setdefault(k, v)\\n   242|        return response\\n   243|else:\\n   244|    security_headers_middleware = None  # type: ignore[assignment]\\n   245|\\n   246|\\n   247|class _IdempotencyCache:\\n   248|    \\\"\\\"\\\"In-memory idempotency cache with TTL and basic LRU semantics.\\\"\\\"\\\"\\n   249|    def __init__(self, max_items: int = 1000, ttl_seconds: int = 300):\\n   250|        from collections import OrderedDict\\n   251|        self._store = OrderedDict()\\n   252|        self._ttl = ttl_seconds\\n   253|        self._max = max_items\\n   254|\\n   255|    def _purge(self):\\n   256|        import time as _t\\n   257|        now = _t.time()\\n   258|        expired = [k for k, v in self._store.items() if now - v[\\\"ts\\\"] > self._ttl]\\n   259|        for k in expired:\\n   260|            self._store.pop(k, None)\\n   261|        while len(self._store) > self._max:\\n   262|            self._store.popitem(last=False)\\n   263|\\n   264|    async def get_or_set(self, key: str, fingerprint: str, compute_coro):\\n   265|        self._purge()\\n   266|        item = self._store.get(key)\\n   267|        if item and item[\\\"fp\\\"] == fingerprint:\\n   268|            return item[\\\"resp\\\"]\\n   269|        resp = await compute_coro()\\n   270|        import time as _t\\n   271|        self._store[key] = {\\\"resp\\\": resp, \\\"fp\\\": fingerprint, \\\"ts\\\": _t.time()}\\n   272|        self._purge()\\n   273|        return resp\\n   274|\\n   275|\\n   276|_idem_cache = _IdempotencyCache()\\n   277|\\n   278|\\n   279|def _make_request_fingerprint(body: Dict[str, Any], keys: List[str]) -> str:\\n   280|    from hashlib import sha256\\n   281|    subset = {k: body.get(k) for k in keys}\\n   282|    return sha256(repr(subset).encode(\\\"utf-8\\\")).hexdigest()\\n   283|\\n   284|\\n   285|class APIServerAdapter(BasePlatformAdapter):\\n   286|    \\\"\\\"\\\"\\n   287|    OpenAI-compatible HTTP API server adapter.\\n   288|\\n   289|    Runs an aiohttp web server that accepts OpenAI-format requests\\n   290|    and routes them through hermes-agent's AIAgent.\\n   291|    \\\"\\\"\\\"\\n   292|\\n   293|    def __init__(self, config: PlatformConfig):\\n   294|        super().__init__(config, Platform.API_SERVER)\\n   295|        extra = config.extra or {}\\n   296|        self._host: str = extra.get(\\\"host\\\", os.getenv(\\\"API_SERVER_HOST\\\", DEFAULT_HOST))\\n   297|        self._port: int = int(extra.get(\\\"port\\\", os.getenv(\\\"API_SERVER_PORT\\\", str(DEFAULT_PORT))))\\n   298|        self._api_key: str = extra.get(\\\"key\\\", os.getenv(\\\"API_SERVER_KEY\\\", \\\"\\\"))\\n   299|        self._cors_origins: tuple[str, ...] = self._parse_cors_origins(\\n   300|            extra.get(\\\"cors_origins\\\", os.getenv(\\\"API_SERVER_CORS_ORIGINS\\\", \\\"\\\")),\\n   301|        )\\n   302|        self._app: Optional[\\\"web.Application\\\"] = None\\n   303|        self._runner: Optional[\\\"web.AppRunner\\\"] = None\\n   304|        self._site: Optional[\\\"web.TCPSite\\\"] = None\\n   305|        self._response_store = ResponseStore()\\n   306|        # Active run streams: run_id -> asyncio.Queue of SSE event dicts\\n   307|        self._run_streams: Dict[str, \\\"asyncio.Queue[Optional[Dict]]\\\"] = {}\\n   308|        # Creation timestamps for orphaned-run TTL sweep\\n   309|        self._run_streams_created: Dict[str, float] = {}\\n   310|        self._session_db: Optional[Any] = None  # Lazy-init SessionDB for session continuity\\n   311|\\n   312|    @staticmethod\\n   313|    def _parse_cors_origins(value: Any) -> tuple[str, ...]:\\n   314|        \\\"\\\"\\\"Normalize configured CORS origins into a stable tuple.\\\"\\\"\\\"\\n   315|        if not value:\\n   316|            return ()\\n   317|\\n   318|        if isinstance(value, str):\\n   319|            items = value.split(\\\",\\\")\\n   320|        elif isinstance(value, (list, tuple, set)):\\n   321|            items = value\\n   322|        else:\\n   323|            items = [str(value)]\\n   324|\\n   325|        return tuple(str(item).strip() for item in items if str(item).strip())\\n   326|\\n   327|    def _cors_headers_for_origin(self, origin: str) -> Optional[Dict[str, str]]:\\n   328|        \\\"\\\"\\\"Return CORS headers for an allowed browser origin.\\\"\\\"\\\"\\n   329|        if not origin or not self._cors_origins:\\n   330|            return None\\n   331|\\n   332|        if \\\"*\\\" in self._cors_origins:\\n   333|            headers = dict(_CORS_HEADERS)\\n   334|            headers[\\\"Access-Control-Allow-Origin\\\"] = \\\"*\\\"\\n   335|            headers[\\\"Access-Control-Max-Age\\\"] = \\\"600\\\"\\n   336|            return headers\\n   337|\\n   338|        if origin not in self._cors_origins:\\n   339|            return None\\n   340|\\n   341|        headers = dict(_CORS_HEADERS)\\n   342|        headers[\\\"Access-Control-Allow-Origin\\\"] = origin\\n   343|        headers[\\\"Vary\\\"] = \\\"Origin\\\"\\n   344|        headers[\\\"Access-Control-Max-Age\\\"] = \\\"600\\\"\\n   345|        return headers\\n   346|\\n   347|    def _origin_allowed(self, origin: str) -> bool:\\n   348|        \\\"\\\"\\\"Allow non-browser clients and explicitly configured browser origins.\\\"\\\"\\\"\\n   349|        if not origin:\\n   350|            return True\\n   351|\\n   352|        if not self._cors_origins:\\n   353|            return False\\n   354|\\n   355|        return \\\"*\\\" in self._cors_origins or origin in self._cors_origins\\n   356|\\n   357|    # ------------------------------------------------------------------\\n   358|    # Auth helper\\n   359|    # ------------------------------------------------------------------\\n   360|\\n   361|    def _check_auth(self, request: \\\"web.Request\\\") -> Optional[\\\"web.Response\\\"]:\\n   362|        \\\"\\\"\\\"\\n   363|        Validate Bearer token from Authorization header.\\n   364|\\n   365|        Returns None if auth is OK, or a 401 web.Response on failure.\\n   366|        If no API key is configured, all requests are allowed.\\n   367|        \\\"\\\"\\\"\\n   368|        if not self._api_key:\\n   369|            return None  # No key configured — allow all (local-only use)\\n   370|\\n   371|        auth_header = request.headers.get(\\\"Authorization\\\", \\\"\\\")\\n   372|        if auth_header.startswith(\\\"Bearer \\\"):\\n   373|            token = auth_header[7:].strip()\\n   374|            if hmac.compare_digest(token, self._api_key):\\n   375|                return None  # Auth OK\\n   376|\\n   377|        return web.json_response(\\n   378|            {\\\"error\\\": {\\\"message\\\": \\\"Invalid API key\\\", \\\"type\\\": \\\"invalid_request_error\\\", \\\"code\\\": \\\"invalid_api_key\\\"}},\\n   379|            status=401,\\n   380|        )\\n   381|\\n   382|    # ------------------------------------------------------------------\\n   383|    # Session DB helper\\n   384|    # ------------------------------------------------------------------\\n   385|\\n   386|    def _ensure_session_db(self):\\n   387|        \\\"\\\"\\\"Lazily initialise and return the shared SessionDB instance.\\n   388|\\n   389|        Sessions are persisted to ``state.db`` so that ``hermes sessions list``\\n   390|        shows API-server conversations alongside CLI and gateway ones.\\n   391|        \\\"\\\"\\\"\\n   392|        if self._session_db is None:\\n   393|            try:\\n   394|                from hermes_state import SessionDB\\n   395|                self._session_db = SessionDB()\\n   396|            except Exception as e:\\n   397|                logger.debug(\\\"SessionDB unavailable for API server: %s\\\", e)\\n   398|        return self._session_db\\n   399|\\n   400|    # ------------------------------------------------------------------\\n   401|    # Agent creation helper\\n   402|    # ------------------------------------------------------------------\\n   403|\\n   404|    def _create_agent(\\n   405|        self,\\n   406|        ephemeral_system_prompt: Optional[str] = None,\\n   407|        session_id: Optional[str] = None,\\n   408|        stream_delta_callback=None,\\n   409|        tool_progress_callback=None,\\n   410|    ) -> Any:\\n   411|        \\\"\\\"\\\"\\n   412|        Create an AIAgent instance using the gateway's runtime config.\\n   413|\\n   414|        Uses _resolve_runtime_agent_kwargs() to pick up model, api_key,\\n   415|        base_url, etc. from config.yaml / env vars.  Toolsets are resolved\\n   416|        from config.yaml platform_toolsets.api_server (same as all other\\n   417|        gateway platforms), falling back to the hermes-api-server default.\\n   418|        \\\"\\\"\\\"\\n   419|        from run_agent import AIAgent\\n   420|        from gateway.run import _resolve_runtime_agent_kwargs, _resolve_gateway_model, _load_gateway_config\\n   421|        from hermes_cli.tools_config import _get_platform_tools\\n   422|\\n   423|        runtime_kwargs = _resolve_runtime_agent_kwargs()\\n   424|        model = _resolve_gateway_model()\\n   425|\\n   426|        user_config = _load_gateway_config()\\n   427|        enabled_toolsets = sorted(_get_platform_tools(user_config, \\\"api_server\\\"))\\n   428|\\n   429|        max_iterations = int(os.getenv(\\\"HERMES_MAX_ITERATIONS\\\", \\\"90\\\"))\\n   430|\\n   431|        # Load fallback provider chain so the API server platform has the\\n   432|        # same fallback behaviour as Telegram/Discord/Slack (fixes #4954).\\n   433|        from gateway.run import GatewayRunner\\n   434|        fallback_model = GatewayRunner._load_fallback_model()\\n   435|\\n   436|        agent = AIAgent(\\n   437|            model=model,\\n   438|            **runtime_kwargs,\\n   439|            max_iterations=max_iterations,\\n   440|            quiet_mode=True,\\n   441|            verbose_logging=False,\\n   442|            ephemeral_system_prompt=ephemeral_system_prompt or None,\\n   443|            enabled_toolsets=enabled_toolsets,\\n   444|            session_id=session_id,\\n   445|            platform=\\\"api_server\\\",\\n   446|            stream_delta_callback=stream_delta_callback,\\n   447|            tool_progress_callback=tool_progress_callback,\\n   448|            session_db=self._ensure_session_db(),\\n   449|            fallback_model=fallback_model,\\n   450|        )\\n   451|        return agent\\n   452|\\n   453|    # ------------------------------------------------------------------\\n   454|    # HTTP Handlers\\n   455|    # ------------------------------------------------------------------\\n   456|\\n   457|    async def _handle_health(self, request: \\\"web.Request\\\") -> \\\"web.Response\\\":\\n   458|        \\\"\\\"\\\"GET /health — simple health check.\\\"\\\"\\\"\\n   459|        return web.json_response({\\\"status\\\": \\\"ok\\\", \\\"platform\\\": \\\"hermes-agent\\\"})\\n   460|\\n   461|    async def _handle_models(self, request: \\\"web.Request\\\") -> \\\"web.Response\\\":\\n   462|        \\\"\\\"\\\"GET /v1/models — return hermes-agent as an available model.\\\"\\\"\\\"\\n   463|        auth_err = self._check_auth(request)\\n   464|        if auth_err:\\n   465|            return auth_err\\n   466|\\n   467|        return web.json_response({\\n   468|            \\\"object\\\": \\\"list\\\",\\n   469|            \\\"data\\\": [\\n   470|                {\\n   471|                    \\\"id\\\": \\\"hermes-agent\\\",\\n   472|                    \\\"object\\\": \\\"model\\\",\\n   473|                    \\\"created\\\": int(time.time()),\\n   474|                    \\\"owned_by\\\": \\\"hermes\\\",\\n   475|                    \\\"permission\\\": [],\\n   476|                    \\\"root\\\": \\\"hermes-agent\\\",\\n   477|                    \\\"parent\\\": None,\\n   478|                }\\n   479|            ],\\n   480|        })\\n   481|\\n   482|    async def _handle_chat_completions(self, request: \\\"web.Request\\\") -> \\\"web.Response\\\":\\n   483|        \\\"\\\"\\\"POST /v1/chat/completions — OpenAI Chat Completions format.\\\"\\\"\\\"\\n   484|        auth_err = self._check_auth(request)\\n   485|        if auth_err:\\n   486|            return auth_err\\n   487|\\n   488|        # Parse request body\\n   489|        try:\\n   490|            body = await request.json()\\n   491|        except (json.JSONDecodeError, Exception):\\n   492|            return web.json_response(_openai_error(\\\"Invalid JSON in request body\\\"), status=400)\\n   493|\\n   494|        messages = body.get(\\\"messages\\\")\\n   495|        if not messages or not isinstance(messages, list):\\n   496|            return web.json_response(\\n   497|                {\\\"error\\\": {\\\"message\\\": \\\"Missing or invalid 'messages' field\\\", \\\"type\\\": \\\"invalid_request_error\\\"}},\\n   498|                status=400,\\n   499|            )\\n   500|\\n   501|\", \"total_lines\": 1696, \"file_size\": 70832, \"truncated\": true, \"hint\": \"Use offset=501 to continue reading (showing 1-500 of 1696 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_e625f193"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_feb580c9",
+          "call_id": "call_feb580c9",
+          "response_item_id": "fc_feb580c9",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*auth*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 18, \"files\": [\"./tests/tools/test_mcp_oauth.py\", \"./tests/hermes_cli/test_auth_codex_provider.py\", \"./tests/hermes_cli/test_auth_commands.py\", \"./tests/hermes_cli/test_anthropic_oauth_flow.py\", \"./tests/hermes_cli/test_copilot_auth.py\", \"./tests/hermes_cli/test_auth_nous_provider.py\", \"./tests/hermes_cli/test_ollama_cloud_auth.py\", \"./tests/skills/test_google_oauth_setup.py\", \"./tests/gateway/test_ws_auth_retry.py\", \"./tests/gateway/test_unauthorized_dm_behavior.py\", \"./hermes_cli/auth.py\", \"./tests/acp/test_auth.py\", \"./hermes_cli/copilot_auth.py\", \"./hermes_cli/auth_commands.py\", \"./tools/mcp_oauth.py\", \"./optional-skills/devops/cli/references/authentication.md\", \"./acp_adapter/auth.py\", \"./plans/gemini-oauth-provider.md\"]}",
+      "tool_call_id": "call_feb580c9"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_1c841fa5",
+          "call_id": "call_1c841fa5",
+          "response_item_id": "fc_1c841fa5",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*data*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 11, \"files\": [\"./tests/test_packaging_metadata.py\", \"./tests/test_project_metadata.py\", \"./tests/gateway/test_discord_media_metadata.py\", \"./tests/agent/test_model_metadata.py\", \"./tests/agent/test_model_metadata_local_ctx.py\", \"./skills/creative/manim-video/references/graphs-and-data.md\", \"./agent/model_metadata.py\", \"./skills/mlops/training/axolotl/references/dataset-formats.md\", \"./optional-skills/mlops/simpo/references/datasets.md\", \"./skills/productivity/powerpoint/scripts/office/schemas/microsoft/wml-sdtdatahash-2020.xsd\", \"./optional-skills/mcp/fastmcp/templates/database_server.py\"]}",
+      "tool_call_id": "call_1c841fa5"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_3499c89b",
+          "call_id": "call_3499c89b",
+          "response_item_id": "fc_3499c89b",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*schema*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_3499c89b"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_5e832c2f",
+          "call_id": "call_5e832c2f",
+          "response_item_id": "fc_5e832c2f",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*db*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"./tests/tools/test_modal_sandbox_fixes.py\", \"./tests/plugins/test_retaindb_plugin.py\", \"./skills/creative/popular-web-designs/templates/mongodb.md\"]}",
+      "tool_call_id": "call_5e832c2f"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_57528afe",
+          "call_id": "call_57528afe",
+          "response_item_id": "fc_57528afe",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*session*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 28, \"files\": [\"./tests/honcho_plugin/test_session.py\", \"./tests/tools/test_session_search.py\", \"./tests/run_agent/test_session_reset_fix.py\", \"./tests/run_agent/test_session_meta_filtering.py\", \"./tests/hermes_cli/test_session_browse.py\", \"./tests/hermes_cli/test_sessions_delete.py\", \"./tests/hermes_cli/test_coalesce_session_args.py\", \"./tests/gateway/test_session_env.py\", \"./tests/gateway/test_session_dm_thread_seeding.py\", \"./tests/gateway/test_session_model_reset.py\", \"./tests/gateway/test_base_topic_sessions.py\", \"./tests/gateway/test_session_reset_notify.py\", \"./tests/gateway/test_session_info.py\", \"./tests/gateway/test_session_hygiene.py\", \"./tests/gateway/test_session_boundary_hooks.py\", \"./tests/gateway/test_session_race_guard.py\", \"./tests/gateway/test_session.py\", \"./tests/gateway/test_command_bypass_active_session.py\", \"./tests/acp/test_session.py\", \"./tests/cli/test_cli_new_session.py\", \"./tests/cli/test_session_boundary_hooks.py\", \"./plugins/memory/honcho/session.py\", \"./website/docs/developer-guide/session-storage.md\", \"./website/docs/user-guide/sessions.md\", \"./website/static/img/docs/session-recap.svg\", \"./tools/session_search_tool.py\", \"./gateway/session.py\", \"./acp_adapter/session.py\"]}",
+      "tool_call_id": "call_57528afe"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_aa7a17e2",
+          "call_id": "call_aa7a17e2",
+          "response_item_id": "fc_aa7a17e2",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"gateway/session.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"\\n     2|Session management for the gateway.\\n     3|\\n     4|Handles:\\n     5|- Session context tracking (where messages come from)\\n     6|- Session storage (conversations persisted to disk)\\n     7|- Reset policy evaluation (when to start fresh)\\n     8|- Dynamic system prompt injection (agent knows its context)\\n     9|\\\"\\\"\\\"\\n    10|\\n    11|import hashlib\\n    12|import logging\\n    13|import os\\n    14|import json\\n    15|import re\\n    16|import threading\\n    17|import uuid\\n    18|from pathlib import Path\\n    19|from datetime import datetime, timedelta\\n    20|from dataclasses import dataclass\\n    21|from typing import Dict, List, Optional, Any\\n    22|\\n    23|logger = logging.getLogger(__name__)\\n    24|\\n    25|\\n    26|def _now() -> datetime:\\n    27|    \\\"\\\"\\\"Return the current local time.\\\"\\\"\\\"\\n    28|    return datetime.now()\\n    29|\\n    30|\\n    31|# ---------------------------------------------------------------------------\\n    32|# PII redaction helpers\\n    33|# ---------------------------------------------------------------------------\\n    34|\\n    35|_PHONE_RE = re.compile(r\\\"^\\\\+?\\\\d[\\\\d\\\\-\\\\s]{6,}$\\\")\\n    36|\\n    37|\\n    38|def _hash_id(value: str) -> str:\\n    39|    \\\"\\\"\\\"Deterministic 12-char hex hash of an identifier.\\\"\\\"\\\"\\n    40|    return hashlib.sha256(value.encode(\\\"utf-8\\\")).hexdigest()[:12]\\n    41|\\n    42|\\n    43|def _hash_sender_id(value: str) -> str:\\n    44|    \\\"\\\"\\\"Hash a sender ID to ``user_<12hex>``.\\\"\\\"\\\"\\n    45|    return f\\\"user_{_hash_id(value)}\\\"\\n    46|\\n    47|\\n    48|def _hash_chat_id(value: str) -> str:\\n    49|    \\\"\\\"\\\"Hash the numeric portion of a chat ID, preserving platform prefix.\\n    50|\\n    51|    ``telegram:12345`` → ``telegram:<hash>``\\n    52|    ``12345``          → ``<hash>``\\n    53|    \\\"\\\"\\\"\\n    54|    colon = value.find(\\\":\\\")\\n    55|    if colon > 0:\\n    56|        prefix = value[:colon]\\n    57|        return f\\\"{prefix}:{_hash_id(value[colon + 1:])}\\\"\\n    58|    return _hash_id(value)\\n    59|\\n    60|\\n    61|def _looks_like_phone(value: str) -> bool:\\n    62|    \\\"\\\"\\\"Return True if *value* looks like a phone number (E.164 or similar).\\\"\\\"\\\"\\n    63|    return bool(_PHONE_RE.match(value.strip()))\\n    64|\\n    65|from .config import (\\n    66|    Platform,\\n    67|    GatewayConfig,\\n    68|    SessionResetPolicy,  # noqa: F401 — re-exported via gateway/__init__.py\\n    69|    HomeChannel,\\n    70|)\\n    71|\\n    72|\\n    73|@dataclass\\n    74|class SessionSource:\\n    75|    \\\"\\\"\\\"\\n    76|    Describes where a message originated from.\\n    77|    \\n    78|    This information is used to:\\n    79|    1. Route responses back to the right place\\n    80|    2. Inject context into the system prompt\\n    81|    3. Track origin for cron job delivery\\n    82|    \\\"\\\"\\\"\\n    83|    platform: Platform\\n    84|    chat_id: str\\n    85|    chat_name: Optional[str] = None\\n    86|    chat_type: str = \\\"dm\\\"  # \\\"dm\\\", \\\"group\\\", \\\"channel\\\", \\\"thread\\\"\\n    87|    user_id: Optional[str] = None\\n    88|    user_name: Optional[str] = None\\n    89|    thread_id: Optional[str] = None  # For forum topics, Discord threads, etc.\\n    90|    chat_topic: Optional[str] = None  # Channel topic/description (Discord, Slack)\\n    91|    user_id_alt: Optional[str] = None  # Signal UUID (alternative to phone number)\\n    92|    chat_id_alt: Optional[str] = None  # Signal group internal ID\\n    93|    \\n    94|    @property\\n    95|    def description(self) -> str:\\n    96|        \\\"\\\"\\\"Human-readable description of the source.\\\"\\\"\\\"\\n    97|        if self.platform == Platform.LOCAL:\\n    98|            return \\\"CLI terminal\\\"\\n    99|        \\n   100|        parts = []\\n   101|        if self.chat_type == \\\"dm\\\":\\n   102|            parts.append(f\\\"DM with {self.user_name or self.user_id or 'user'}\\\")\\n   103|        elif self.chat_type == \\\"group\\\":\\n   104|            parts.append(f\\\"group: {self.chat_name or self.chat_id}\\\")\\n   105|        elif self.chat_type == \\\"channel\\\":\\n   106|            parts.append(f\\\"channel: {self.chat_name or self.chat_id}\\\")\\n   107|        else:\\n   108|            parts.append(self.chat_name or self.chat_id)\\n   109|        \\n   110|        if self.thread_id:\\n   111|            parts.append(f\\\"thread: {self.thread_id}\\\")\\n   112|        \\n   113|        return \\\", \\\".join(parts)\\n   114|    \\n   115|    def to_dict(self) -> Dict[str, Any]:\\n   116|        d = {\\n   117|            \\\"platform\\\": self.platform.value,\\n   118|            \\\"chat_id\\\": self.chat_id,\\n   119|            \\\"chat_name\\\": self.chat_name,\\n   120|            \\\"chat_type\\\": self.chat_type,\\n   121|            \\\"user_id\\\": self.user_id,\\n   122|            \\\"user_name\\\": self.user_name,\\n   123|            \\\"thread_id\\\": self.thread_id,\\n   124|            \\\"chat_topic\\\": self.chat_topic,\\n   125|        }\\n   126|        if self.user_id_alt:\\n   127|            d[\\\"user_id_alt\\\"] = self.user_id_alt\\n   128|        if self.chat_id_alt:\\n   129|            d[\\\"chat_id_alt\\\"] = self.chat_id_alt\\n   130|        return d\\n   131|    \\n   132|    @classmethod\\n   133|    def from_dict(cls, data: Dict[str, Any]) -> \\\"SessionSource\\\":\\n   134|        return cls(\\n   135|            platform=Platform(data[\\\"platform\\\"]),\\n   136|            chat_id=str(data[\\\"chat_id\\\"]),\\n   137|            chat_name=data.get(\\\"chat_name\\\"),\\n   138|            chat_type=data.get(\\\"chat_type\\\", \\\"dm\\\"),\\n   139|            user_id=data.get(\\\"user_id\\\"),\\n   140|            user_name=data.get(\\\"user_name\\\"),\\n   141|            thread_id=data.get(\\\"thread_id\\\"),\\n   142|            chat_topic=data.get(\\\"chat_topic\\\"),\\n   143|            user_id_alt=data.get(\\\"user_id_alt\\\"),\\n   144|            chat_id_alt=data.get(\\\"chat_id_alt\\\"),\\n   145|        )\\n   146|    \\n   147|    @classmethod\\n   148|    def local_cli(cls) -> \\\"SessionSource\\\":\\n   149|        \\\"\\\"\\\"Create a source representing the local CLI.\\\"\\\"\\\"\\n   150|        return cls(\\n   151|            platform=Platform.LOCAL,\\n   152|            chat_id=\\\"cli\\\",\\n   153|            chat_name=\\\"CLI terminal\\\",\\n   154|            chat_type=\\\"dm\\\",\\n   155|        )\\n   156|\\n   157|\\n   158|@dataclass\\n   159|class SessionContext:\\n   160|    \\\"\\\"\\\"\\n   161|    Full context for a session, used for dynamic system prompt injection.\\n   162|    \\n   163|    The agent receives this information to understand:\\n   164|    - Where messages are coming from\\n   165|    - What platforms are available\\n   166|    - Where it can deliver scheduled task outputs\\n   167|    \\\"\\\"\\\"\\n   168|    source: SessionSource\\n   169|    connected_platforms: List[Platform]\\n   170|    home_channels: Dict[Platform, HomeChannel]\\n   171|    \\n   172|    # Session metadata\\n   173|    session_key: str = \\\"\\\"\\n   174|    session_id: str = \\\"\\\"\\n   175|    created_at: Optional[datetime] = None\\n   176|    updated_at: Optional[datetime] = None\\n   177|    \\n   178|    def to_dict(self) -> Dict[str, Any]:\\n   179|        return {\\n   180|            \\\"source\\\": self.source.to_dict(),\\n   181|            \\\"connected_platforms\\\": [p.value for p in self.connected_platforms],\\n   182|            \\\"home_channels\\\": {\\n   183|                p.value: hc.to_dict() for p, hc in self.home_channels.items()\\n   184|            },\\n   185|            \\\"session_key\\\": self.session_key,\\n   186|            \\\"session_id\\\": self.session_id,\\n   187|            \\\"created_at\\\": self.created_at.isoformat() if self.created_at else None,\\n   188|            \\\"updated_at\\\": self.updated_at.isoformat() if self.updated_at else None,\\n   189|        }\\n   190|\\n   191|\\n   192|_PII_SAFE_PLATFORMS = frozenset({\\n   193|    Platform.WHATSAPP,\\n   194|    Platform.SIGNAL,\\n   195|    Platform.TELEGRAM,\\n   196|})\\n   197|\\\"\\\"\\\"Platforms where user IDs can be safely redacted (no in-message mention system\\n   198|that requires raw IDs).  Discord is excluded because mentions use ``<@user_id>``\\n   199|and the LLM needs the real ID to tag users.\\\"\\\"\\\"\\n   200|\\n   201|\\n   202|def build_session_context_prompt(\\n   203|    context: SessionContext,\\n   204|    *,\\n   205|    redact_pii: bool = False,\\n   206|) -> str:\\n   207|    \\\"\\\"\\\"\\n   208|    Build the dynamic system prompt section that tells the agent about its context.\\n   209|    \\n   210|    This is injected into the system prompt so the agent knows:\\n   211|    - Where messages are coming from\\n   212|    - What platforms are connected\\n   213|    - Where it can deliver scheduled task outputs\\n   214|\\n   215|    When *redact_pii* is True **and** the source platform is in\\n   216|    ``_PII_SAFE_PLATFORMS``, phone numbers are stripped and user/chat IDs\\n   217|    are replaced with deterministic hashes before being sent to the LLM.\\n   218|    Platforms like Discord are excluded because mentions need real IDs.\\n   219|    Routing still uses the original values (they stay in SessionSource).\\n   220|    \\\"\\\"\\\"\\n   221|    # Only apply redaction on platforms where IDs aren't needed for mentions\\n   222|    redact_pii = redact_pii and context.source.platform in _PII_SAFE_PLATFORMS\\n   223|    lines = [\\n   224|        \\\"## Current Session Context\\\",\\n   225|        \\\"\\\",\\n   226|    ]\\n   227|    \\n   228|    # Source info\\n   229|    platform_name = context.source.platform.value.title()\\n   230|    if context.source.platform == Platform.LOCAL:\\n   231|        lines.append(f\\\"**Source:** {platform_name} (the machine running this agent)\\\")\\n   232|    else:\\n   233|        # Build a description that respects PII redaction\\n   234|        src = context.source\\n   235|        if redact_pii:\\n   236|            # Build a safe description without raw IDs\\n   237|            _uname = src.user_name or (\\n   238|                _hash_sender_id(src.user_id) if src.user_id else \\\"user\\\"\\n   239|            )\\n   240|            _cname = src.chat_name or _hash_chat_id(src.chat_id)\\n   241|            if src.chat_type == \\\"dm\\\":\\n   242|                desc = f\\\"DM with {_uname}\\\"\\n   243|            elif src.chat_type == \\\"group\\\":\\n   244|                desc = f\\\"group: {_cname}\\\"\\n   245|            elif src.chat_type == \\\"channel\\\":\\n   246|                desc = f\\\"channel: {_cname}\\\"\\n   247|            else:\\n   248|                desc = _cname\\n   249|        else:\\n   250|            desc = src.description\\n   251|        lines.append(f\\\"**Source:** {platform_name} ({desc})\\\")\\n   252|    \\n   253|    # Channel topic (if available - provides context about the channel's purpose)\\n   254|    if context.source.chat_topic:\\n   255|        lines.append(f\\\"**Channel Topic:** {context.source.chat_topic}\\\")\\n   256|\\n   257|    # User identity.\\n   258|    # In shared thread sessions (non-DM with thread_id), multiple users\\n   259|    # contribute to the same conversation.  Don't pin a single user name\\n   260|    # in the system prompt — it changes per-turn and would bust the prompt\\n   261|    # cache.  Instead, note that this is a multi-user thread; individual\\n   262|    # sender names are prefixed on each user message by the gateway.\\n   263|    _is_shared_thread = (\\n   264|        context.source.chat_type != \\\"dm\\\"\\n   265|        and context.source.thread_id\\n   266|    )\\n   267|    if _is_shared_thread:\\n   268|        lines.append(\\n   269|            \\\"**Session type:** Multi-user thread — messages are prefixed \\\"\\n   270|            \\\"with [sender name]. Multiple users may participate.\\\"\\n   271|        )\\n   272|    elif context.source.user_name:\\n   273|        lines.append(f\\\"**User:** {context.source.user_name}\\\")\\n   274|    elif context.source.user_id:\\n   275|        uid = context.source.user_id\\n   276|        if redact_pii:\\n   277|            uid = _hash_sender_id(uid)\\n   278|        lines.append(f\\\"**User ID:** {uid}\\\")\\n   279|    \\n   280|    # Platform-specific behavioral notes\\n   281|    if context.source.platform == Platform.SLACK:\\n   282|        lines.append(\\\"\\\")\\n   283|        lines.append(\\n   284|            \\\"**Platform notes:** You are running inside Slack. \\\"\\n   285|            \\\"You do NOT have access to Slack-specific APIs — you cannot search \\\"\\n   286|            \\\"channel history, pin/unpin messages, manage channels, or list users. \\\"\\n   287|            \\\"Do not promise to perform these actions. If the user asks, explain \\\"\\n   288|            \\\"that you can only read messages sent directly to you and respond.\\\"\\n   289|        )\\n   290|    elif context.source.platform == Platform.DISCORD:\\n   291|        lines.append(\\\"\\\")\\n   292|        lines.append(\\n   293|            \\\"**Platform notes:** You are running inside Discord. \\\"\\n   294|            \\\"You do NOT have access to Discord-specific APIs — you cannot search \\\"\\n   295|            \\\"channel history, pin messages, manage roles, or list server members. \\\"\\n   296|            \\\"Do not promise to perform these actions. If the user asks, explain \\\"\\n   297|            \\\"that you can only read messages sent directly to you and respond.\\\"\\n   298|        )\\n   299|\\n   300|    # Connected platforms\\n   301|    platforms_list = [\\\"local (files on this machine)\\\"]\\n   302|    for p in context.connected_platforms:\\n   303|        if p != Platform.LOCAL:\\n   304|            platforms_list.append(f\\\"{p.value}: Connected ✓\\\")\\n   305|    \\n   306|    lines.append(f\\\"**Connected Platforms:** {', '.join(platforms_list)}\\\")\\n   307|    \\n   308|    # Home channels\\n   309|    if context.home_channels:\\n   310|        lines.append(\\\"\\\")\\n   311|        lines.append(\\\"**Home Channels (default destinations):**\\\")\\n   312|        for platform, home in context.home_channels.items():\\n   313|            hc_id = _hash_chat_id(home.chat_id) if redact_pii else home.chat_id\\n   314|            lines.append(f\\\"  - {platform.value}: {home.name} (ID: {hc_id})\\\")\\n   315|    \\n   316|    # Delivery options for scheduled tasks\\n   317|    lines.append(\\\"\\\")\\n   318|    lines.append(\\\"**Delivery options for scheduled tasks:**\\\")\\n   319|    \\n   320|    # Origin delivery\\n   321|    if context.source.platform == Platform.LOCAL:\\n   322|        lines.append(\\\"- `\\\\\\\"origin\\\\\\\"` → Local output (saved to files)\\\")\\n   323|    else:\\n   324|        _origin_label = context.source.chat_name or (\\n   325|            _hash_chat_id(context.source.chat_id) if redact_pii else context.source.chat_id\\n   326|        )\\n   327|        lines.append(f\\\"- `\\\\\\\"origin\\\\\\\"` → Back to this chat ({_origin_label})\\\")\\n   328|    \\n   329|    # Local always available\\n   330|    lines.append(\\\"- `\\\\\\\"local\\\\\\\"` → Save to local files only (~/.hermes/cron/output/)\\\")\\n   331|    \\n   332|    # Platform home channels\\n   333|    for platform, home in context.home_channels.items():\\n   334|        lines.append(f\\\"- `\\\\\\\"{platform.value}\\\\\\\"` → Home channel ({home.name})\\\")\\n   335|    \\n   336|    # Note about explicit targeting\\n   337|    lines.append(\\\"\\\")\\n   338|    lines.append(\\\"*For explicit targeting, use `\\\\\\\"platform:chat_id\\\\\\\"` format if the user provides a specific chat ID.*\\\")\\n   339|    \\n   340|    return \\\"\\\\n\\\".join(lines)\\n   341|\\n   342|\\n   343|@dataclass\\n   344|class SessionEntry:\\n   345|    \\\"\\\"\\\"\\n   346|    Entry in the session store.\\n   347|    \\n   348|    Maps a session key to its current session ID and metadata.\\n   349|    \\\"\\\"\\\"\\n   350|    session_key: str\\n   351|    session_id: str\\n   352|    created_at: datetime\\n   353|    updated_at: datetime\\n   354|    \\n   355|    # Origin metadata for delivery routing\\n   356|    origin: Optional[SessionSource] = None\\n   357|    \\n   358|    # Display metadata\\n   359|    display_name: Optional[str] = None\\n   360|    platform: Optional[Platform] = None\\n   361|    chat_type: str = \\\"dm\\\"\\n   362|    \\n   363|    # Token tracking\\n   364|    input_tokens: int = 0\\n   365|    output_tokens: int = 0\\n   366|    cache_read_tokens: int = 0\\n   367|    cache_write_tokens: int = 0\\n   368|    total_tokens: int = 0\\n   369|    estimated_cost_usd: float = 0.0\\n   370|    cost_status: str = \\\"unknown\\\"\\n   371|    \\n   372|    # Last API-reported prompt tokens (for accurate compression pre-check)\\n   373|    last_prompt_tokens: int = 0\\n   374|    \\n   375|    # Set when a session was created because the previous one expired;\\n   376|    # consumed once by the message handler to inject a notice into context\\n   377|    was_auto_reset: bool = False\\n   378|    auto_reset_reason: Optional[str] = None  # \\\"idle\\\" or \\\"daily\\\"\\n   379|    reset_had_activity: bool = False  # whether the expired session had any messages\\n   380|    \\n   381|    # Set by the background expiry watcher after it successfully flushes\\n   382|    # memories for this session.  Persisted to sessions.json so the flag\\n   383|    # survives gateway restarts (the old in-memory _pre_flushed_sessions\\n   384|    # set was lost on restart, causing redundant re-flushes).\\n   385|    memory_flushed: bool = False\\n   386|    \\n   387|    def to_dict(self) -> Dict[str, Any]:\\n   388|        result = {\\n   389|            \\\"session_key\\\": self.session_key,\\n   390|            \\\"session_id\\\": self.session_id,\\n   391|            \\\"created_at\\\": self.created_at.isoformat(),\\n   392|            \\\"updated_at\\\": self.updated_at.isoformat(),\\n   393|            \\\"display_name\\\": self.display_name,\\n   394|            \\\"platform\\\": self.platform.value if self.platform else None,\\n   395|            \\\"chat_type\\\": self.chat_type,\\n   396|            \\\"input_tokens\\\": self.input_tokens,\\n   397|            \\\"output_tokens\\\": self.output_tokens,\\n   398|            \\\"cache_read_tokens\\\": self.cache_read_tokens,\\n   399|            \\\"cache_write_tokens\\\": self.cache_write_tokens,\\n   400|            \\\"total_tokens\\\": self.total_tokens,\\n   401|            \\\"last_prompt_tokens\\\": self.last_prompt_tokens,\\n   402|            \\\"estimated_cost_usd\\\": self.estimated_cost_usd,\\n   403|            \\\"cost_status\\\": self.cost_status,\\n   404|            \\\"memory_flushed\\\": self.memory_flushed,\\n   405|        }\\n   406|        if self.origin:\\n   407|            result[\\\"origin\\\"] = self.origin.to_dict()\\n   408|        return result\\n   409|    \\n   410|    @classmethod\\n   411|    def from_dict(cls, data: Dict[str, Any]) -> \\\"SessionEntry\\\":\\n   412|        origin = None\\n   413|        if \\\"origin\\\" in data and data[\\\"origin\\\"]:\\n   414|            origin = SessionSource.from_dict(data[\\\"origin\\\"])\\n   415|        \\n   416|        platform = None\\n   417|        if data.get(\\\"platform\\\"):\\n   418|            try:\\n   419|                platform = Platform(data[\\\"platform\\\"])\\n   420|            except ValueError as e:\\n   421|                logger.debug(\\\"Unknown platform value %r: %s\\\", data[\\\"platform\\\"], e)\\n   422|        \\n   423|        return cls(\\n   424|            session_key=data[\\\"session_key\\\"],\\n   425|            session_id=data[\\\"session_id\\\"],\\n   426|            created_at=datetime.fromisoformat(data[\\\"created_at\\\"]),\\n   427|            updated_at=datetime.fromisoformat(data[\\\"updated_at\\\"]),\\n   428|            origin=origin,\\n   429|            display_name=data.get(\\\"display_name\\\"),\\n   430|            platform=platform,\\n   431|            chat_type=data.get(\\\"chat_type\\\", \\\"dm\\\"),\\n   432|            input_tokens=data.get(\\\"input_tokens\\\", 0),\\n   433|            output_tokens=data.get(\\\"output_tokens\\\", 0),\\n   434|            cache_read_tokens=data.get(\\\"cache_read_tokens\\\", 0),\\n   435|            cache_write_tokens=data.get(\\\"cache_write_tokens\\\", 0),\\n   436|            total_tokens=data.get(\\\"total_tokens\\\", 0),\\n   437|            last_prompt_tokens=data.get(\\\"last_prompt_tokens\\\", 0),\\n   438|            estimated_cost_usd=data.get(\\\"estimated_cost_usd\\\", 0.0),\\n   439|            cost_status=data.get(\\\"cost_status\\\", \\\"unknown\\\"),\\n   440|            memory_flushed=data.get(\\\"memory_flushed\\\", False),\\n   441|        )\\n   442|\\n   443|\\n   444|def build_session_key(\\n   445|    source: SessionSource,\\n   446|    group_sessions_per_user: bool = True,\\n   447|    thread_sessions_per_user: bool = False,\\n   448|) -> str:\\n   449|    \\\"\\\"\\\"Build a deterministic session key from a message source.\\n   450|\\n   451|    This is the single source of truth for session key construction.\\n   452|\\n   453|    DM rules:\\n   454|      - DMs include chat_id when present, so each private conversation is isolated.\\n   455|      - thread_id further differentiates threaded DMs within the same DM chat.\\n   456|      - Without chat_id, thread_id is used as a best-effort fallback.\\n   457|      - Without thread_id or chat_id, DMs share a single session.\\n   458|\\n   459|    Group/channel rules:\\n   460|      - chat_id identifies the parent group/channel.\\n   461|      - user_id/user_id_alt isolates participants within that parent chat when available when\\n   462|        ``group_sessions_per_user`` is enabled.\\n   463|      - thread_id differentiates threads within that parent chat.  When\\n   464|        ``thread_sessions_per_user`` is False (default), threads are *shared* across all\\n   465|        participants — user_id is NOT appended, so every user in the thread\\n   466|        shares a single session.  This is the expected UX for threaded\\n   467|        conversations (Telegram forum topics, Discord threads, Slack threads).\\n   468|      - Without participant identifiers, or when isolation is disabled, messages fall back to one\\n   469|        shared session per chat.\\n   470|      - Without identifiers, messages fall back to one session per platform/chat_type.\\n   471|    \\\"\\\"\\\"\\n   472|    platform = source.platform.value\\n   473|    if source.chat_type == \\\"dm\\\":\\n   474|        if source.chat_id:\\n   475|            if source.thread_id:\\n   476|                return f\\\"agent:main:{platform}:dm:{source.chat_id}:{source.thread_id}\\\"\\n   477|            return f\\\"agent:main:{platform}:dm:{source.chat_id}\\\"\\n   478|        if source.thread_id:\\n   479|            return f\\\"agent:main:{platform}:dm:{source.thread_id}\\\"\\n   480|        return f\\\"agent:main:{platform}:dm\\\"\\n   481|\\n   482|    participant_id = source.user_id_alt or source.user_id\\n   483|    key_parts = [\\\"agent:main\\\", platform, source.chat_type]\\n   484|\\n   485|    if source.chat_id:\\n   486|        key_parts.append(source.chat_id)\\n   487|    if source.thread_id:\\n   488|        key_parts.append(source.thread_id)\\n   489|\\n   490|    # In threads, default to shared sessions (all participants see the same\\n   491|    # conversation).  Per-user isolation only applies when explicitly enabled\\n   492|    # via thread_sessions_per_user, or when there is no thread (regular group).\\n   493|    isolate_user = group_sessions_per_user\\n   494|    if source.thread_id and not thread_sessions_per_user:\\n   495|        isolate_user = False\\n   496|\\n   497|    if isolate_user and participant_id:\\n   498|        key_parts.append(str(participant_id))\\n   499|\\n   500|    return \\\":\\\".join(key_parts)\\n   501|\", \"total_lines\": 1081, \"file_size\": 41623, \"truncated\": true, \"hint\": \"Use offset=501 to continue reading (showing 1-500 of 1081 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_aa7a17e2"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_1190530c",
+          "call_id": "call_1190530c",
+          "response_item_id": "fc_1190530c",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*run_agent*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 8, \"files\": [\"./tests/run_agent/test_run_agent_codex_responses.py\", \"./tests/run_agent/test_run_agent.py\", \"./run_agent.py\", \"./run_agent.py.probe-r7.5-orig\", \"./run_agent.py.probe-r7.4-orig\", \"./run_agent.py.orig\", \"./run_agent.py.probe-d-orig\", \"./run_agent.py.probe-r7.6-orig\"]}",
+      "tool_call_id": "call_1190530c"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_447aee3c",
+          "call_id": "call_447aee3c",
+          "response_item_id": "fc_447aee3c",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"run_agent.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|#!/usr/bin/env python3\\n     2|\\\"\\\"\\\"\\n     3|AI Agent Runner with Tool Calling\\n     4|\\n     5|This module provides a clean, standalone agent that can execute AI models\\n     6|with tool calling capabilities. It handles the conversation loop, tool execution,\\n     7|and response management.\\n     8|\\n     9|Features:\\n    10|- Automatic tool calling loop until completion\\n    11|- Configurable model parameters\\n    12|- Error handling and recovery\\n    13|- Message history management\\n    14|- Support for multiple model providers\\n    15|\\n    16|Usage:\\n    17|    from run_agent import AIAgent\\n    18|    \\n    19|    agent = AIAgent(base_url=\\\"http://localhost:30000/v1\\\", model=\\\"claude-opus-4-20250514\\\")\\n    20|    response = agent.run_conversation(\\\"Tell me about the latest Python updates\\\")\\n    21|\\\"\\\"\\\"\\n    22|\\n    23|import asyncio\\n    24|import base64\\n    25|import concurrent.futures\\n    26|import copy\\n    27|import hashlib\\n    28|import json\\n    29|import logging\\n    30|logger = logging.getLogger(__name__)\\n    31|import os\\n    32|import random\\n    33|import re\\n    34|import sys\\n    35|import tempfile\\n    36|import time\\n    37|import threading\\n    38|from types import SimpleNamespace\\n    39|import uuid\\n    40|from typing import List, Dict, Any, Optional\\n    41|from openai import OpenAI\\n    42|import fire\\n    43|from datetime import datetime\\n    44|from pathlib import Path\\n    45|\\n    46|from hermes_constants import get_hermes_home\\n    47|\\n    48|# Load .env from ~/.hermes/.env first, then project root as dev fallback.\\n    49|# User-managed env files should override stale shell exports on restart.\\n    50|from hermes_cli.env_loader import load_hermes_dotenv\\n    51|\\n    52|_hermes_home = get_hermes_home()\\n    53|_project_env = Path(__file__).parent / '.env'\\n    54|_loaded_env_paths = load_hermes_dotenv(hermes_home=_hermes_home, project_env=_project_env)\\n    55|if _loaded_env_paths:\\n    56|    for _env_path in _loaded_env_paths:\\n    57|        logger.info(\\\"Loaded environment variables from %s\\\", _env_path)\\n    58|else:\\n    59|    logger.info(\\\"No .env file found. Using system environment variables.\\\")\\n    60|\\n    61|\\n    62|# Import our tool system\\n    63|from model_tools import (\\n    64|    get_tool_definitions,\\n    65|    get_toolset_for_tool,\\n    66|    handle_function_call,\\n    67|    check_toolset_requirements,\\n    68|)\\n    69|from tools.terminal_tool import cleanup_vm, get_active_env\\n    70|from tools.tool_result_storage import maybe_persist_tool_result, enforce_turn_budget\\n    71|from tools.interrupt import set_interrupt as _set_interrupt\\n    72|from tools.browser_tool import cleanup_browser\\n    73|\\n    74|\\n    75|from hermes_constants import OPENROUTER_BASE_URL\\n    76|\\n    77|# Agent internals extracted to agent/ package for modularity\\n    78|from agent.memory_manager import build_memory_context_block\\n    79|from agent.retry_utils import jittered_backoff\\n    80|from agent.prompt_builder import (\\n    81|    DEFAULT_AGENT_IDENTITY, PLATFORM_HINTS,\\n    82|    MEMORY_GUIDANCE, SESSION_SEARCH_GUIDANCE, SKILLS_GUIDANCE,\\n    83|    build_nous_subscription_prompt,\\n    84|)\\n    85|from agent.model_metadata import (\\n    86|    fetch_model_metadata,\\n    87|    estimate_tokens_rough, estimate_messages_tokens_rough, estimate_request_tokens_rough,\\n    88|    get_next_probe_tier, parse_context_limit_from_error,\\n    89|    save_context_length, is_local_endpoint,\\n    90|    query_ollama_num_ctx,\\n    91|)\\n    92|from agent.context_compressor import ContextCompressor\\n    93|from agent.subdirectory_hints import SubdirectoryHintTracker\\n    94|from agent.prompt_caching import apply_anthropic_cache_control\\n    95|from agent.prompt_builder import build_skills_system_prompt, build_context_files_prompt, load_soul_md, TOOL_USE_ENFORCEMENT_GUIDANCE, TOOL_USE_ENFORCEMENT_MODELS, DEVELOPER_ROLE_MODELS, GOOGLE_MODEL_OPERATIONAL_GUIDANCE, OPENAI_MODEL_EXECUTION_GUIDANCE\\n    96|from agent.usage_pricing import estimate_usage_cost, normalize_usage\\n    97|from agent.display import (\\n    98|    KawaiiSpinner, build_tool_preview as _build_tool_preview,\\n    99|    get_cute_tool_message as _get_cute_tool_message_impl,\\n   100|    _detect_tool_failure,\\n   101|    get_tool_emoji as _get_tool_emoji,\\n   102|)\\n   103|from agent.trajectory import (\\n   104|    convert_scratchpad_to_think, has_incomplete_scratchpad,\\n   105|    save_trajectory as _save_trajectory_to_file,\\n   106|)\\n   107|from utils import atomic_json_write, env_var_enabled\\n   108|\\n   109|\\n   110|\\n   111|class _SafeWriter:\\n   112|    \\\"\\\"\\\"Transparent stdio wrapper that catches OSError/ValueError from broken pipes.\\n   113|\\n   114|    When hermes-agent runs as a systemd service, Docker container, or headless\\n   115|    daemon, the stdout/stderr pipe can become unavailable (idle timeout, buffer\\n   116|    exhaustion, socket reset). Any print() call then raises\\n   117|    ``OSError: [Errno 5] Input/output error``, which can crash agent setup or\\n   118|    run_conversation() — especially via double-fault when an except handler\\n   119|    also tries to print.\\n   120|\\n   121|    Additionally, when subagents run in ThreadPoolExecutor threads, the shared\\n   122|    stdout handle can close between thread teardown and cleanup, raising\\n   123|    ``ValueError: I/O operation on closed file`` instead of OSError.\\n   124|\\n   125|    This wrapper delegates all writes to the underlying stream and silently\\n   126|    catches both OSError and ValueError. It is transparent when the wrapped\\n   127|    stream is healthy.\\n   128|    \\\"\\\"\\\"\\n   129|\\n   130|    __slots__ = (\\\"_inner\\\",)\\n   131|\\n   132|    def __init__(self, inner):\\n   133|        object.__setattr__(self, \\\"_inner\\\", inner)\\n   134|\\n   135|    def write(self, data):\\n   136|        try:\\n   137|            return self._inner.write(data)\\n   138|        except (OSError, ValueError):\\n   139|            return len(data) if isinstance(data, str) else 0\\n   140|\\n   141|    def flush(self):\\n   142|        try:\\n   143|            self._inner.flush()\\n   144|        except (OSError, ValueError):\\n   145|            pass\\n   146|\\n   147|    def fileno(self):\\n   148|        return self._inner.fileno()\\n   149|\\n   150|    def isatty(self):\\n   151|        try:\\n   152|            return self._inner.isatty()\\n   153|        except (OSError, ValueError):\\n   154|            return False\\n   155|\\n   156|    def __getattr__(self, name):\\n   157|        return getattr(self._inner, name)\\n   158|\\n   159|\\n   160|def _install_safe_stdio() -> None:\\n   161|    \\\"\\\"\\\"Wrap stdout/stderr so best-effort console output cannot crash the agent.\\\"\\\"\\\"\\n   162|    for stream_name in (\\\"stdout\\\", \\\"stderr\\\"):\\n   163|        stream = getattr(sys, stream_name, None)\\n   164|        if stream is not None and not isinstance(stream, _SafeWriter):\\n   165|            setattr(sys, stream_name, _SafeWriter(stream))\\n   166|\\n   167|\\n   168|class IterationBudget:\\n   169|    \\\"\\\"\\\"Thread-safe iteration counter for an agent.\\n   170|\\n   171|    Each agent (parent or subagent) gets its own ``IterationBudget``.\\n   172|    The parent's budget is capped at ``max_iterations`` (default 90).\\n   173|    Each subagent gets an independent budget capped at\\n   174|    ``delegation.max_iterations`` (default 50) — this means total\\n   175|    iterations across parent + subagents can exceed the parent's cap.\\n   176|    Users control the per-subagent limit via ``delegation.max_iterations``\\n   177|    in config.yaml.\\n   178|\\n   179|    ``execute_code`` (programmatic tool calling) iterations are refunded via\\n   180|    :meth:`refund` so they don't eat into the budget.\\n   181|    \\\"\\\"\\\"\\n   182|\\n   183|    def __init__(self, max_total: int):\\n   184|        self.max_total = max_total\\n   185|        self._used = 0\\n   186|        self._lock = threading.Lock()\\n   187|\\n   188|    def consume(self) -> bool:\\n   189|        \\\"\\\"\\\"Try to consume one iteration.  Returns True if allowed.\\\"\\\"\\\"\\n   190|        with self._lock:\\n   191|            if self._used >= self.max_total:\\n   192|                return False\\n   193|            self._used += 1\\n   194|            return True\\n   195|\\n   196|    def refund(self) -> None:\\n   197|        \\\"\\\"\\\"Give back one iteration (e.g. for execute_code turns).\\\"\\\"\\\"\\n   198|        with self._lock:\\n   199|            if self._used > 0:\\n   200|                self._used -= 1\\n   201|\\n   202|    @property\\n   203|    def used(self) -> int:\\n   204|        return self._used\\n   205|\\n   206|    @property\\n   207|    def remaining(self) -> int:\\n   208|        with self._lock:\\n   209|            return max(0, self.max_total - self._used)\\n   210|\\n   211|\\n   212|# Tools that must never run concurrently (interactive / user-facing).\\n   213|# When any of these appear in a batch, we fall back to sequential execution.\\n   214|_NEVER_PARALLEL_TOOLS = frozenset({\\\"clarify\\\"})\\n   215|\\n   216|# Read-only tools with no shared mutable session state.\\n   217|_PARALLEL_SAFE_TOOLS = frozenset({\\n   218|    \\\"ha_get_state\\\",\\n   219|    \\\"ha_list_entities\\\",\\n   220|    \\\"ha_list_services\\\",\\n   221|    \\\"read_file\\\",\\n   222|    \\\"search_files\\\",\\n   223|    \\\"session_search\\\",\\n   224|    \\\"skill_view\\\",\\n   225|    \\\"skills_list\\\",\\n   226|    \\\"vision_analyze\\\",\\n   227|    \\\"web_extract\\\",\\n   228|    \\\"web_search\\\",\\n   229|})\\n   230|\\n   231|# File tools can run concurrently when they target independent paths.\\n   232|_PATH_SCOPED_TOOLS = frozenset({\\\"read_file\\\", \\\"write_file\\\", \\\"patch\\\"})\\n   233|\\n   234|# Maximum number of concurrent worker threads for parallel tool execution.\\n   235|_MAX_TOOL_WORKERS = 8\\n   236|\\n   237|# Patterns that indicate a terminal command may modify/delete files.\\n   238|_DESTRUCTIVE_PATTERNS = re.compile(\\n   239|    r\\\"\\\"\\\"(?:^|\\\\s|&&|\\\\|\\\\||;|`)(?:\\n   240|        rm\\\\s|rmdir\\\\s|\\n   241|        mv\\\\s|\\n   242|        sed\\\\s+-i|\\n   243|        truncate\\\\s|\\n   244|        dd\\\\s|\\n   245|        shred\\\\s|\\n   246|        git\\\\s+(?:reset|clean|checkout)\\\\s\\n   247|    )\\\"\\\"\\\",\\n   248|    re.VERBOSE,\\n   249|)\\n   250|# Output redirects that overwrite files (> but not >>)\\n   251|_REDIRECT_OVERWRITE = re.compile(r'[^>]>[^>]|^>[^>]')\\n   252|\\n   253|\\n   254|def _is_destructive_command(cmd: str) -> bool:\\n   255|    \\\"\\\"\\\"Heuristic: does this terminal command look like it modifies/deletes files?\\\"\\\"\\\"\\n   256|    if not cmd:\\n   257|        return False\\n   258|    if _DESTRUCTIVE_PATTERNS.search(cmd):\\n   259|        return True\\n   260|    if _REDIRECT_OVERWRITE.search(cmd):\\n   261|        return True\\n   262|    return False\\n   263|\\n   264|\\n   265|def _should_parallelize_tool_batch(tool_calls) -> bool:\\n   266|    \\\"\\\"\\\"Return True when a tool-call batch is safe to run concurrently.\\\"\\\"\\\"\\n   267|    if len(tool_calls) <= 1:\\n   268|        return False\\n   269|\\n   270|    tool_names = [tc.function.name for tc in tool_calls]\\n   271|    if any(name in _NEVER_PARALLEL_TOOLS for name in tool_names):\\n   272|        return False\\n   273|\\n   274|    reserved_paths: list[Path] = []\\n   275|    for tool_call in tool_calls:\\n   276|        tool_name = tool_call.function.name\\n   277|        try:\\n   278|            function_args = json.loads(tool_call.function.arguments)\\n   279|        except Exception:\\n   280|            logging.debug(\\n   281|                \\\"Could not parse args for %s — defaulting to sequential; raw=%s\\\",\\n   282|                tool_name,\\n   283|                tool_call.function.arguments[:200],\\n   284|            )\\n   285|            return False\\n   286|        if not isinstance(function_args, dict):\\n   287|            logging.debug(\\n   288|                \\\"Non-dict args for %s (%s) — defaulting to sequential\\\",\\n   289|                tool_name,\\n   290|                type(function_args).__name__,\\n   291|            )\\n   292|            return False\\n   293|\\n   294|        if tool_name in _PATH_SCOPED_TOOLS:\\n   295|            scoped_path = _extract_parallel_scope_path(tool_name, function_args)\\n   296|            if scoped_path is None:\\n   297|                return False\\n   298|            if any(_paths_overlap(scoped_path, existing) for existing in reserved_paths):\\n   299|                return False\\n   300|            reserved_paths.append(scoped_path)\\n   301|            continue\\n   302|\\n   303|        if tool_name not in _PARALLEL_SAFE_TOOLS:\\n   304|            return False\\n   305|\\n   306|    return True\\n   307|\\n   308|\\n   309|def _extract_parallel_scope_path(tool_name: str, function_args: dict) -> Path | None:\\n   310|    \\\"\\\"\\\"Return the normalized file target for path-scoped tools.\\\"\\\"\\\"\\n   311|    if tool_name not in _PATH_SCOPED_TOOLS:\\n   312|        return None\\n   313|\\n   314|    raw_path = function_args.get(\\\"path\\\")\\n   315|    if not isinstance(raw_path, str) or not raw_path.strip():\\n   316|        return None\\n   317|\\n   318|    expanded = Path(raw_path).expanduser()\\n   319|    if expanded.is_absolute():\\n   320|        return Path(os.path.abspath(str(expanded)))\\n   321|\\n   322|    # Avoid resolve(); the file may not exist yet.\\n   323|    return Path(os.path.abspath(str(Path.cwd() / expanded)))\\n   324|\\n   325|\\n   326|def _paths_overlap(left: Path, right: Path) -> bool:\\n   327|    \\\"\\\"\\\"Return True when two paths may refer to the same subtree.\\\"\\\"\\\"\\n   328|    left_parts = left.parts\\n   329|    right_parts = right.parts\\n   330|    if not left_parts or not right_parts:\\n   331|        # Empty paths shouldn't reach here (guarded upstream), but be safe.\\n   332|        return bool(left_parts) == bool(right_parts) and bool(left_parts)\\n   333|    common_len = min(len(left_parts), len(right_parts))\\n   334|    return left_parts[:common_len] == right_parts[:common_len]\\n   335|\\n   336|\\n   337|\\n   338|_SURROGATE_RE = re.compile(r'[\\\\ud800-\\\\udfff]')\\n   339|\\n   340|_BUDGET_WARNING_RE = re.compile(\\n   341|    r\\\"\\\\[BUDGET(?:\\\\s+WARNING)?:\\\\s+Iteration\\\\s+\\\\d+/\\\\d+\\\\..*?\\\\]\\\",\\n   342|    re.DOTALL,\\n   343|)\\n   344|\\n   345|\\n   346|def _sanitize_surrogates(text: str) -> str:\\n   347|    \\\"\\\"\\\"Replace lone surrogate code points with U+FFFD (replacement character).\\n   348|\\n   349|    Surrogates are invalid in UTF-8 and will crash ``json.dumps()`` inside the\\n   350|    OpenAI SDK.  This is a fast no-op when the text contains no surrogates.\\n   351|    \\\"\\\"\\\"\\n   352|    if _SURROGATE_RE.search(text):\\n   353|        return _SURROGATE_RE.sub('\\\\ufffd', text)\\n   354|    return text\\n   355|\\n   356|\\n   357|def _sanitize_messages_surrogates(messages: list) -> bool:\\n   358|    \\\"\\\"\\\"Sanitize surrogate characters from all string content in a messages list.\\n   359|\\n   360|    Walks message dicts in-place.  Returns True if any surrogates were found\\n   361|    and replaced, False otherwise.\\n   362|    \\\"\\\"\\\"\\n   363|    found = False\\n   364|    for msg in messages:\\n   365|        if not isinstance(msg, dict):\\n   366|            continue\\n   367|        content = msg.get(\\\"content\\\")\\n   368|        if isinstance(content, str) and _SURROGATE_RE.search(content):\\n   369|            msg[\\\"content\\\"] = _SURROGATE_RE.sub('\\\\ufffd', content)\\n   370|            found = True\\n   371|        elif isinstance(content, list):\\n   372|            for part in content:\\n   373|                if isinstance(part, dict):\\n   374|                    text = part.get(\\\"text\\\")\\n   375|                    if isinstance(text, str) and _SURROGATE_RE.search(text):\\n   376|                        part[\\\"text\\\"] = _SURROGATE_RE.sub('\\\\ufffd', text)\\n   377|                        found = True\\n   378|    return found\\n   379|\\n   380|\\n   381|def _strip_budget_warnings_from_history(messages: list) -> None:\\n   382|    \\\"\\\"\\\"Remove budget pressure warnings from tool-result messages in-place.\\n   383|\\n   384|    Budget warnings are turn-scoped signals that must not leak into replayed\\n   385|    history.  They live in tool-result ``content`` either as a JSON key\\n   386|    (``_budget_warning``) or appended plain text.\\n   387|    \\\"\\\"\\\"\\n   388|    for msg in messages:\\n   389|        if not isinstance(msg, dict) or msg.get(\\\"role\\\") != \\\"tool\\\":\\n   390|            continue\\n   391|        content = msg.get(\\\"content\\\")\\n   392|        if not isinstance(content, str) or \\\"_budget_warning\\\" not in content and \\\"[BUDGET\\\" not in content:\\n   393|            continue\\n   394|\\n   395|        # Try JSON first (the common case: _budget_warning key in a dict)\\n   396|        try:\\n   397|            parsed = json.loads(content)\\n   398|            if isinstance(parsed, dict) and \\\"_budget_warning\\\" in parsed:\\n   399|                del parsed[\\\"_budget_warning\\\"]\\n   400|                msg[\\\"content\\\"] = json.dumps(parsed, ensure_ascii=False)\\n   401|                continue\\n   402|        except (json.JSONDecodeError, TypeError):\\n   403|            pass\\n   404|\\n   405|        # Fallback: strip the text pattern from plain-text tool results\\n   406|        cleaned = _BUDGET_WARNING_RE.sub(\\\"\\\", content).strip()\\n   407|        if cleaned != content:\\n   408|            msg[\\\"content\\\"] = cleaned\\n   409|\\n   410|\\n   411|# =========================================================================\\n   412|# Large tool result handler — save oversized output to temp file\\n   413|# =========================================================================\\n   414|\\n   415|\\n   416|\\n   417|# --- r7.6-P1A inv-2 G1 channel-marker helpers ----------------------\\n   418|# Detect harmony-format channel-marker leakage in assistant content. When\\n   419|# the Gemma 4 26B MoE on oMLX produces exclusively \\\"<channel|>\\\" /\\n   420|# \\\"thought\\\\n<channel|>\\\" / \\\"<|channel|>\\\" variants as visible content, the\\n   421|# empty-follow-up fallback must not back-patch the penultimate turn with\\n   422|# \\\"Calling the X tool...\\\" — that masks the empty-synthesis state. This\\n   423|# helper tells the fallback path to emit a diagnostic trailer instead.\\n   424|import re as _re_r76\\n   425|_R76_CHANNEL_MARKER_ONLY_RE = _re_r76.compile(\\n   426|    r\\\"^\\\\s*(?:\\\"\\n   427|    r\\\"(?:<\\\\|?channel\\\\|?>\\\\s*)\\\"\\n   428|    r\\\"|(?:thought\\\\s*<\\\\|?channel\\\\|?>\\\\s*)\\\"\\n   429|    r\\\"|(?:<\\\\|?channel\\\\|?>\\\\s*thought\\\\s*<\\\\|?channel\\\\|?>\\\\s*)\\\"\\n   430|    r\\\")+\\\\s*$\\\",\\n   431|    _re_r76.IGNORECASE | _re_r76.DOTALL,\\n   432|)\\n   433|def _r76_channel_marker_only(s):\\n   434|    \\\"\\\"\\\"True iff s is empty or pure channel-marker leakage.\\\"\\\"\\\"\\n   435|    if s is None:\\n   436|        return True\\n   437|    if not isinstance(s, str):\\n   438|        s = str(s)\\n   439|    if s.strip() == \\\"\\\":\\n   440|        return True\\n   441|    return bool(_R76_CHANNEL_MARKER_ONLY_RE.match(s))\\n   442|\\n   443|_R76_EMPTY_SYNTHESIS_TRAILER = (\\n   444|    \\\"[child session exited with no synthesis — content was channel-marker pollution only]\\\"\\n   445|)\\n   446|# --- end r7.6-P1A inv-2 G1 helpers ---------------------------------\\n   447|\\n   448|class AIAgent:\\n   449|    \\\"\\\"\\\"\\n   450|    AI Agent with tool calling capabilities.\\n   451|\\n   452|    This class manages the conversation flow, tool execution, and response handling\\n   453|    for AI models that support function calling.\\n   454|    \\\"\\\"\\\"\\n   455|\\n   456|    @property\\n   457|    def base_url(self) -> str:\\n   458|        return self._base_url\\n   459|\\n   460|    @base_url.setter\\n   461|    def base_url(self, value: str) -> None:\\n   462|        self._base_url = value\\n   463|        self._base_url_lower = value.lower() if value else \\\"\\\"\\n   464|\\n   465|    def __init__(\\n   466|        self,\\n   467|        base_url: str = None,\\n   468|        api_key: str = None,\\n   469|        provider: str = None,\\n   470|        api_mode: str = None,\\n   471|        acp_command: str = None,\\n   472|        acp_args: list[str] | None = None,\\n   473|        command: str = None,\\n   474|        args: list[str] | None = None,\\n   475|        model: str = \\\"\\\",\\n   476|        max_iterations: int = 90,  # Default tool-calling iterations (shared with subagents)\\n   477|        tool_delay: float = 1.0,\\n   478|        enabled_toolsets: List[str] = None,\\n   479|        disabled_toolsets: List[str] = None,\\n   480|        save_trajectories: bool = False,\\n   481|        verbose_logging: bool = False,\\n   482|        quiet_mode: bool = False,\\n   483|        ephemeral_system_prompt: str = None,\\n   484|        log_prefix_chars: int = 100,\\n   485|        log_prefix: str = \\\"\\\",\\n   486|        providers_allowed: List[str] = None,\\n   487|        providers_ignored: List[str] = None,\\n   488|        providers_order: List[str] = None,\\n   489|        provider_sort: str = None,\\n   490|        provider_require_parameters: bool = False,\\n   491|        provider_data_collection: str = None,\\n   492|        session_id: str = None,\\n   493|        tool_progress_callback: callable = None,\\n   494|        tool_start_callback: callable = None,\\n   495|        tool_complete_callback: callable = None,\\n   496|        thinking_callback: callable = None,\\n   497|        reasoning_callback: callable = None,\\n   498|        clarify_callback: callable = None,\\n   499|        step_callback: callable = None,\\n   500|        stream_delta_callback: callable = None,\\n   501|\", \"total_lines\": 9594, \"file_size\": 485607, \"truncated\": true, \"hint\": \"Use offset=501 to continue reading (showing 1-500 of 9594 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_447aee3c"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_033b79f2",
+          "call_id": "call_033b79f2",
+          "response_item_id": "fc_033b79f2",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*permission*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"./tests/cron/test_file_permissions.py\", \"./tests/acp/test_permissions.py\", \"./acp_adapter/permissions.py\"]}",
+      "tool_call_id": "call_033b79f2"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_2842f7ed",
+          "call_id": "call_2842f7ed",
+          "response_item_id": "fc_2842f7ed",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"acp_adapter/permissions.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|\\\"\\\"\\\"ACP permission bridging — maps ACP approval requests to hermes approval callbacks.\\\"\\\"\\\"\\n     2|\\n     3|from __future__ import annotations\\n     4|\\n     5|import asyncio\\n     6|import logging\\n     7|from concurrent.futures import TimeoutError as FutureTimeout\\n     8|from typing import Callable\\n     9|\\n    10|from acp.schema import (\\n    11|    AllowedOutcome,\\n    12|    PermissionOption,\\n    13|)\\n    14|\\n    15|logger = logging.getLogger(__name__)\\n    16|\\n    17|# Maps ACP PermissionOptionKind -> hermes approval result strings\\n    18|_KIND_TO_HERMES = {\\n    19|    \\\"allow_once\\\": \\\"once\\\",\\n    20|    \\\"allow_always\\\": \\\"always\\\",\\n    21|    \\\"reject_once\\\": \\\"deny\\\",\\n    22|    \\\"reject_always\\\": \\\"deny\\\",\\n    23|}\\n    24|\\n    25|\\n    26|def make_approval_callback(\\n    27|    request_permission_fn: Callable,\\n    28|    loop: asyncio.AbstractEventLoop,\\n    29|    session_id: str,\\n    30|    timeout: float = 60.0,\\n    31|) -> Callable[[str, str], str]:\\n    32|    \\\"\\\"\\\"\\n    33|    Return a hermes-compatible ``approval_callback(command, description) -> str``\\n    34|    that bridges to the ACP client's ``request_permission`` call.\\n    35|\\n    36|    Args:\\n    37|        request_permission_fn: The ACP connection's ``request_permission`` coroutine.\\n    38|        loop: The event loop on which the ACP connection lives.\\n    39|        session_id: Current ACP session id.\\n    40|        timeout: Seconds to wait for a response before auto-denying.\\n    41|    \\\"\\\"\\\"\\n    42|\\n    43|    def _callback(command: str, description: str) -> str:\\n    44|        options = [\\n    45|            PermissionOption(option_id=\\\"allow_once\\\", kind=\\\"allow_once\\\", name=\\\"Allow once\\\"),\\n    46|            PermissionOption(option_id=\\\"allow_always\\\", kind=\\\"allow_always\\\", name=\\\"Allow always\\\"),\\n    47|            PermissionOption(option_id=\\\"deny\\\", kind=\\\"reject_once\\\", name=\\\"Deny\\\"),\\n    48|        ]\\n    49|        import acp as _acp\\n    50|\\n    51|        tool_call = _acp.start_tool_call(\\\"perm-check\\\", command, kind=\\\"execute\\\")\\n    52|\\n    53|        coro = request_permission_fn(\\n    54|            session_id=session_id,\\n    55|            tool_call=tool_call,\\n    56|            options=options,\\n    57|        )\\n    58|\\n    59|        try:\\n    60|            future = asyncio.run_coroutine_threadsafe(coro, loop)\\n    61|            response = future.result(timeout=timeout)\\n    62|        except (FutureTimeout, Exception) as exc:\\n    63|            logger.warning(\\\"Permission request timed out or failed: %s\\\", exc)\\n    64|            return \\\"deny\\\"\\n    65|\\n    66|        outcome = response.outcome\\n    67|        if isinstance(outcome, AllowedOutcome):\\n    68|            option_id = outcome.option_id\\n    69|            # Look up the kind from our options list\\n    70|            for opt in options:\\n    71|                if opt.option_id == option_id:\\n    72|                    return _KIND_TO_HERMES.get(opt.kind, \\\"deny\\\")\\n    73|            return \\\"once\\\"  # fallback for unknown option_id\\n    74|        else:\\n    75|            return \\\"deny\\\"\\n    76|\\n    77|    return _callback\\n    78|\", \"total_lines\": 77, \"file_size\": 2525, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_2842f7ed"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_f527b937",
+          "call_id": "call_f527b937",
+          "response_item_id": "fc_f527b937",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*docs*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_f527b937"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_8a218295",
+          "call_id": "call_8a218295",
+          "response_item_id": "fc_8a218295",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*doc*\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 15, \"files\": [\"./tests/tools/test_docker_environment.py\", \"./tests/tools/test_docker_find.py\", \"./tests/hermes_cli/test_doctor.py\", \"./tests/gateway/test_telegram_documents.py\", \"./tests/gateway/test_discord_document_handling.py\", \"./tests/gateway/test_document_cache.py\", \"./website/docusaurus.config.ts\", \"./website/docs/user-guide/docker.md\", \"./hermes_cli/doctor.py\", \"./tools/environments/docker.py\", \"./.dockerignore\", \"./skills/productivity/powerpoint/scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesExtended.xsd\", \"./skills/productivity/powerpoint/scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesVariantTypes.xsd\", \"./skills/productivity/powerpoint/scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesCustom.xsd\", \"./scripts/discord-voice-doctor.py\"]}",
+      "tool_call_id": "call_8a218295"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>PLAN: I will create the `features/export-engine/PLAN.md` file with a detailed implementation plan and technical stack summary based on my findings. Paths: `features/export-engine/PLAN.md`. Stop when: The file is written and the deliverable is complete.\n\nI have completed the discovery phase:\n1. **Data Retrieval Layer**: The system uses `gateway/session.py` for session context and `run_agent.py` (via `AIAgent`) for the core execution loop. Data access is likely integrated via tool calling (e.g., `read_file`, `search_files`) or specialized skills. The `ResponseStore` in `gateway/platforms/api_server.py` manages persisted conversation state.\n2. **Permission/Auth**: Auth is handled via Bearer tokens in the `APIServerAdapter` (`gateway/platforms/api_server.py`) and through the ACP (Agent Control Protocol) bridging in `acp_adapter/permissions.py`.\n3. **API Documentation**: Documentation is primarily housed in the `website/docs/` directory (e.g., `website/docs/user-guide/features/api-server.md`).\n4. **Tech Stack Identification**:\n   - **Language**: Python (based on existing codebase).\n   - **API Framework**: `aiohttp` (used in the gateway).\n   - **PDF Generation**: `reportlab` or `pdfkit` (candidates).\n   - **Data Formats**: Standard `json` and `csv` libraries.\n\nI will now create the directory and the plan.",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_87c8a2f2",
+          "call_id": "call_87c8a2f2",
+          "response_item_id": "fc_87c8a2f2",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"mkdir -p features/export-engine && touch features/export-engine/PLAN.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_87c8a2f2",
+      "content": "Tool 'terminal' does not exist. Available tools: read_file, search_files, todo"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_37e82fda",
+          "call_id": "call_37e82fda",
+          "response_item_id": "fc_37e82fda",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"features/export-engine/PLAN.md\", \"content\": \"# Export Engine Implementation Plan\\n\\n## Overview\\nThis document outlines the development of a multi-format export feature (CSV, JSON, PDF) for the Hermes Agent, allowing users to export conversation histories, tool outputs, and session data.\\n\\n## Technical Stack\\n- **Language:** Python 3.x\\n- **API Framework:** `aiohttp` (consistent with existing `gateway/platforms/api_server.py`)\\n- **PDF Generation:** `reportlab` (preferred for high-performance server-side PDF generation without external dependencies like wkhtmltopdf) or `pdfkit` (if HTML-to-PDF is required).\\n- **Data Formats:**\\n  - **JSON:** Standard `json` library.\\n  - **CSV:** Standard `csv` library.\\n- **Testing:** `pytest` (consistent with existing `tests/` structure).\\n\\n## Implementation Steps\\n\\n### 1. Data Access Layer (DAL)\\n- **Objective:** Retrieve data while respecting ownership and session boundaries.\\n- **Tasks:**\\n  - Implement a `DataRetriever` service that interfaces with `SessionDB` (from `hermes_state`) and `ResponseStore`.\\n  - Ensure ownership-based filtering by validating `SessionSource` (platform, chat_id, user_id) before data extraction.\\n  - Create methods to extract structured data from `AIAgent` trajectories and session histories.\\n\\n### 2. Format Generators\\n- **Objective:** Transform raw data into the requested file formats.\\n- **Tasks:**\\n  - **Base Generator Interface:** Define an abstract `BaseExporter` class.\\n  - **JSON Exporter:** Implement serialization of session/trajectory objects.\\n  - **CSV Exporter:** Implement flattening of nested message/tool structures into tabular rows.\\n  - **PDF Exporter:** Implement layout engine using `reportlab` to render readable conversation logs, including timestamps and role identifiers.\\n\\n### 3. API Endpoint Implementation\\n- **Objective:** Expose the export functionality via the existing API Gateway.\\n- **Tasks:**\\n  - Extend `APIServerAdapter` in `gateway/platforms/api_server.py`.\\n  - Add `GET /v1/exports/{session_id}?format={csv|json|pdf}` endpoint.\\n  - Integrate with `_check_auth` to ensure only authorized users can trigger exports.\\n  - Implement streaming responses for large files to prevent memory exhaustion.\\n\\n### 4. Test Suite\\n- **Objective:** Ensure reliability and correctness of data extraction and formatting.\\n- **Tasks:**\\n  - **Unit Tests:** Test individual generators with mocked data.\\n  - **Integration Tests:** Test the full flow from API request to file generation using `pytest`.\\n  - **Security Tests:** Verify that attempting to export a `session_id` from a different `user_id` or `chat_id` returns a 403 Forbidden.\\n\\n### 5. API Documentation Updates\\n- **Objective:** Inform users/developers of the new capability.\\n- **Tasks:**\\n  - Update `website/docs/user-guide/features/api-server.md`.\\n  - Add specific examples for the new export endpoint.\\n\\n## Dependencies to Add\\n- `reportlab` (for PDF)\\n- `pandas` (optional, for easier CSV/Data manipulation if complexity grows)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"\", \"total_lines\": 0, \"file_size\": 0, \"truncated\": false, \"is_binary\": false, \"is_image\": false, \"error\": \"File not found: features/export-engine/PLAN.md\"}",
+      "tool_call_id": "call_37e82fda"
+    },
+    {
+      "role": "assistant",
+      "content": "<channel|>",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_e018968c",
+          "call_id": "call_e018968c",
+          "response_item_id": "fc_e018968c",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"content\": \"# Export Engine Implementation Plan\\n\\n## Overview\\nThis document outlines the development of a multi-format export feature (CSV, JSON, PDF) for the Hermes Agent, allowing users to export conversation histories, tool outputs, and session data.\\n\\n## Technical Stack\\n- **Language:** Python 3.x\\n- **API Framework:** `aiohttp` (consistent with existing `gateway/platforms/api_server.py`)\\n- **PDF Generation:** `reportlab` (preferred for high-performance server-side PDF generation without external dependencies like wkhtmltopdf) or `pdfkit` (if HTML-to-PDF is required).\\n- **Data Formats:**\\n  - **JSON:** Standard `json` library.\\n  - **CSV:** Standard `csv` library.\\n- **Testing:** `pytest` (consistent with existing `tests/` structure).\\n\\n## Implementation Steps\\n\\n### 1. Data Access Layer (DAL)\\n- **Objective:** Retrieve data while respecting ownership and session boundaries.\\n- **Tasks:**\\n  - Implement a `DataRetriever` service that interfaces with `SessionDB` (from `hermes_state`) and `ResponseStore`.\\n  - Ensure ownership-based filtering by validating `SessionSource` (platform, chat_id, user_id) before data extraction.\\n  - Create methods to extract structured data from `AIAgent` trajectories and session histories.\\n\\n### 2. Format Generators\\n- **Objective:** Transform raw data into the requested file formats.\\n- **Tasks:**\\n  - **Base Generator Interface:** Define an abstract `BaseExporter` class.\\n  - **JSON Exporter:** Implement serialization of session/trajectory objects.\\n  - **CSV Exporter:** Implement flattening of nested message/tool structures into tabular rows.\\n  - **PDF Exporter:** Implement layout engine using `reportlab` to render readable conversation logs, including timestamps and role identifiers.\\n\\n### 3. API Endpoint Implementation\\n- **Objective:** Expose the export functionality via the existing API Gateway.\\n- **Tasks:**\\n  - Extend `APIServerAdapter` in `gateway/platforms/api_server.py`.\\n  - Add `GET /v1/exports/{session_id}?format={csv|json|pdf}` endpoint.\\n  - Integrate with `_check_auth` to ensure only authorized users can trigger exports.\\n  - Implement streaming responses for large files to prevent memory exhaustion.\\n\\n### 4. Test Suite\\n- **Objective:** Ensure reliability and correctness of data extraction and formatting.\\n- **Tasks:**\\n  - **Unit Tests:** Test individual generators with mocked data.\\n  - **Integration Tests:** Test the full flow from API request to file generation using `pytest`.\\n  - **Security Tests:** Verify that attempting to export a `session_id` from a different `user_id` or `chat_id` returns a 403 Forbidden.\\n\\n### 5. API Documentation Updates\\n- **Objective:** Inform users/developers of the new capability.\\n- **Tasks:**\\n  - Update `website/docs/user-guide/features/api-server.md`.\\n  - Add specific examples for the new export endpoint.\\n\\n## Dependencies to Add\\n- `reportlab` (for PDF)\\n- `pandas` (optional, for easier CSV/Data manipulation if complexity grows)\\n\", \"path\": \"features/export-engine/PLAN.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"\", \"total_lines\": 0, \"file_size\": 0, \"truncated\": false, \"is_binary\": false, \"is_image\": false, \"error\": \"File not found: features/export-engine/PLAN.md\"}",
+      "tool_call_id": "call_e018968c"
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>I cannot use `write_file` or `terminal` because they are not available in the current toolset, and I am unable to create the directory or file directly. However, I have completed the **Discovery & Planning** phase through analysis and have prepared the content for the deliverable.\n\n### Discovery Findings\n1. **Data Retrieval Layer**: The system manages session state via `gateway/session.py` and `ResponseStore` (in `gateway/platforms/api_server.py`). Data access for agents is handled through the `AIAgent` class in `run_agent.py`.\n2. **Permission/Auth**: Authentication is implemented in `gateway/platforms/api_server.py` using Bearer tokens. Permission bridging for the Agent Control Protocol (ACP) is handled in `acp_adapter/permissions.py`.\n3. **API Documentation**: Documentation is located in the `website/docs/` directory (e.g., `website/docs/user-guide/features/api-server.md`).\n\n### Technical Stack Chosen\n- **Language**: Python 3.x\n- **API Framework**: `aiohttp` (existing gateway standard)\n- **PDF Generation**: `reportlab` (chosen for server-side efficiency and minimal external dependencies)\n- **Data Formats**: Standard `json` and `csv` libraries\n- **Testing**: `pytest`\n\n---\n\n### Deliverable: `features/export-engine/PLAN.md` (Content)\n\n```markdown\n# Export Engine Implementation Plan\n\n## Overview\nThis document outlines the development of a multi-format export feature (CSV, JSON, PDF) for the Hermes Agent, allowing users to export conversation histories, tool outputs, and session data.\n\n## Technical Stack\n- **Language:** Python 3.x\n- **API Framework:** `aiohttp` (consistent with existing `gateway/platforms/api_server.py`)\n- **PDF Generation:** `reportlab` (preferred for high-performance server-side PDF generation)\n- **Data Formats:**\n  - **JSON:** Standard `json` library.\n  - **CSV:** Standard `csv` library.\n- **Testing:** `pytest` (consistent with existing `tests/` structure).\n\n## Implementation Steps\n\n### 1. Data Access Layer (DAL)\n- **Objective:** Retrieve data while respecting ownership and session boundaries.\n- **Tasks:**\n  - Implement a `DataRetriever` service that interfaces with `SessionDB` and `ResponseStore`.\n  - Ensure ownership-based filtering by validating `SessionSource` (platform, chat_id, user_id) before data extraction.\n  - Create methods to extract structured data from `AIAgent` trajectories and session histories.\n\n### 2. Format Generators\n- **Objective:** Transform raw data into the requested file formats.\n- **Tasks:**\n  - **Base Generator Interface:** Define an abstract `BaseExporter` class.\n  - **JSON Exporter:** Implement serialization of session/trajectory objects.\n  - **CSV Exporter:** Implement flattening of nested message/tool structures into tabular rows.\n  - **PDF Exporter:** Implement layout engine using `reportlab` to render readable conversation logs.\n\n### 3. API Endpoint Implementation\n- **Objective:** Expose the export functionality via the existing API Gateway.\n- **Tasks:**\n  - Extend `APIServerAdapter` in `gateway/platforms/api_server.py`.\n  - Add `GET /v1/exports/{session_id}?format={csv|json|pdf}` endpoint.\n  - Integrate with `_check_auth` to ensure only authorized users can trigger exports.\n  - Implement streaming responses for large files.\n\n### 4. Test Suite\n- **Objective:** Ensure reliability and correctness.\n- **Tasks:**\n  - **Unit Tests:** Test individual generators with mocked data.\n  - **Integration Tests:** Test the full flow from API request to file generation using `pytest`.\n  - **Security Tests:** Verify that unauthorized `session_id` access returns a 403 Forbidden.\n\n### 5. API Documentation Updates\n- **Objective:** Inform users/developers of the new capability.\n- **Tasks:**\n  - Update `website/docs/user-guide/features/api-server.md`.\n  - Add specific examples for the new export endpoint.\n\n## Dependencies to Add\n- `reportlab` (for PDF)\n```",
+      "reasoning": null,
+      "finish_reason": "stop"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+=== Unstaging variantJ-A2 ===
+[probe-variantJ-A2-stage] Unstaging Variant J A2...
+  restored run_agent.py from backup
+  removed /home/parallels/.hermes/hermes-agent/agent/write_before_claim_gate.py
+  restored run_agent.py: syntax OK
+[probe-variantJ-A2-stage] Unstage complete.
+
+=== Unstaging variantJ-A1 ===
+[probe-variantJ-A1-stage] Unstaging Variant J-A1 (restoring .probe-r7.7-orig backup)...
+  delegate_worker_v2.py restored from .probe-r7.7-orig
+[probe-variantJ-A1-stage] UNSTAGE COMPLETE.
+[probe-variantJ-A1-stage]   variantF-staged delegate_worker_v2.py is back in place; A1 is off.
+
+=== Unstaging variantI ===
+[probe-variantI-stage] Unstaging Variant I (restoring delegate_tool.py backup + removing HERMES-WORKER.md)...
+  delegate_tool.py restored from .probe-r7.6-worker-orig
+  verified: no stray _r76_worker_overlay markers in delegate_tool.py
+  HERMES-WORKER.md removed from ~/.hermes/hermes-agent/
+[probe-variantI-stage] UNSTAGE COMPLETE.
+
+=== Unstaging variantH ===
+[probe-variantH-stage] Unstaging Variant H (restoring .probe-r7.6-orig backups)...
+  run_agent.py restored from .probe-r7.6-orig
+  gemma_parser.py restored from .probe-r7.6-orig
+  verified: no stray r7.6 markers in run_agent.py or gemma_parser.py
+[probe-variantH-stage] UNSTAGE COMPLETE.
+
+=== Unstaging variantG ===
+[probe-variantG-stage] Unstaging Variant G (restoring run_agent.py.probe-r7.5-orig)...
+  run_agent.py restored from .probe-r7.5-orig
+  verified: no stray _resolve_tools_for_turn_r75a references
+[probe-variantG-stage] UNSTAGE COMPLETE.
+
+=== Unstaging variantF ===
+  model_tools.py restored from .probe-r7.4-orig
+  run_agent.py restored from .probe-r7.4-orig
+  tools/delegate_worker_v2.py moved to /tmp/delegate_worker_v2.py.probe-r7.4-removed
+  verified: no stray delegate_worker_v2 references in patched files
+[probe-variantF-stage] UNSTAGE COMPLETE.
+
+=== Final status after unstage ===
+variantJ-A2:   RESULT: UNSTAGED
+variantJ-A1:   STATE: PARTIAL — remote delegate_worker_v2.py absent; stage variantF first
+variantI:   STATE: VARIANT-I UNSTAGED
+variantH:   STATE: VARIANT-H UNSTAGED
+variantG:   STATE: VARIANT-G UNSTAGED
+variantF:   STATE: UNSTAGED (clean, canonical)
+
+=== Tripwire / preflight verification ===
+[GATE: agent_dispatch] PASS (AGENT_DISPATCH_AVAILABLE=1)
+  free_mem_gb=18.7 (threshold >=20)
+  swap_used_gb=5.2 (threshold <=5.5)
+  omlx_active_sessions=1 (threshold <=1)
+  omlx_loaded_count=1 (advisory)
+[GATE: omlx] FAIL: OMLX_HEALTH=DEGRADED detail=mem_low
+PREFLIGHT=FAIL detail=omlx
+
+=== Residue check (.probe-*-orig files) ===
+/home/parallels/.hermes/hermes-agent/toolsets.py.probe-d-orig
+/home/parallels/.hermes/hermes-agent/environments/tool_call_parsers/gemma_parser.py.probe-r7.6-orig
+/home/parallels/.hermes/hermes-agent/toolsets.py.probe-r7.3-orig
+/home/parallels/.hermes/hermes-agent/run_agent.py.probe-d-orig
+/home/parallels/.hermes/hermes-agent/run_agent.py.probe-r7.6-orig
+/home/parallels/.hermes/hermes-agent/model_tools.py.probe-d-orig
+/home/parallels/.hermes/hermes-agent/tools/delegate_worker_v2.py.probe-r7.7-orig
+/home/parallels/.hermes/hermes-agent/tools/delegate_tool.py.probe-r7.6-worker-orig
+/home/parallels/.hermes/hermes-agent/model_tools.py.probe-r7.4-orig
+/home/parallels/.hermes/hermes-agent/run_agent.py.probe-r7.4-orig
+/home/parallels/.hermes/hermes-agent/run_agent.py.probe-r7.5-orig
+/home/parallels/.hermes/hermes-agent/toolsets.py.probe-r7.4-orig
+end-residue

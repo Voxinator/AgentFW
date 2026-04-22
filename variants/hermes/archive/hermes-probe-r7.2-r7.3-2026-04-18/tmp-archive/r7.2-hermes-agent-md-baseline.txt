@@ -1,0 +1,14 @@
+/home/parallels/.hermes/hermes-agent/AGENTS.md
+/home/parallels/.hermes/hermes-agent/CONTRIBUTING.md
+/home/parallels/.hermes/hermes-agent/HERMES-canonical-backup.md
+/home/parallels/.hermes/hermes-agent/HERMES.md
+/home/parallels/.hermes/hermes-agent/HERMES-variantB.md
+/home/parallels/.hermes/hermes-agent/HERMES-variantD.md
+/home/parallels/.hermes/hermes-agent/README.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.2.0.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.3.0.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.4.0.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.5.0.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.6.0.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.7.0.md
+/home/parallels/.hermes/hermes-agent/RELEASE_v0.8.0.md

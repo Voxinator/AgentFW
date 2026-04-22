@@ -1,0 +1,2 @@
+5503ee1c2ef7d635a020eea275e41239  /media/psf/Projects/chief-of-staff-dashboard/src/hooks/useDashboard.ts
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh

@@ -1,0 +1,6 @@
+[probe-r7.2-dense-v2 run7] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense-v2 TIMEOUT=900s
+[probe-r7.2-dense-v2 run7] task: Summarize this paragraph in 30 words: The quarterly budget review meeting covered revenue targets fo...
+[probe-r7.2-dense-v2 run7] attempt 0: initial invocation
+[probe-r7.2-dense-v2 run7] session_id captured: 20260418_145811_dd6c5a
+[probe-r7.2-dense-v2 run7] attempt 0 verdict: COMPLIANT
+OUTCOME run=7 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=39s final_session=20260418_145811_dd6c5a chain="A0:rc=0 | A0:COMPLIANT"

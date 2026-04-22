@@ -1,0 +1,22 @@
+[
+  {"trial": 1, "task": "T4", "run": 1, "parent": "20260420_170311_e637a5", "children": ["20260420_170321_07f156"], "a2": "CLEAN", "source": "Original-attempt"},
+  {"trial": 2, "task": "T5", "run": 1, "parent": "20260420_171957_1d5146", "children": ["20260420_172002_fc5d66"], "a2": "CLEAN", "source": "Original-attempt"},
+  {"trial": 3, "task": "T4", "run": 2, "parent": "20260420_193933_e60c16", "children": [], "a2": "CLEAN", "source": "B1"},
+  {"trial": 4, "task": "T5", "run": 2, "parent": "20260420_194022_26f7bc", "children": [], "a2": "CLEAN", "source": "B1"},
+  {"trial": 5, "task": "T6", "run": 1, "parent": "20260420_194104_12c0d8", "children": [], "a2": "CLEAN", "source": "B1"},
+  {"trial": 6, "task": "T10", "run": 1, "parent": "20260420_195822_365547", "children": [], "a2": "CLEAN", "source": "B1"},
+  {"trial": 7, "task": "T4", "run": 3, "parent": "20260420_195900_bd5f49", "children": [], "a2": "CLEAN", "source": "B1"},
+  {"trial": 8, "task": "T5", "run": 3, "parent": "20260420_200547_2347e2", "children": ["20260420_200556_fcb1aa"], "a2": "CLEAN", "source": "B2"},
+  {"trial": 9, "task": "T6", "run": 2, "parent": "20260420_200634_a3eec8", "children": ["20260420_200640_e0b6c3", "20260420_201027_43bce2"], "a2": "CLEAN", "source": "B2"},
+  {"trial": 10, "task": "T10", "run": 2, "parent": "20260420_201421_a1597d", "children": ["20260420_201425_b17b47"], "a2": "CLEAN", "source": "B2"},
+  {"trial": 11, "task": "T4", "run": 4, "parent": "20260420_201539_619f4c", "children": ["20260420_201545_ac9d79"], "a2": "CLEAN", "source": "B2"},
+  {"trial": 12, "task": "T5", "run": 4, "parent": "20260420_201623_6c58e1", "children": ["20260420_201628_059415"], "a2": "CLEAN", "source": "B2"},
+  {"trial": 13, "task": "T6", "run": 3, "parent": "20260420_202009_3a63ff", "children": ["20260420_202014_dbbbee", "20260420_202043_6c92f0", "20260420_202055_9d897f"], "a2": "CLEAN", "source": "B3"},
+  {"trial": 14, "task": "T10", "run": 3, "parent": "20260420_202124_6ec63e", "children": ["20260420_202129_a7de2c", "20260420_202246_58f2ea", "20260420_202324_8576fc"], "a2": "FABRICATED", "source": "B3"},
+  {"trial": 15, "task": "T4", "run": 5, "parent": "20260420_202405_ed4589", "children": ["20260420_202410_a8865b"], "a2": "CLEAN", "source": "B3"},
+  {"trial": 16, "task": "T5", "run": 5, "parent": "20260420_202448_649b03", "children": ["20260420_202452_e4e79b"], "a2": "CLEAN", "source": "B3"},
+  {"trial": 17, "task": "T6", "run": 4, "parent": "20260420_202930_f3ba6e", "children": ["20260420_202934_f17c30", "20260420_203024_0209c5"], "a2": "CLEAN", "source": "B3"},
+  {"trial": 18, "task": "T10", "run": 4, "parent": "20260420_203359_e9f686", "children": ["20260420_203405_a2c18f", "20260420_203435_ad359e", "20260420_204849_bec3b9"], "a2": "CLEAN", "source": "B4"},
+  {"trial": 19, "task": "T6", "run": 5, "parent": "20260420_204949_9db097", "children": ["20260420_204954_688f43", "20260420_205004_95b924", "20260420_205042_b58b3a"], "a2": "CLEAN", "source": "B4"},
+  {"trial": 20, "task": "T10", "run": 5, "parent": "20260420_205158_780a70", "children": ["20260420_205203_fb527e", "20260420_205239_c5c9a3"], "a2": "FABRICATED", "source": "B4"}
+]

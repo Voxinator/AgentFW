@@ -1,0 +1,105 @@
+  ┊ 🔀 preparing delegate_worker_v2…
+  ┊ 📋 plan      1 task(s)  0.0s
+  ┊ 🔎 find      .*  0.7s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📋 plan      update 1 task(s)  0.0s
+  ┊ ⚡ delegate_ Design a zero-downtime migration plan for a 80GB PostgreSQL 12 database to PostgreSQL 16. The plan must account for three dependent services and 24/7 availability. Deliverable: A high-level migration strategy document (as a draft) that covers: 1. Migration Method: Evaluate Logical Replication (using `pg_logical` or native logical replication) vs. Blue/Green deployment with CDC tools (like Debezium) vs. managed service tools. 2. Phase 1: Setup & Initial Sync (Snapshotting the 80GB). 3. Phase 2: Continuous Data Sync (Handling the delta/lag). 4. Phase 3: Verification (Data integrity checks, checksums, and latency monitoring). 5. Phase 4: Cutover Strategy (How to switch the three dependent services with minimal connection blip - e.g., using PgBouncer or DNS/Proxy shifts). 6. Rollback Plan: How to revert if the services fail under PG16. Constraints: 80GB size, 24/7 uptime, three services. Do not execute any commands; provide the architectural design and sequence of operations.  21.3s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+This is a high-stakes migration. For an 80GB database with 24/7 availability and three dependent services, the safest and most efficient path is **Native Logical Replication**.
+
+I have designed a comprehensive migration strategy focusing on minimizing the "cutover window" to seconds rather than minutes.
+
+### **Executive Summary: The "Logical Flip" Strategy**
+
+Instead of a massive dump/restore that would lock your tables, we will treat the PG16 instance as a "live follower" that eventually becomes the "leader."
+
+#### **1. The Migration Path**
+*   **Primary Method:** **Native PostgreSQL Logical Replication**.
+*   **Why:** Unlike physical replication (which requires identical versions), logical replication allows us to stream data from PG12 directly into a PG16 instance. It allows the source to remain fully writable throughout the entire process.
+
+#### **2. Implementation Phases**
+
+**Phase 1: Preparation & Snapshot**
+*   **Source (PG12):** Set `wal_level = logical`. Create a `PUBLICATION` for all required tables.
+*   **Target (PG16):** Provision the new instance. Clone the schema **only** (no data) using `pg_dump --schema-only`. This ensures the structure is identical without the 80GB overhead.
+*   **Initial Sync:** Create a `SUBSCRIPTION` on the PG16 instance. PostgreSQL will automatically perform the initial data copy from the PG12 snapshot.
+
+**Phase 2: Continuous Synchronization**
+*   While the 80GB is copying, PG12 continues to handle all production traffic.
+*   Once the snapshot is done, PG16 will automatically start consuming the WAL (Write Ahead Log) stream to catch up on all changes (deltas) that happened during the copy.
+*   **Key Metric:** Monitor `pg_stat_replication` to ensure the "replay lag" is approaching zero.
+
+**Phase 3: The Cutover (The "Zero-Downtime" Moment)**
+To avoid a massive outage for your 3 services, we don't want to wait for DNS propagation.
+*   **The Proxy Approach:** If you use **PgBouncer** or a Load Balancer, the cutover is nearly instantaneous. 
+*   **Sequence of Operations:**
+    1.  Briefly pause/buffer connections at the proxy level (stops new writes for a few seconds).
+    2.  Wait for the final replication lag to hit absolute zero.
+    3.  **Crucial:** Manually sync the `SEQUENCES` (logical replication doesn't do this automatically).
+    4.  Redirect the proxy/connection string to the PG16 IP.
+    5.  Resume connections.
+
+**Phase 4: Verification & Rollback**
+*   **Verification:** Run row-count checks and checksums on critical tables immediately after the flip.
+*   **Rollback:** Keep the PG12 instance running in "read-only" mode for at least 24 hours. If a critical failure occurs, you can point the services back to PG12. 
+    *   *Note: If you have already written new data to PG16, you will need a "Reverse Logical Replication" setup to move that new data back to PG12 before rolling back.*
+
+### **Risk Assessment**
+| Risk | Mitigation |
+| :--- | :--- |
+| **Sequence Mismatch** | Mandatory manual sequence sync immediately before cutover. |
+| **Schema Drift** | Ensure no DDL (ALTER TABLE) is run on PG12 during the sync phase. |
+| **Replication Lag** | Monitor IOPS on PG12 to ensure the logical decoding doesn't tank performance. |
+
+This is a high-stakes migration. For an 80GB database with 24/7 availability and three dependent services, the safest and most efficient path is **Native Logical Replication**.
+
+I have designed a comprehensive migration strategy focusing on minimizing the "cutover window" to seconds rather than minutes.
+
+### **Executive Summary: The "Logical Flip" Strategy**
+
+Instead of a massive dump/restore that would lock your tables, we will treat the PG16 instance as a "live follower" that eventually becomes the "leader."
+
+#### **1. The Migration Path**
+*   **Primary Method:** **Native PostgreSQL Logical Replication**.
+*   **Why:** Unlike physical replication (which requires identical versions), logical replication allows us to stream data from PG12 directly into a PG16 instance. It allows the source to remain fully writable throughout the entire process.
+
+#### **2. Implementation Phases**
+
+**Phase 1: Preparation & Snapshot**
+*   **Source (PG12):** Set `wal_level = logical`. Create a `PUBLICATION` for all required tables.
+*   **Target (PG16):** Provision the new instance. Clone the schema **only** (no data) using `pg_dump --schema-only`. This ensures the structure is identical without the 80GB overhead.
+*   **Initial Sync:** Create a `SUBSCRIPTION` on the PG16 instance. PostgreSQL will automatically perform the initial data copy from the PG12 snapshot.
+
+**Phase 2: Continuous Synchronization**
+*   While the 80GB is copying, PG12 continues to handle all production traffic.
+*   Once the snapshot is done, PG16 will automatically start consuming the WAL (Write Ahead Log) stream to catch up on all changes (deltas) that happened during the copy.
+*   **Key Metric:** Monitor `pg_stat_replication` to ensure the "replay lag" is approaching zero.
+
+**Phase 3: The Cutover (The "Zero-Downtime" Moment)**
+To avoid a massive outage for your 3 services, we don't want to wait for DNS propagation.
+*   **The Proxy Approach:** If you use **PgBouncer** or a Load Balancer, the cutover is nearly instantaneous. 
+*   **Sequence of Operations:**
+    1.  Briefly pause/buffer connections at the proxy level (stops new writes for a few seconds).
+    2.  Wait for the final replication lag to hit absolute zero.
+    3.  **Crucial:** Manually sync the `SEQUENCES` (logical replication doesn't do this automatically).
+    4.  Redirect the proxy/connection string to the PG16 IP.
+    5.  Resume connections.
+
+**Phase 4: Verification & Rollback**
+*   **Verification:** Run row-count checks and checksums on critical tables immediately after the flip.
+*   **Rollback:** Keep the PG12 instance running in "read-only" mode for at least 24 hours. If a critical failure occurs, you can point the services back to PG12. 
+    *   *Note: If you have already written new data to PG16, you will need a "Reverse Logical Replication" setup to move that new data back to PG12 before rolling back.*
+
+### **Risk Assessment**
+| Risk | Mitigation |
+| :--- | :--- |
+| **Sequence Mismatch** | Mandatory manual sequence sync immediately before cutover. |
+| **Schema Drift** | Ensure no DDL (ALTER TABLE) is run on PG12 during the sync phase. |
+| **Replication Lag** | Monitor IOPS on PG12 to ensure the logical decoding doesn't tank performance. |
+
+**Would you like me to draft the specific shell scripts for the sequence synchronization or the PgBouncer reconfiguration?**
+
+session_id: 20260419_145041_9c2267
+---ATTEMPT 0 END (rc=0)---

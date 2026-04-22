@@ -1,0 +1,38 @@
+  ┊ 🔀 preparing delegate_worker_v2…
+  ┊ 📋 plan      3 task(s)  0.0s
+  ┊ 🔎 find      *  0.6s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📋 plan      update 3 task(s)  0.0s
+  ┊ 💬 <channel|>
+  ┊ 📋 plan      update 3 task(s)  0.0s
+  ┊ 💬 thought
+<channel|>
+  ┊ 📋 plan      update 3 task(s)  0.0s
+  ┊ ⚡ delegate_ Begin phase 1 of the Postgres 12 to 16 zero-downtime migration. Scope: Produce a comprehensive MIGRATION_PLAN.md in the project root. The plan must address: 1. Strategy selection (Logical Replication vs. Blue/Green via Read Replicas/CDC). 2. Detailed steps for setting up the target Postgres 16 instance. 3. Data synchronization and validation methods for an 80GB dataset. 4. A specific cutover plan for the three dependent services to ensure zero downtime (e.g., connection string updates, proxy/load balancer shifts). 5. Rollback procedures. Do NOT execute any commands. Deliverable: MIGRATION_PLAN.md with a phased timeline and risk assessment.  12.9s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+I've initiated the migration process by drafting a comprehensive **MIGRATION_PLAN.md**. 
+
+Because this is a zero-downtime requirement for an 80GB production database, I've prioritized a **Logical Replication** strategy. This allows us to keep the Postgres 12 and Postgres 16 instances running in parallel, syncing data continuously until we are ready to flip the switch on the three dependent services.
+
+**The plan covers:**
+*   **Strategy:** Logical Replication (to bridge the major version gap).
+*   **Data Integrity:** Checksum and row-count validation for the 80GB payload.
+*   **Zero-Downtime Cutover:** Utilizing a connection proxy (like PgBouncer) or a load balancer shift to ensure the service interruption is near-zero.
+*   **Safety Net:** A reverse-replication rollback strategy so we can revert to Postgres 12 instantly if something breaks after the cutover.
+
+I've initiated the migration process by drafting a comprehensive **MIGRATION_PLAN.md**. 
+
+Because this is a zero-downtime requirement for an 80GB production database, I've prioritized a **Logical Replication** strategy. This allows us to keep the Postgres 12 and Postgres 16 instances running in parallel, syncing data continuously until we are ready to flip the switch on the three dependent services.
+
+**The plan covers:**
+*   **Strategy:** Logical Replication (to bridge the major version gap).
+*   **Data Integrity:** Checksum and row-count validation for the 80GB payload.
+*   **Zero-Downtime Cutover:** Utilizing a connection proxy (like PgBouncer) or a load balancer shift to ensure the service interruption is near-zero.
+*   **Safety Net:** A reverse-replication rollback strategy so we can revert to Postgres 12 instantly if something breaks after the cutover.
+
+I've saved the full plan to `MIGRATION_PLAN.md`. Please review it, and let me know if you want to proceed to **Phase 2: Target Environment Provisioning**, or if you want to adjust the cutover strategy for the dependent services.
+
+session_id: 20260419_181002_099235
+---ATTEMPT 0 END (rc=0)---

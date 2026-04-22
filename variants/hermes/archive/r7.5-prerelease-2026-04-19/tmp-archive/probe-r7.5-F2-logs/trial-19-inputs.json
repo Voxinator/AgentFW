@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 19,
+  "TASK_ID": "T10",
+  "TASK_CLASS": "long-horizon",
+  "PARENT_SESSION_ID": "20260419_181030_6c75f6",
+  "CHILD_SESSION_ID": "20260419_181035_9164c6",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_181035_9164c6.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_181030_6c75f6.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-19.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "long-horizon",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Begin phase 1 of the Postgres 12 to 16 zero-downtime migration. Scope: Produce a detailed MIGRATION_PLAN.md in the project root. The plan must address: 1) Strategy selection (e.g., Logical Replication vs. Blue/Green deployment with a proxy like pgBouncer/HAProxy), 2) Infrastructure requirements for the target PG16 instance, 3) Detailed steps for setting up logical replication (publication/subscription), 4) Verification strategy to ensure data parity between PG12 and PG16, and 5) The cutover procedure to minimize connection drops for the three dependent services. Do NOT execute any commands or touch the database yet. Deliverable: A comprehensive MIGRATION_PLAN.md."
+}

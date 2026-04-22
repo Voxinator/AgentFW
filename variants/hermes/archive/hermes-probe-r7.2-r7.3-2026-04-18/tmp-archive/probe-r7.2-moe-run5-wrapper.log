@@ -1,0 +1,7 @@
+[probe-r7.2-moe run5] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.2-moe TIMEOUT=900s
+[probe-r7.2-moe run5] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.2-moe run5] attempt 0: initial invocation
+[probe-r7.2-moe run5] session_id captured: 20260418_161848_0dea5b
+[probe-r7.2-moe run5] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-moe run5] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-moe run5] attempt 1 verdict: COMPLIANT

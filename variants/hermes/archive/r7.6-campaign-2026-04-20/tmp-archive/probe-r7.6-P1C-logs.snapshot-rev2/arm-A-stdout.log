@@ -1,0 +1,163 @@
+[orch] ----- armA-T4-run1-g1 start -----
+[probe-r7.6-armA-T4-moe run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T4-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T4-moe run1] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.6-armA-T4-moe run1] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T4-moe run1] session_id captured: 20260419_202058_1ba6de
+[probe-r7.6-armA-T4-moe run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=33s final_session=20260419_202058_1ba6de chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T4-run1-g1 end elapsed=34s -----
+[orch] ----- armA-T4-run2-g2 start -----
+[probe-r7.6-armA-T4-moe run2] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T4-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T4-moe run2] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.6-armA-T4-moe run2] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T4-moe run2] session_id captured: 20260419_202132_50f846
+[probe-r7.6-armA-T4-moe run2] attempt 0 verdict: COMPLIANT
+OUTCOME run=2 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=65s final_session=20260419_202132_50f846 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T4-run2-g2 end elapsed=66s -----
+[orch] ----- armA-T4-run3-g3 start -----
+[probe-r7.6-armA-T4-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T4-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T4-moe run3] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.6-armA-T4-moe run3] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T4-moe run3] session_id captured: 20260419_202238_5347d7
+[probe-r7.6-armA-T4-moe run3] attempt 0 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=30s final_session=20260419_202238_5347d7 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T4-run3-g3 end elapsed=30s -----
+[orch] ----- armA-T4-run4-g4 start -----
+[probe-r7.6-armA-T4-moe run4] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T4-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T4-moe run4] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.6-armA-T4-moe run4] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T4-moe run4] session_id captured: 20260419_202309_a7614f
+[probe-r7.6-armA-T4-moe run4] attempt 0 verdict: COMPLIANT
+OUTCOME run=4 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=33s final_session=20260419_202309_a7614f chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T4-run4-g4 end elapsed=33s -----
+[orch] ----- armA-T4-run5-g5 start -----
+[probe-r7.6-armA-T4-moe run5] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T4-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T4-moe run5] task: Refactor the auth module to use the new session store. Three files need changes: src/auth/session.ts...
+[probe-r7.6-armA-T4-moe run5] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T4-moe run5] session_id captured: 20260419_202341_b5c773
+[probe-r7.6-armA-T4-moe run5] attempt 0 verdict: COMPLIANT
+OUTCOME run=5 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=31s final_session=20260419_202341_b5c773 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T4-run5-g5 end elapsed=31s -----
+[orch] ----- armA-T5-run1-g6 start -----
+[probe-r7.6-armA-T5-moe run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T5-moe run1] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.6-armA-T5-moe run1] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T5-moe run1] session_id captured: 20260419_202413_7754a1
+[probe-r7.6-armA-T5-moe run1] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.6-armA-T5-moe run1] attempt 1: sending correction for VIOLATION:NO_MARKER (ARM=A)
+[probe-r7.6-armA-T5-moe run1] attempt 1 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=2 elapsed=111s final_session=20260419_202413_7754a1 chain="A0:rc=0 | A0:VIOLATION:NO_MARKER | A1_correct:rc=0 | A1:COMPLIANT"
+[orch] ----- armA-T5-run1-g6 end elapsed=111s -----
+[orch] ----- armA-T5-run2-g7 start -----
+[probe-r7.6-armA-T5-moe run2] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T5-moe run2] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.6-armA-T5-moe run2] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T5-moe run2] session_id captured: 20260419_202603_0a9b34
+[probe-r7.6-armA-T5-moe run2] attempt 0 verdict: COMPLIANT
+OUTCOME run=2 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=62s final_session=20260419_202603_0a9b34 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T5-run2-g7 end elapsed=63s -----
+[orch] ----- armA-T5-run3-g8 start -----
+[probe-r7.6-armA-T5-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T5-moe run3] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.6-armA-T5-moe run3] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T5-moe run3] session_id captured: 20260419_202706_b5b0d7
+[probe-r7.6-armA-T5-moe run3] attempt 0 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=84s final_session=20260419_202706_b5b0d7 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T5-run3-g8 end elapsed=84s -----
+[orch] ----- armA-T5-run4-g9 start -----
+[probe-r7.6-armA-T5-moe run4] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T5-moe run4] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.6-armA-T5-moe run4] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T5-moe run4] session_id captured: 20260419_202831_b11dcf
+[probe-r7.6-armA-T5-moe run4] attempt 0 verdict: COMPLIANT
+OUTCOME run=4 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=92s final_session=20260419_202831_b11dcf chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T5-run4-g9 end elapsed=92s -----
+[orch] ----- armA-T5-run5-g10 start -----
+[probe-r7.6-armA-T5-moe run5] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T5-moe run5] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.6-armA-T5-moe run5] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T5-moe run5] session_id captured: 20260419_203003_57b4e2
+[probe-r7.6-armA-T5-moe run5] attempt 0 verdict: COMPLIANT
+OUTCOME run=5 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=67s final_session=20260419_203003_57b4e2 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T5-run5-g10 end elapsed=67s -----
+[orch] ----- armA-T6-run1-g11 start -----
+[probe-r7.6-armA-T6-moe run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T6-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T6-moe run1] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.6-armA-T6-moe run1] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T6-moe run1] session_id captured: 20260419_203110_ce514c
+[probe-r7.6-armA-T6-moe run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=303s final_session=20260419_203110_ce514c chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T6-run1-g11 end elapsed=303s -----
+[orch] ----- armA-T6-run2-g12 start -----
+[probe-r7.6-armA-T6-moe run2] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T6-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T6-moe run2] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.6-armA-T6-moe run2] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T6-moe run2] session_id captured: 20260419_203613_d66559
+[probe-r7.6-armA-T6-moe run2] attempt 0 verdict: COMPLIANT
+OUTCOME run=2 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=140s final_session=20260419_203613_d66559 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T6-run2-g12 end elapsed=141s -----
+[orch] ----- armA-T6-run3-g13 start -----
+[probe-r7.6-armA-T6-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T6-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T6-moe run3] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.6-armA-T6-moe run3] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T6-moe run3] session_id captured: 20260419_203833_c7b356
+[probe-r7.6-armA-T6-moe run3] attempt 0 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=94s final_session=20260419_203833_c7b356 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T6-run3-g13 end elapsed=94s -----
+[orch] ----- armA-T6-run4-g14 start -----
+[probe-r7.6-armA-T6-moe run4] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T6-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T6-moe run4] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.6-armA-T6-moe run4] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T6-moe run4] session_id captured: 20260419_204008_f427ed
+[probe-r7.6-armA-T6-moe run4] attempt 0 verdict: COMPLIANT
+OUTCOME run=4 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=96s final_session=20260419_204008_f427ed chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T6-run4-g14 end elapsed=96s -----
+[orch] ----- armA-T6-run5-g15 start -----
+[probe-r7.6-armA-T6-moe run5] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T6-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T6-moe run5] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.6-armA-T6-moe run5] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T6-moe run5] session_id captured: 20260419_204143_1337e5
+[probe-r7.6-armA-T6-moe run5] attempt 0 verdict: COMPLIANT
+OUTCOME run=5 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=292s final_session=20260419_204143_1337e5 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T6-run5-g15 end elapsed=292s -----
+[orch] ----- armA-T10-run1-g16 start -----
+[probe-r7.6-armA-T10-moe run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T10-moe run1] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.6-armA-T10-moe run1] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T10-moe run1] session_id captured: 20260419_204636_4ddafd
+[probe-r7.6-armA-T10-moe run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=99s final_session=20260419_204636_4ddafd chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T10-run1-g16 end elapsed=99s -----
+[orch] ----- armA-T10-run2-g17 start -----
+[probe-r7.6-armA-T10-moe run2] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T10-moe run2] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.6-armA-T10-moe run2] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T10-moe run2] session_id captured: 20260419_204816_751167
+[probe-r7.6-armA-T10-moe run2] attempt 0 verdict: COMPLIANT
+OUTCOME run=2 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=323s final_session=20260419_204816_751167 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T10-run2-g17 end elapsed=323s -----
+[orch] ----- armA-T10-run3-g18 start -----
+[probe-r7.6-armA-T10-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T10-moe run3] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.6-armA-T10-moe run3] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T10-moe run3] session_id captured: 20260419_205339_9534b8
+[probe-r7.6-armA-T10-moe run3] attempt 0 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=112s final_session=20260419_205339_9534b8 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T10-run3-g18 end elapsed=112s -----
+[orch] ----- armA-T10-run4-g19 start -----
+[probe-r7.6-armA-T10-moe run4] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T10-moe run4] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.6-armA-T10-moe run4] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T10-moe run4] session_id captured: 20260419_205531_e43f0d
+[probe-r7.6-armA-T10-moe run4] attempt 0 verdict: COMPLIANT
+OUTCOME run=4 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=154s final_session=20260419_205531_e43f0d chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T10-run4-g19 end elapsed=155s -----
+[orch] ----- armA-T10-run5-g20 start -----
+[probe-r7.6-armA-T10-moe run5] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T10-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T10-moe run5] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.6-armA-T10-moe run5] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T10-moe run5] session_id captured: 20260419_205805_806204
+[probe-r7.6-armA-T10-moe run5] attempt 0 verdict: COMPLIANT
+OUTCOME run=5 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=213s final_session=20260419_205805_806204 chain="A0:rc=0 | A0:COMPLIANT"
+[orch] ----- armA-T10-run5-g20 end elapsed=213s -----
+[orch] arm A complete. Outcomes: /tmp/probe-r7.6-P1C-logs/arm-A-outcomes.txt

@@ -1,0 +1,10 @@
+Implement an end-to-end export feature (CSV, JSON, PDF) that respects user ownership permissions.
+
+Phased Execution:
+1. Phase 1: Discovery & Planning. Survey the existing codebase to identify the data models, permission middleware, and current API structure. Create a PLAN.md in 'docs/features/export-feature/' outlining the architecture, file changes, and verification strategy.
+2. Phase 2: Core Logic. Implement the data retrieval and transformation service for CSV/JSON/PDF. Ensure strict permission checks are applied at the data layer.
+3. Phase 3: API & Documentation. Expose the endpoints and update API documentation (Swagger/OpenAPI or equivalent).
+4. Phase 4: Testing. Write unit and integration tests covering all formats and permission edge cases.
+5. Phase 5: Verification. Run tests and verify the end-to-end flow.
+
+Constraints: Respect existing architectural patterns for permissions and error handling. Do not ship without 80%+ test coverage on new logic.

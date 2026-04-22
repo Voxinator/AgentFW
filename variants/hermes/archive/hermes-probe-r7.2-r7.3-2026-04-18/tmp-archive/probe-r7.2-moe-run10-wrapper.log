@@ -1,0 +1,7 @@
+[probe-r7.2-moe run10] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.2-moe TIMEOUT=900s
+[probe-r7.2-moe run10] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.2-moe run10] attempt 0: initial invocation
+[probe-r7.2-moe run10] session_id captured: 20260418_163800_3a20eb
+[probe-r7.2-moe run10] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.2-moe run10] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.2-moe run10] attempt 1 verdict: COMPLIANT

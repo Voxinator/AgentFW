@@ -1,0 +1,5 @@
+[probe-r7.6-armA-T5-moe run4] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.6-armA-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s ARM=A OVERLAY=off
+[probe-r7.6-armA-T5-moe run4] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.6-armA-T5-moe run4] attempt 0: initial invocation (ARM=A)
+[probe-r7.6-armA-T5-moe run4] session_id captured: 20260419_202831_b11dcf
+[probe-r7.6-armA-T5-moe run4] attempt 0 verdict: COMPLIANT

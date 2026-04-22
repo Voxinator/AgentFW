@@ -1,0 +1,46 @@
+  ┊ 🔀 preparing delegate_worker_v2…
+[subagent-0] ⚠️  Unknown tool 'terminal' — sending error to model for self-correction (1/3)
+[subagent-0] ⚠️  Unknown tool 'terminal' — sending error to model for self-correction (2/3)
+  ┊ ⚡ delegate_ Initiate the zero-downtime migration project from Postgres 12 to Postgres 16. 1. Create a project directory `migrations/postgres-12-to-16/`. 2. Create a `PLAN.md` in that directory. 3. The PLAN.md must include: a phased approach (Discovery, Setup, Replication/CDC, Cutover, Cleanup), a risk assessment for the 80GB volume and 3 dependent services, and a detailed checklist for verifying data integrity and connection string updates. Do NOT execute any actual database commands or migrations. Deliverable: the initial `PLAN.md` and project structure.  11.9s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+That is a heavy lift, especially with an 80GB footprint and 24/7 uptime requirements. Moving from PG 12 to 16 requires a strategy that handles the version gap without a maintenance window.
+
+I have initialized the migration project structure and drafted an initial **Phase 1: Discovery & Planning** document.
+
+**Current Status:**
+- **Project Directory:** `migrations/postgres-12-to-16/`
+- **Artifacts:** `PLAN.md` created.
+
+**The proposed strategy focuses on Logical Replication (CDC) to minimize downtime:**
+1. **Phase 1 (Discovery):** Audit extensions (PostGIS, etc.), schema compatibility, and dependent service connection patterns.
+2. **Phase 2 (Setup):** Spin up a fresh PG 16 instance.
+3. **Phase 3 (Sync):** Use PostgreSQL Logical Replication to stream data from PG 12 to PG 16. This keeps them in sync while the old DB stays live.
+4. **Phase 4 (Cutover):** A brief "switch-over" where we point the 3 services to the new endpoint.
+5. **Phase 5 (Verification & Cleanup):** Validate data integrity and decommission the old instance.
+
+**Next Steps:**
+I need to verify the exact environment details to ensure the replication method is viable (e.g., checking if `wal_level` is set to `logical` on the current production instance).
+
+That is a heavy lift, especially with an 80GB footprint and 24/7 uptime requirements. Moving from PG 12 to 16 requires a strategy that handles the version gap without a maintenance window.
+
+I have initialized the migration project structure and drafted an initial **Phase 1: Discovery & Planning** document.
+
+**Current Status:**
+- **Project Directory:** `migrations/postgres-12-to-16/`
+- **Artifacts:** `PLAN.md` created.
+
+**The proposed strategy focuses on Logical Replication (CDC) to minimize downtime:**
+1. **Phase 1 (Discovery):** Audit extensions (PostGIS, etc.), schema compatibility, and dependent service connection patterns.
+2. **Phase 2 (Setup):** Spin up a fresh PG 16 instance.
+3. **Phase 3 (Sync):** Use PostgreSQL Logical Replication to stream data from PG 12 to PG 16. This keeps them in sync while the old DB stays live.
+4. **Phase 4 (Cutover):** A brief "switch-over" where we point the 3 services to the new endpoint.
+5. **Phase 5 (Verification & Cleanup):** Validate data integrity and decommission the old instance.
+
+**Next Steps:**
+I need to verify the exact environment details to ensure the replication method is viable (e.g., checking if `wal_level` is set to `logical` on the current production instance).
+
+Shall I proceed with the **Discovery Phase** to audit the current database configuration and extensions?
+
+session_id: 20260419_230337_cca0b6
+---ATTEMPT 0 END (rc=0)---

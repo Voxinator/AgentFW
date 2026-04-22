@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 20,
+  "TASK_ID": "T10",
+  "TASK_CLASS": "long-horizon",
+  "PARENT_SESSION_ID": "20260419_181115_e6b7d4",
+  "CHILD_SESSION_ID": "20260419_181120_a0ffcf",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_181120_a0ffcf.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_181115_e6b7d4.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-20.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "long-horizon",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "Initiate a zero-downtime migration plan for upgrading a 80GB Postgres 12 database to Postgres 16. \n\n1. Research and propose the optimal migration strategy (e.g., Logical Replication, Blue/Green deployment via AWS RDS/Aurora, or pglogical) given the 'zero downtime' and 'three dependent services' constraints.\n2. Create a project directory `migrations/pg12-to-pg16-zero-downtime/`.\n3. Produce a `PLAN.md` in that directory that includes:\n   - A phased execution timeline (Assessment, Setup, Replication, Validation, Cutover, Cleanup).\n   - Detailed risk assessment for the three dependent services.\n   - Specific verification steps to ensure data parity before cutover.\n   - A rollback plan.\n4. Do NOT execute any infrastructure changes or database commands. Deliver only the high-level strategic plan and the project structure."
+}

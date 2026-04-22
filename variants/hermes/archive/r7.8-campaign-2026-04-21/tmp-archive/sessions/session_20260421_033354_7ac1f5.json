@@ -1,0 +1,63 @@
+{
+  "session_id": "20260421_033354_7ac1f5",
+  "model": "gemma-4-26B-A4B-it-MLX-8bit",
+  "base_url": "http://10.211.55.2:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-04-21T03:33:54.733052",
+  "last_updated": "2026-04-21T03:33:57.091569",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nConversation started: Tuesday, April 21, 2026 03:33 AM\nModel: gemma-4-26B-A4B-it-MLX-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal.",
+  "tools": [],
+  "message_count": 5,
+  "messages": [
+    {
+      "role": "user",
+      "content": "List all files in /media/psf/Projects/chief-of-staff-dashboard recursively to understand the project structure."
+    },
+    {
+      "role": "assistant",
+      "content": "<|tool_call>call:ls_command{path: \"/media/psf/Projects/chief-of-staff-dashboard\"}<tool_call|>",
+      "reasoning": null,
+      "finish_reason": "stop",
+      "tool_calls": [
+        {
+          "id": "call_9dce6a27",
+          "call_id": "call_9dce6a27",
+          "response_item_id": "fc_9dce6a27",
+          "type": "function",
+          "function": {
+            "name": "ls_command",
+            "arguments": "{\"path\": \"/media/psf/Projects/chief-of-staff-dashboard\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_9dce6a27",
+      "content": "Tool 'ls_command' does not exist. Available tools: "
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|>",
+      "reasoning": null,
+      "finish_reason": "stop",
+      "tool_calls": [
+        {
+          "id": "call_6b97b131",
+          "call_id": "call_6b97b131",
+          "response_item_id": "fc_6b97b131",
+          "type": "function",
+          "function": {
+            "name": "list_files",
+            "arguments": "{\"path\": \"/media/psf/Projects/chief-of-staff-dashboard\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_6b97b131",
+      "content": "Tool 'list_files' does not exist. Available tools: "
+    }
+  ]
+}

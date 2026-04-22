@@ -1,0 +1,5 @@
+[probe-r7.7-S8-armF-T6 run1] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.7-S8-armF-T6 TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=1500s ARM=B OVERLAY=HERMES_WORKER_OVERLAY=1 HERMES_CHILD_TOOLSET_RESTRICT=1 HERMES_WRITE_BEFORE_CLAIM_GATE=1
+[probe-r7.7-S8-armF-T6 run1] task: Implement an end-to-end export feature (CSV, JSON, PDF) that respects user ownership permissions.
+
+P...
+[probe-r7.7-S8-armF-T6 run1] attempt 0: initial invocation (ARM=B)

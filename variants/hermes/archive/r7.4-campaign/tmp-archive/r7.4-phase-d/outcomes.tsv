@@ -1,0 +1,7 @@
+T1	dense	1	OUTCOME run=1 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=19s final_session=20260419_125518_b00428 chain="A0:rc=0 | A0:COMPLIANT"
+T4	dense	2	OUTCOME run=2 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=108s final_session=20260419_125613_71379f chain="A0:rc=0 | A0:COMPLIANT"
+T4	dense	3	OUTCOME run=3 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=83s final_session=20260419_125801_2cb36f chain="A0:rc=0 | A0:COMPLIANT"
+T4	dense	4	OUTCOME run=4 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=127s final_session=20260419_125924_6145fb chain="A0:rc=0 | A0:COMPLIANT"
+T4	dense	5	OUTCOME run=5 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=287s final_session=20260419_130137_415fbf chain="A0:rc=0 | A0:COMPLIANT"
+T4	dense	6	OUTCOME run=6 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=116s final_session=20260419_130620_292188 chain="A0:rc=0 | A0:COMPLIANT"
+T5	dense	7	OUTCOME run=7 MODEL=gemma-4-31b-it-4bit RESULT=COMPLIANT attempts=1 elapsed=902s final_session=20260419_130851_615d1e chain="A0:rc=124 | A0:COMPLIANT"

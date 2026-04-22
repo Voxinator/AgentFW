@@ -1,0 +1,9 @@
+[probe-r7.2-dense run10] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense TIMEOUT=600s
+[probe-r7.2-dense run10] task: Migrate our Postgres 12 database to Postgres 16 with zero downtime. Production DB is ~80GB, active 2...
+[probe-r7.2-dense run10] attempt 0: initial invocation
+[probe-r7.2-dense run10] session_id captured: 20260418_132832_cea030
+[probe-r7.2-dense run10] attempt 0 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.2-dense run10] attempt 1: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.2-dense run10] attempt 1 verdict: VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.2-dense run10] attempt 2: sending correction for VIOLATION:NO_DISPATCH:long-horizon
+[probe-r7.2-dense run10] attempt 2 verdict: COMPLIANT

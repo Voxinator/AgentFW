@@ -1,0 +1,6 @@
+[probe-r7.5-T6-moe run1] MODEL=gemma-4-26b-a4b-it-mlx-8bit SOURCE_PREFIX=probe-r7.5-T6-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.5-T6-moe run1] task: Build a new export feature for our product. Users should be able to export their data as CSV, JSON, ...
+[probe-r7.5-T6-moe run1] attempt 0: initial invocation
+[probe-r7.5-T6-moe run1] session_id captured: 20260419_180505_7c5bec
+[probe-r7.5-T6-moe run1] attempt 0 verdict: COMPLIANT
+OUTCOME run=1 MODEL=gemma-4-26b-a4b-it-mlx-8bit RESULT=COMPLIANT attempts=1 elapsed=19s final_session=20260419_180505_7c5bec chain="A0:rc=0 | A0:COMPLIANT"

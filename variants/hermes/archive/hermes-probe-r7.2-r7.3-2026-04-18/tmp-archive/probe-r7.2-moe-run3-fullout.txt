@@ -1,0 +1,6 @@
+[probe-r7.2-moe run3] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.2-moe TIMEOUT=900s
+[probe-r7.2-moe run3] task: On line 47 of auth.py there's a NullPointerException when `user` is None. Add a guard that returns e...
+[probe-r7.2-moe run3] attempt 0: initial invocation
+[probe-r7.2-moe run3] session_id captured: 20260418_161308_db1368
+[probe-r7.2-moe run3] attempt 0 verdict: COMPLIANT
+OUTCOME run=3 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=164s final_session=20260418_161308_db1368 chain="A0:rc=0 | A0:COMPLIANT"

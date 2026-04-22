@@ -1,0 +1,5 @@
+[probe-r7.3-l12-oneshot-moe run8] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.3-l12-oneshot-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.3-l12-oneshot-moe run8] task: Write a one-off script to count files larger than 10MB in ~/Downloads and print the total. Python is...
+[probe-r7.3-l12-oneshot-moe run8] attempt 0: initial invocation
+[probe-r7.3-l12-oneshot-moe run8] session_id captured: 20260419_004626_301a0b
+[probe-r7.3-l12-oneshot-moe run8] attempt 0 verdict: COMPLIANT

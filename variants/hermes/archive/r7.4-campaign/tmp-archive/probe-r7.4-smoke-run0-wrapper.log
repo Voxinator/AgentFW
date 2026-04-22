@@ -1,0 +1,6 @@
+[probe-r7.4-smoke run0] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.4-smoke TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.4-smoke run0] task: What is 2+2? Answer in one sentence....
+[probe-r7.4-smoke run0] uploading check script (md5 local=9fea7cbe5862da92b0fdc94e43fec563 remote=none)
+[probe-r7.4-smoke run0] attempt 0: initial invocation
+[probe-r7.4-smoke run0] session_id captured: 20260419_124936_789d14
+[probe-r7.4-smoke run0] attempt 0 verdict: COMPLIANT

@@ -1,0 +1,69 @@
+{
+  "session_id": "20260421_003226_8dff2c",
+  "model": "gemma-4-26B-A4B-it-MLX-8bit",
+  "base_url": "http://10.211.55.2:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-04-21T00:32:26.784975",
+  "last_updated": "2026-04-21T00:32:29.194911",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nConversation started: Tuesday, April 21, 2026 12:32 AM\nModel: gemma-4-26B-A4B-it-MLX-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal.",
+  "tools": [],
+  "message_count": 6,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Refactor the auth module to use the new session store.\n\nFiles to modify:\n1. src/auth/session.ts\n2. src/auth/middleware.ts\n3. tests/auth.test.ts\n\nRequirements:\n- All existing tests in tests/auth.test.ts must pass.\n- Avoid breaking public API changes unless necessary.\n- Ensure proper error handling.\n\nDeliverables:\n- Modified files.\n- Successful test run output."
+    },
+    {
+      "role": "assistant",
+      "content": "<|tool_call>call:ls_files{path: \"/home/parallels/.hermes/hermes-agent/src/auth\"}<tool_call|>",
+      "reasoning": null,
+      "finish_reason": "stop",
+      "tool_calls": [
+        {
+          "id": "call_79a214d6",
+          "call_id": "call_79a214d6",
+          "response_item_id": "fc_79a214d6",
+          "type": "function",
+          "function": {
+            "name": "ls_files",
+            "arguments": "{\"path\": \"/home/parallels/.hermes/hermes-agent/src/auth\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_79a214d6",
+      "content": "Tool 'ls_files' does not exist. Available tools: "
+    },
+    {
+      "role": "assistant",
+      "content": "thought\n<channel|><|tool_call>call:execute_command{command: \"ls -R /home/parallels/.hermes/hermes-agent/src/auth /home/parallels/.hermes/hermes-agent/tests\"}<tool_call|>",
+      "reasoning": null,
+      "finish_reason": "stop",
+      "tool_calls": [
+        {
+          "id": "call_f136ab05",
+          "call_id": "call_f136ab05",
+          "response_item_id": "fc_f136ab05",
+          "type": "function",
+          "function": {
+            "name": "execute_command",
+            "arguments": "{\"command\": \"ls -R /home/parallels/.hermes/hermes-agent/src/auth /home/parallels/.hermes/hermes-agent/tests\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_f136ab05",
+      "content": "Tool 'execute_command' does not exist. Available tools: "
+    },
+    {
+      "role": "assistant",
+      "content": "(empty)",
+      "reasoning": null,
+      "finish_reason": "stop"
+    }
+  ]
+}

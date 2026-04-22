@@ -1,0 +1,26 @@
+{
+  "TRIAL_N": 10,
+  "TASK_ID": "T5",
+  "TASK_CLASS": "structured",
+  "PARENT_SESSION_ID": "20260419_180208_0d729b",
+  "CHILD_SESSION_ID": "20260419_180417_3748c0",
+  "CHILD_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180417_3748c0.json",
+  "PARENT_SESSION_PATH": "/home/parallels/.hermes/sessions/session_20260419_180208_0d729b.json",
+  "GOAL_PATHS": [],
+  "TRIPWIRE_BASELINE": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "TRIPWIRE_POST": {
+    "HERMES.md": "01c0e77bb2a6e753a8ea9063784a25e0",
+    "SKILL.md": "fb1a5a5208a6cf2fcb8252aac10397eb",
+    "jira-briefing.sh": "a1dce6e989527686124d0860830627c9"
+  },
+  "PER_TRIAL_ARTIFACT_PATH": "/Users/briantaylor/Projects/AgentFW/ARTIFACT-r7.5-worker-quality-trial-10.md",
+  "SSH_TARGET": "ubuntu-vm",
+  "FIRST_ATTEMPT_PASS": true,
+  "CLASSIFICATION": "structured",
+  "ATTEMPTS": 1,
+  "PARENT_GOAL": "The investigation has identified a strong candidate for the stale data issue: the backend `server/index.ts` performs updates (`updateTask` and `deleteTask`) but does not call `invalidateCache()` in `server/jira-cache.ts`. This means the cache continues to serve old data until the TTL expires.\n\n**Task:**\n1.  **Confirm the bug**: Read `server/index.ts` (specifically the `updateTask` and `deleteTask` routes) and `server/jira-cache.ts` to verify that `invalidateCache` is indeed missing from the mutation routes.\n2.  **Implement the fix**: Update `server/index.ts` to call `invalidateCache` with the appropriate keys whenever a task is updated or deleted.\n3.  **Verify the fix**: \n    *   Run the existing backend tests (if any) using `npm test` or equivalent in the `server/` directory.\n    *   If possible, simulate a sequence: `POST /api/tasks` (update) followed by `GET /api/dashboard`. Check if the response contains the updated data or the cached stale data.\n4.  **Check Frontend**: Verify `src/hooks/useDashboard.ts` handles the response correctly and doesn't have a race condition where it might revert to stale data if the backend response is delayed.\n\n**Files of interest:**\n- `/media/psf/Projects/chief-of-staff-dashboard/server/index.ts`\n- `/media/psf/Projects/chief-of-staff-dashboard/server/jira-cache.ts`\n- `/media/psf/Projects/chief-of-staff-dashboard/src/hooks/useDashboard.ts`"
+}

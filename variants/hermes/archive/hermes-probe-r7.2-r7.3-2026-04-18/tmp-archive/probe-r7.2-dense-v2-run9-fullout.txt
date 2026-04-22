@@ -1,0 +1,12 @@
+[probe-r7.2-dense-v2 run9] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.2-dense-v2 TIMEOUT=900s
+[probe-r7.2-dense-v2 run9] task: The Jira daily briefing cron has been silently failing on some days — no notification, no output, ...
+[probe-r7.2-dense-v2 run9] attempt 0: initial invocation
+[probe-r7.2-dense-v2 run9] session_id captured: 20260418_145925_118829
+[probe-r7.2-dense-v2 run9] attempt 0 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run9] attempt 1: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run9] attempt 1 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run9] attempt 2: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run9] attempt 2 verdict: VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run9] attempt 3: sending correction for VIOLATION:NO_DISPATCH:structured
+[probe-r7.2-dense-v2 run9] attempt 3 verdict: VIOLATION:NO_DISPATCH:structured
+OUTCOME run=9 MODEL=gemma-4-31b-it-4bit RESULT=RETRY_EXHAUSTED last_violation=VIOLATION:NO_DISPATCH:structured attempts=4 elapsed=436s final_session=20260418_145925_118829 chain="A0:rc=0 | A0:VIOLATION:NO_DISPATCH:structured | A1_correct:rc=0 | A1:VIOLATION:NO_DISPATCH:structured | A2_correct:rc=0 | A2:VIOLATION:NO_DISPATCH:structured | A3_correct:rc=0 | A3:VIOLATION:NO_DISPATCH:structured"

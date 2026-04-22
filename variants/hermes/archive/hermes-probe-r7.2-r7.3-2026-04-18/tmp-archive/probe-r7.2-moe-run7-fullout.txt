@@ -1,0 +1,12 @@
+[probe-r7.2-moe run7] MODEL=gemma-4-26B-A4B-it-MLX-8bit SOURCE_PREFIX=probe-r7.2-moe TIMEOUT=900s
+[probe-r7.2-moe run7] task: Summarize this paragraph in 30 words: The quarterly budget review meeting covered revenue targets fo...
+[probe-r7.2-moe run7] attempt 0: initial invocation
+[probe-r7.2-moe run7] session_id captured: 20260418_163330_36bd44
+[probe-r7.2-moe run7] attempt 0 verdict: VIOLATION:NO_MARKER
+[probe-r7.2-moe run7] attempt 1: sending correction for VIOLATION:NO_MARKER
+[probe-r7.2-moe run7] attempt 1 verdict: VIOLATION:NO_MARKER
+[probe-r7.2-moe run7] attempt 2: sending correction for VIOLATION:NO_MARKER
+[probe-r7.2-moe run7] attempt 2 verdict: VIOLATION:NO_MARKER
+[probe-r7.2-moe run7] attempt 3: sending correction for VIOLATION:NO_MARKER
+[probe-r7.2-moe run7] attempt 3 verdict: VIOLATION:NO_MARKER
+OUTCOME run=7 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=RETRY_EXHAUSTED last_violation=VIOLATION:NO_MARKER attempts=4 elapsed=36s final_session=20260418_163330_36bd44 chain="A0:rc=0 | A0:VIOLATION:NO_MARKER | A1_correct:rc=0 | A1:VIOLATION:NO_MARKER | A2_correct:rc=0 | A2:VIOLATION:NO_MARKER | A3_correct:rc=0 | A3:VIOLATION:NO_MARKER"

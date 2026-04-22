@@ -1,0 +1,1 @@
+OUTCOME run=5 MODEL=gemma-4-26B-A4B-it-MLX-8bit RESULT=COMPLIANT attempts=1 elapsed=27s final_session=20260421_040116_bb008d chain="A0:rc=0 | A0:COMPLIANT"

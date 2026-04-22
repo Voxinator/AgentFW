@@ -1,0 +1,3 @@
+[probe-r7.4-T5-dense run8] MODEL=gemma-4-31b-it-4bit SOURCE_PREFIX=probe-r7.4-T5-dense TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.4-T5-dense run8] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.4-T5-dense run8] attempt 0: initial invocation

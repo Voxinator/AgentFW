@@ -1,0 +1,5 @@
+[probe-r7.4-T5-moe run5] MODEL=gemma-4-26b-a4b-it-mlx-8bit SOURCE_PREFIX=probe-r7.4-T5-moe TOOLSETS=delegation,todo,clarify,file_readonly TIMEOUT=900s
+[probe-r7.4-T5-moe run5] task: The dashboard sometimes shows stale data after a user hits Save. It's intermittent — reproduces ma...
+[probe-r7.4-T5-moe run5] attempt 0: initial invocation
+[probe-r7.4-T5-moe run5] session_id captured: 20260419_143500_76bb41
+[probe-r7.4-T5-moe run5] attempt 0 verdict: COMPLIANT

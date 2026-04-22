@@ -1,0 +1,30 @@
+=== baseline-pre-armA 2026-04-19T20:20:57-05:00 ===
+01c0e77bb2a6e753a8ea9063784a25e0  /home/parallels/.hermes/hermes-agent/HERMES.md
+fb1a5a5208a6cf2fcb8252aac10397eb  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/SKILL.md
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
+=== after-T4-batch 2026-04-19T20:24:12-05:00 ===
+01c0e77bb2a6e753a8ea9063784a25e0  /home/parallels/.hermes/hermes-agent/HERMES.md
+fb1a5a5208a6cf2fcb8252aac10397eb  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/SKILL.md
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
+=== after-T5-batch 2026-04-19T20:31:09-05:00 ===
+01c0e77bb2a6e753a8ea9063784a25e0  /home/parallels/.hermes/hermes-agent/HERMES.md
+fb1a5a5208a6cf2fcb8252aac10397eb  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/SKILL.md
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
+=== after-T6-batch 2026-04-19T20:46:35-05:00 ===
+01c0e77bb2a6e753a8ea9063784a25e0  /home/parallels/.hermes/hermes-agent/HERMES.md
+fb1a5a5208a6cf2fcb8252aac10397eb  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/SKILL.md
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
+=== after-T10-batch 2026-04-19T21:01:38-05:00 ===
+01c0e77bb2a6e753a8ea9063784a25e0  /home/parallels/.hermes/hermes-agent/HERMES.md
+fb1a5a5208a6cf2fcb8252aac10397eb  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/SKILL.md
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
+=== final-post-armA 2026-04-19T21:01:38-05:00 ===
+01c0e77bb2a6e753a8ea9063784a25e0  /home/parallels/.hermes/hermes-agent/HERMES.md
+fb1a5a5208a6cf2fcb8252aac10397eb  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/SKILL.md
+a1dce6e989527686124d0860830627c9  /home/parallels/.hermes/skills/productivity/atlassian/jira-daily-briefing/jira-briefing.sh
+
