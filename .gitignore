@@ -25,3 +25,9 @@ SESSION-*.md
 # Local tmp + logs for probe runs
 /tmp/probe-*
 
+# Hermes campaign reference material (dense per-trial artifacts + session JSONs
+# pulled from VM). Kept Mac-local for offline research; not committed to avoid
+# bloating the repo with ~50 MB of per-trial stdouts, wrapper logs, and
+# session JSONs. If cross-machine sharing is needed, tarball per campaign.
+variants/hermes/archive/*/tmp-archive/
+
