@@ -22,6 +22,7 @@
 set -euo pipefail
 
 REMOTE_HOST="${REMOTE_HOST:-ubuntu-vm}"
+R_AGENT="${R_AGENT:-.hermes/hermes-agent}"  # $HOME-relative path to Hermes on VM
 SCAFFOLD="/tmp/r7.11-smoke-scaffold"
 REPORT="/tmp/r7.11-smoke-report.md"
 STDOUT_LOG="/tmp/r7.11-smoke-stdout.txt"
@@ -95,7 +96,7 @@ log "Phase B: launch hermes chat (timeout ${HARD_TIMEOUT_S}s, model ${MODEL}, to
 
 local_start=$(date +%s)
 set +e
-ssh "$REMOTE_HOST" "cd ~/.hermes/hermes-agent && OMLX_API_KEY='${OMLX_API_KEY}' timeout ${HARD_TIMEOUT_S} ./venv/bin/hermes chat \
+ssh "$REMOTE_HOST" "cd ~/${R_AGENT} && OMLX_API_KEY='${OMLX_API_KEY}' timeout ${HARD_TIMEOUT_S} ./venv/bin/hermes chat \
   -m ${MODEL} \
   -Q \
   --max-turns 15 \

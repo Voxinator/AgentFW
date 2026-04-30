@@ -42,11 +42,26 @@ To run a smoke test after install (requires `OMLX_API_KEY`):
 OMLX_API_KEY=... bash variants/hermes/install.sh --smoke
 ```
 
-To target a non-default ssh alias:
+To target a non-default ssh alias OR a non-default Hermes path on the VM:
 
 ```bash
 bash variants/hermes/install.sh --host=my-hermes-vm
+bash variants/hermes/install.sh --hermes-path=opt/hermes-agent
+# Or via env vars:
+HERMES_HOST=my-hermes-vm HERMES_PATH=opt/hermes-agent bash variants/hermes/install.sh
 ```
+
+`--hermes-path` is interpreted as `$HOME`-relative on the VM. Default is `.hermes/hermes-agent` (the upstream-recommended location).
+
+If your Hermes is a slightly different version than the tested baseline (and the canonical md5s don't match), you can override the drift halt with:
+
+```bash
+bash variants/hermes/install.sh --allow-canonical-drift
+```
+
+This converts the md5 mismatch from FAIL to WARN. **CAUTION**: staging may fail or produce unexpected results against an untested Hermes version. The baseline md5s in `install.sh` are pinned to Hermes Agent v0.8.0 commit `86960cdb`; any other Hermes version requires either:
+- Updating the baseline md5s in `install.sh` (after empirically verifying r7.11 works against your version), OR
+- Using `--allow-canonical-drift` (you're on your own for compatibility).
 
 See `bash variants/hermes/install.sh --help` for the full flag list.
 
@@ -105,14 +120,15 @@ See `DEPENDENCIES.md` for full tested-version detail. Summary:
 - Bash, `ssh`, `python3` (3.9+ on the Mac for running tests; the VM needs 3.11)
 - This repo cloned
 - `~/.ssh/config` alias pointing at the Hermes VM (default `ubuntu-vm`; override via `--host=` or `HERMES_HOST` env var)
+- (No assumption about your local repo path; the installer derives paths from its own location)
 - A local OpenAI-compatible inference endpoint (oMLX recommended; `gemma-4-26B-A4B-it-MLX-8bit` MoE was the n=5 baseline model)
 
 ### VM side
 
 - Linux VM with `ssh` access from Mac
-- Hermes Agent installed at `~/.hermes/hermes-agent/` (upstream `github.com/NousResearch/hermes-agent`, tested at `v0.8.0` / commit `86960cdb`)
-- Hermes' Python venv at `~/.hermes/hermes-agent/venv/` running Python 3.11.x (uv-managed cpython-3.11.15 on the tested rig)
-- Canonical Hermes install (no prior modifications to `HERMES.md`, `run_agent.py`, `toolsets.py`, or `model_tools.py`); the installer halts on canonical drift
+- Hermes Agent installed somewhere on the VM (upstream `github.com/NousResearch/hermes-agent`, tested at `v0.8.0` / commit `86960cdb`). Default install path assumed: `$HOME/.hermes/hermes-agent/`. If you installed it elsewhere, pass `--hermes-path=<path>` (`$HOME`-relative) or set `HERMES_PATH`.
+- Hermes' Python venv at `<hermes-path>/venv/` running Python 3.11.x (uv-managed cpython-3.11.15 on the tested rig)
+- Canonical Hermes install (no prior modifications to `HERMES.md`, `run_agent.py`, `toolsets.py`, or `model_tools.py`); the installer halts on canonical drift unless `--allow-canonical-drift` is passed
 
 ### To run trials post-install
 
@@ -193,7 +209,8 @@ The wrapper exits with:
 |---|---|---|
 | `cannot ssh to ubuntu-vm` | ssh config or key auth | Test `ssh ubuntu-vm true` directly; check `~/.ssh/config` |
 | `Hermes not installed at ~/.hermes/hermes-agent` | Hermes Agent isn't installed on the VM | Install Hermes Agent first (see upstream); installer assumes Hermes is already present |
-| `md5 mismatch` on canonical files | Prior modifications to canonical Hermes | Either restore canonical Hermes OR (if you've intentionally modified Hermes) update the baseline md5s in `install.sh` |
+| `md5 mismatch` on canonical files | Different Hermes version than the tested baseline OR prior modifications | Restore canonical Hermes; OR pass `--allow-canonical-drift` (CAUTION: untested); OR update baseline md5s in `install.sh` after empirically verifying compatibility |
+| `Hermes not installed at ~/.hermes/hermes-agent` but Hermes IS installed elsewhere | Default path doesn't match your install | Pass `--hermes-path=<path>` (`$HOME`-relative) or set `HERMES_PATH` env var |
 | `stale .probe-r7.11-orig backup(s) detected` | Previous install didn't unstage cleanly | Run `bash install.sh --uninstall` to restore canonical |
 | `r7.11 firmware appears already staged` | Prior install hasn't been removed | Run `bash install.sh --uninstall` first, then re-install |
 | Test suite fails locally | Source-tree integrity issue | Investigate the failing test; do NOT bypass with `--skip-tests` unless you know what you're doing |

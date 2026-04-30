@@ -7,14 +7,25 @@
 # the .probe-r7.11-orig backup convention.
 #
 # USAGE
-#   bash install.sh                    Default: pre-flight + tests + stage
-#   bash install.sh --check            Pre-flight only (no mutation)
-#   bash install.sh --uninstall        Restore canonical (unstage firmware)
-#   bash install.sh --smoke            After install, run smoke-r7.11.sh
-#                                      (requires OMLX_API_KEY in env)
-#   bash install.sh --host=<alias>     Override default ssh alias (ubuntu-vm)
-#   bash install.sh --skip-tests       Skip the 227-test local pre-stage check
-#   bash install.sh --help             Print this header
+#   bash install.sh                        Default: pre-flight + tests + stage
+#   bash install.sh --check                Pre-flight only (no mutation)
+#   bash install.sh --uninstall            Restore canonical (unstage firmware)
+#   bash install.sh --smoke                After install, run smoke-r7.11.sh
+#                                          (requires OMLX_API_KEY in env)
+#   bash install.sh --host=<alias>         Override default ssh alias
+#                                          (default: ubuntu-vm; or set HERMES_HOST)
+#   bash install.sh --hermes-path=<path>   Override Hermes install path on VM,
+#                                          relative to $HOME on the VM
+#                                          (default: .hermes/hermes-agent;
+#                                          or set HERMES_PATH)
+#   bash install.sh --allow-canonical-drift
+#                                          Convert md5 mismatch from FAIL to
+#                                          WARN. Use if your Hermes is a
+#                                          different version than the tested
+#                                          baseline. CAUTION: staging may
+#                                          break against an untested Hermes.
+#   bash install.sh --skip-tests           Skip the 227-test local pre-stage check
+#   bash install.sh --help                 Print this header
 #
 # EXIT CODES
 #   0  = success (or --check all gates pass)
@@ -27,15 +38,19 @@
 #   10 = uninstall failure (only with --uninstall)
 #   99 = usage error
 #
-# ENV OVERRIDES
-#   HERMES_HOST            default "ubuntu-vm"; ssh alias for the VM
+# ENV OVERRIDES (equivalent to flags)
+#   HERMES_HOST            ssh alias for the VM      (default ubuntu-vm)
+#   HERMES_PATH            Hermes path on VM, $HOME-relative
+#                                                    (default .hermes/hermes-agent)
 #   OMLX_API_KEY           required only with --smoke
-#   R7_11_DIR              default <repo>/variants/hermes/r7.9-research/r7.11
+#   R7_11_DIR              path to the r7.11 source dir on Mac
+#                          (default: <repo>/variants/hermes/r7.9-research/r7.11)
 #
 # REQUIREMENTS
 #   Mac side: this repo cloned; bash; ssh; python3
-#   VM side: Hermes Agent installed at ~/.hermes/hermes-agent/ with
-#            canonical md5s matching baseline (see DEPENDENCIES.md)
+#   VM side: Hermes Agent installed at $HOME/$HERMES_PATH on the VM
+#            (canonical install untouched; installer halts on drift unless
+#             --allow-canonical-drift is passed)
 
 set -uo pipefail
 
@@ -46,26 +61,36 @@ set -uo pipefail
 MODE="install"
 RUN_SMOKE=0
 SKIP_TESTS=0
+ALLOW_CANONICAL_DRIFT=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_R7_11_DIR="${SCRIPT_DIR}/r7.9-research/r7.11"
 R7_11_DIR="${R7_11_DIR:-$DEFAULT_R7_11_DIR}"
 HERMES_HOST="${HERMES_HOST:-ubuntu-vm}"
+HERMES_PATH="${HERMES_PATH:-.hermes/hermes-agent}"
 
 print_help() {
-  sed -n '2,33p' "${BASH_SOURCE[0]}" | sed 's|^# \?||'
+  sed -n '2,49p' "${BASH_SOURCE[0]}" | sed 's|^# \?||'
 }
 
 for arg in "$@"; do
   case "$arg" in
-    --check)        MODE="check" ;;
-    --uninstall)    MODE="uninstall" ;;
-    --smoke)        RUN_SMOKE=1 ;;
-    --skip-tests)   SKIP_TESTS=1 ;;
-    --host=*)       HERMES_HOST="${arg#--host=}" ;;
-    --help|-h)      print_help; exit 0 ;;
+    --check)                    MODE="check" ;;
+    --uninstall)                MODE="uninstall" ;;
+    --smoke)                    RUN_SMOKE=1 ;;
+    --skip-tests)               SKIP_TESTS=1 ;;
+    --allow-canonical-drift)    ALLOW_CANONICAL_DRIFT=1 ;;
+    --host=*)                   HERMES_HOST="${arg#--host=}" ;;
+    --hermes-path=*)            HERMES_PATH="${arg#--hermes-path=}" ;;
+    --help|-h)                  print_help; exit 0 ;;
     *) echo "ERROR: unknown arg: $arg (try --help)" >&2; exit 99 ;;
   esac
 done
+
+# Strip leading slashes / leading $HOME from HERMES_PATH for consistency:
+# we always interpret HERMES_PATH as $HOME-relative on the VM, so commands
+# can be written as `~/$HERMES_PATH/...` cleanly.
+HERMES_PATH="${HERMES_PATH#/}"
+HERMES_PATH="${HERMES_PATH#~/}"
 
 # ---------------------------------------------------------------------------
 # Logging helpers
@@ -79,6 +104,8 @@ header() { printf '\n[install] === %s ===\n' "$*"; }
 
 # ---------------------------------------------------------------------------
 # Canonical baseline md5s (post-cleanup, 2026-04-30)
+# These match Hermes Agent v0.8.0 commit 86960cdb on the tested rig.
+# Different Hermes versions will not match — use --allow-canonical-drift.
 # ---------------------------------------------------------------------------
 
 readonly EXPECTED_HERMES_MD="0780c232a6cb52e13e432261f0d68ad9"
@@ -135,7 +162,7 @@ mac_preflight() {
 # ---------------------------------------------------------------------------
 
 vm_preflight() {
-  header "Phase 2: VM-side pre-flight (host=$HERMES_HOST)"
+  header "Phase 2: VM-side pre-flight (host=$HERMES_HOST, hermes=~/$HERMES_PATH)"
 
   if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$HERMES_HOST" true 2>/dev/null; then
     fail "cannot ssh to $HERMES_HOST (BatchMode; check ~/.ssh/config + key auth)"
@@ -143,22 +170,25 @@ vm_preflight() {
   fi
   ok "ssh to $HERMES_HOST works"
 
-  if ! ssh "$HERMES_HOST" 'test -d ~/.hermes/hermes-agent' 2>/dev/null; then
-    fail "Hermes not installed at ~/.hermes/hermes-agent on $HERMES_HOST"
-    log "See DEPENDENCIES.md for Hermes Agent install requirements"
+  if ! ssh "$HERMES_HOST" "test -d ~/$HERMES_PATH" 2>/dev/null; then
+    fail "Hermes not installed at ~/$HERMES_PATH on $HERMES_HOST"
+    log "Hints:"
+    log "  - Confirm Hermes Agent is installed (see DEPENDENCIES.md for upstream)"
+    log "  - Override path: --hermes-path=<path> or HERMES_PATH=<path>"
+    log "    (Path is interpreted as \$HOME-relative on the VM)"
     return 2
   fi
-  ok "Hermes installed at ~/.hermes/hermes-agent"
+  ok "Hermes installed at ~/$HERMES_PATH"
 
   local md5s drift=0
-  md5s=$(ssh "$HERMES_HOST" 'md5sum ~/.hermes/hermes-agent/HERMES.md \
-                                     ~/.hermes/hermes-agent/run_agent.py \
-                                     ~/.hermes/hermes-agent/toolsets.py \
-                                     ~/.hermes/hermes-agent/model_tools.py 2>&1' 2>/dev/null)
+  md5s=$(ssh "$HERMES_HOST" "md5sum ~/$HERMES_PATH/HERMES.md \
+                                     ~/$HERMES_PATH/run_agent.py \
+                                     ~/$HERMES_PATH/toolsets.py \
+                                     ~/$HERMES_PATH/model_tools.py 2>&1" 2>/dev/null)
   check_md5() {
     local file="$1" expected="$2"
     local actual
-    actual=$(echo "$md5s" | awk -v f="$file" '$2 ~ f {print $1}' | head -1)
+    actual=$(echo "$md5s" | awk -v f="/${file}\$" '$2 ~ f {print $1}' | head -1)
     if [[ -z "$actual" ]]; then
       fail "  $file: not readable on VM"; drift=1
     elif [[ "$actual" != "$expected" ]]; then
@@ -173,15 +203,26 @@ vm_preflight() {
   check_md5 "model_tools.py" "$EXPECTED_MODEL_TOOLS"
 
   if [[ "$drift" -ne 0 ]]; then
-    fail "VM canonical drift detected — refusing to stage"
-    log "Either restore canonical Hermes install OR update baseline md5s in this script"
-    return 2
+    if [[ "$ALLOW_CANONICAL_DRIFT" -eq 1 ]]; then
+      warn "VM canonical drift detected — proceeding because --allow-canonical-drift is set"
+      warn "Staging may fail or produce unexpected results against an untested Hermes version"
+    else
+      fail "VM canonical drift detected — refusing to stage"
+      log "Options:"
+      log "  - Restore canonical Hermes install (see DEPENDENCIES.md for tested version)"
+      log "  - Update baseline md5s in this script if you've intentionally modified Hermes"
+      log "  - Pass --allow-canonical-drift to convert this to a warning (CAUTION)"
+      return 2
+    fi
+  else
+    ok "VM canonical state matches baseline"
   fi
-  ok "VM canonical state matches baseline"
 
   local pyver
-  pyver=$(ssh "$HERMES_HOST" '~/.hermes/hermes-agent/venv/bin/python --version' 2>/dev/null)
-  if [[ "$pyver" != *"Python 3.11"* ]]; then
+  pyver=$(ssh "$HERMES_HOST" "~/$HERMES_PATH/venv/bin/python --version" 2>/dev/null)
+  if [[ -z "$pyver" ]]; then
+    warn "could not read Hermes Python version (expected venv at ~/$HERMES_PATH/venv/)"
+  elif [[ "$pyver" != *"Python 3.11"* ]]; then
     warn "Hermes Python is '$pyver' — r7.11 was tested with Python 3.11.x"
     warn "Scaffold venvs MUST match Hermes' Python for ABI compatibility (F-6)"
   else
@@ -189,7 +230,7 @@ vm_preflight() {
   fi
 
   local stale
-  stale=$(ssh "$HERMES_HOST" 'find ~/.hermes/hermes-agent -name "*.probe-r7.11-orig" 2>/dev/null | wc -l')
+  stale=$(ssh "$HERMES_HOST" "find ~/$HERMES_PATH -name '*.probe-r7.11-orig' 2>/dev/null | wc -l")
   if [[ "$stale" -gt 0 ]]; then
     warn "$stale stale .probe-r7.11-orig backup(s) detected on VM"
     warn "Run --uninstall first OR remove backups manually before re-staging"
@@ -197,7 +238,7 @@ vm_preflight() {
   fi
   ok "no stale .probe-r7.11-orig backups"
 
-  if ssh "$HERMES_HOST" 'test -d ~/.hermes/hermes-agent/tools/r7_11_lib' 2>/dev/null; then
+  if ssh "$HERMES_HOST" "test -d ~/$HERMES_PATH/tools/r7_11_lib" 2>/dev/null; then
     warn "r7.11 firmware appears already staged"
     log "Use --uninstall to restore canonical, or remove staged files manually"
     return 2
@@ -242,12 +283,13 @@ run_local_tests() {
 }
 
 # ---------------------------------------------------------------------------
-# Phase 4: Stage firmware
+# Phase 4: Stage firmware (R_AGENT honors HERMES_PATH; SSH_TARGET honors HERMES_HOST)
 # ---------------------------------------------------------------------------
 
 stage_firmware() {
-  header "Phase 4: Stage firmware on $HERMES_HOST"
-  if ! bash "$R7_11_DIR/probe-r7.11-stage.sh" stage 2>&1 | sed 's/^/  /'; then
+  header "Phase 4: Stage firmware on $HERMES_HOST (path: ~/$HERMES_PATH)"
+  if ! R_AGENT="$HERMES_PATH" REMOTE_HOST="$HERMES_HOST" \
+        bash "$R7_11_DIR/probe-r7.11-stage.sh" stage 2>&1 | sed 's/^/  /'; then
     fail "staging script returned non-zero"
     return 4
   fi
@@ -267,7 +309,7 @@ verify_stage() {
            tools/r7_11_end_session.py tools/r7_11_escalate.py \
            tools/write_plan_md.py toolsets.py.probe-r7.11-orig \
            model_tools.py.probe-r7.11-orig; do
-    if ssh "$HERMES_HOST" "test -e ~/.hermes/hermes-agent/$f" 2>/dev/null; then
+    if ssh "$HERMES_HOST" "test -e ~/$HERMES_PATH/$f" 2>/dev/null; then
       ok "  $f present"
     else
       fail "  $f missing"; missing=1
@@ -280,14 +322,18 @@ verify_stage() {
     return 5
   fi
 
-  local cur_hermes cur_run
-  cur_hermes=$(ssh "$HERMES_HOST" 'md5sum ~/.hermes/hermes-agent/HERMES.md' 2>/dev/null | awk '{print $1}')
-  cur_run=$(ssh "$HERMES_HOST" 'md5sum ~/.hermes/hermes-agent/run_agent.py' 2>/dev/null | awk '{print $1}')
-  if [[ "$cur_hermes" != "$EXPECTED_HERMES_MD" ]] || [[ "$cur_run" != "$EXPECTED_RUN_AGENT" ]]; then
-    fail "canonical tripwires mutated by staging — this should never happen"
-    return 5
+  if [[ "$ALLOW_CANONICAL_DRIFT" -eq 0 ]]; then
+    local cur_hermes cur_run
+    cur_hermes=$(ssh "$HERMES_HOST" "md5sum ~/$HERMES_PATH/HERMES.md" 2>/dev/null | awk '{print $1}')
+    cur_run=$(ssh "$HERMES_HOST" "md5sum ~/$HERMES_PATH/run_agent.py" 2>/dev/null | awk '{print $1}')
+    if [[ "$cur_hermes" != "$EXPECTED_HERMES_MD" ]] || [[ "$cur_run" != "$EXPECTED_RUN_AGENT" ]]; then
+      fail "canonical tripwires mutated by staging — this should never happen"
+      return 5
+    fi
+    ok "canonical tripwires (HERMES.md, run_agent.py) unchanged"
+  else
+    ok "post-stage canonical-tripwire check skipped (--allow-canonical-drift)"
   fi
-  ok "canonical tripwires (HERMES.md, run_agent.py) unchanged"
   return 0
 }
 
@@ -303,7 +349,8 @@ run_smoke() {
     return 6
   fi
 
-  if ! bash "$R7_11_DIR/smoke-r7.11.sh" 2>&1 | sed 's/^/  /'; then
+  if ! R_AGENT="$HERMES_PATH" REMOTE_HOST="$HERMES_HOST" \
+        bash "$R7_11_DIR/smoke-r7.11.sh" 2>&1 | sed 's/^/  /'; then
     fail "smoke test returned non-zero"
     return 6
   fi
@@ -317,21 +364,24 @@ run_smoke() {
 
 run_uninstall() {
   header "Uninstall: restore canonical via probe-r7.11-unstage.sh"
-  if ! bash "$R7_11_DIR/probe-r7.11-unstage.sh" 2>&1 | sed 's/^/  /'; then
+  if ! R_AGENT="$HERMES_PATH" REMOTE_HOST="$HERMES_HOST" \
+        bash "$R7_11_DIR/probe-r7.11-unstage.sh" 2>&1 | sed 's/^/  /'; then
     fail "unstage script returned non-zero"
     return 10
   fi
 
-  local cur_hermes cur_run
-  cur_hermes=$(ssh "$HERMES_HOST" 'md5sum ~/.hermes/hermes-agent/HERMES.md' 2>/dev/null | awk '{print $1}')
-  cur_run=$(ssh "$HERMES_HOST" 'md5sum ~/.hermes/hermes-agent/run_agent.py' 2>/dev/null | awk '{print $1}')
-  if [[ "$cur_hermes" != "$EXPECTED_HERMES_MD" ]] || [[ "$cur_run" != "$EXPECTED_RUN_AGENT" ]]; then
-    fail "canonical drift after unstage — investigate"
-    return 10
+  if [[ "$ALLOW_CANONICAL_DRIFT" -eq 0 ]]; then
+    local cur_hermes cur_run
+    cur_hermes=$(ssh "$HERMES_HOST" "md5sum ~/$HERMES_PATH/HERMES.md" 2>/dev/null | awk '{print $1}')
+    cur_run=$(ssh "$HERMES_HOST" "md5sum ~/$HERMES_PATH/run_agent.py" 2>/dev/null | awk '{print $1}')
+    if [[ "$cur_hermes" != "$EXPECTED_HERMES_MD" ]] || [[ "$cur_run" != "$EXPECTED_RUN_AGENT" ]]; then
+      fail "canonical drift after unstage — investigate"
+      return 10
+    fi
   fi
 
-  if ssh "$HERMES_HOST" 'test -d ~/.hermes/hermes-agent/tools/r7_11_lib \
-                         || test -f ~/.hermes/hermes-agent/tools/write_plan_md.py' 2>/dev/null; then
+  if ssh "$HERMES_HOST" "test -d ~/$HERMES_PATH/tools/r7_11_lib \
+                         || test -f ~/$HERMES_PATH/tools/write_plan_md.py" 2>/dev/null; then
     fail "r7.11 artifacts still present after unstage — investigate"
     return 10
   fi
@@ -346,18 +396,15 @@ run_uninstall() {
 case "$MODE" in
   uninstall)
     mac_preflight || exit $?
-    vm_preflight_for_uninstall() {
-      header "Phase 2: VM-side pre-flight (host=$HERMES_HOST)"
-      ssh -o BatchMode=yes -o ConnectTimeout=10 "$HERMES_HOST" true 2>/dev/null \
-        || { fail "cannot ssh to $HERMES_HOST"; return 2; }
-      ok "ssh to $HERMES_HOST works"
-      return 0
-    }
-    vm_preflight_for_uninstall || exit $?
+    header "Phase 2: VM-side pre-flight (host=$HERMES_HOST)"
+    if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$HERMES_HOST" true 2>/dev/null; then
+      fail "cannot ssh to $HERMES_HOST"; exit 2
+    fi
+    ok "ssh to $HERMES_HOST works"
     run_uninstall || exit $?
     log ""
     log "=== Hermes variant r7.11 firmware UNINSTALLED ==="
-    log "Canonical Hermes Agent restored on $HERMES_HOST"
+    log "Canonical Hermes Agent restored on $HERMES_HOST (~/$HERMES_PATH)"
     exit 0
     ;;
   check)
@@ -382,11 +429,12 @@ case "$MODE" in
     fi
     log ""
     log "=== Hermes variant r7.11 firmware INSTALLED on $HERMES_HOST ==="
+    log "    Path on VM: ~/$HERMES_PATH"
     log ""
     log "Next steps:"
     log "  1. Prepare a scaffold dir on the VM with USER-PROMPT.md +"
     log "     verify-config.json + a python3.11 .venv"
-    log "     (see HOWTO-r7.11-multi.md §Prerequisites)"
+    log "     (see r7.9-research/r7.11/HOWTO-r7.11-multi.md §Prerequisites)"
     log "  2. Run a trial:"
     log "     ssh $HERMES_HOST \"cd /path/to/r7.11 && \\"
     log "       OMLX_API_KEY=... python3 hermes_multi.py run /path/to/scaffold/ \\"
