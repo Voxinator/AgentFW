@@ -1,0 +1,217 @@
+"""
+write_plan_md — minimum-mechanism tool for r7.10 parent-decomposition probe.
+
+Purpose: surface decomposition teaching via a dedicated tool description,
+without modifying any existing tool schema (avoids the Hermes parser bug
+isolated to `spec.properties` substructure removal in delegate_worker_v2).
+
+The tool writes a PLAN.md file to disk. That is all it does. The teaching
+happens in the schema description — the parent reads what PLAN.md should
+contain and how the tool fits into a phased-dispatch workflow. The handler
+does not validate content shape or reject malformed input; the teaching
+is pure-surface, not enforcement. This design choice is deliberate:
+
+  - Operator constraint: no schema tricks on dispatch tools (parser bug).
+  - Operator observation: tool-description teaching reached 40% pickup in
+    Arms B and C; doctrine-only (Arm D) reached 0%. The teaching surface
+    is the tool description itself.
+  - Operator constraint: do not dilute with HERMES.md doctrine; keep the
+    teaching localized to where the parent encounters the tool.
+
+The description references the `todo` tool for phase-completion tracking
+(operator explicit: "the todo tool is load-bearing for phase-iteration
+behavior"). It also references `delegate_worker` (v1) for phase dispatches
+— v1 is parser-bug-immune and validated for phase-dispatch shaped goals
+(see parser-bug-trigger.md §2 for v1 reliability evidence).
+
+The handler writes the content verbatim, counts `## Phase N:` headers in a
+best-effort manner, and returns metadata. Parsing errors are not surfaced
+as tool errors — the parent sees `phase_count=0` and can decide whether
+to rewrite. This keeps the tool purely additive.
+"""
+
+import logging
+import os
+import re
+
+from tools.registry import registry
+
+_LOG = logging.getLogger(__name__)
+
+_DEFAULT_PLAN_PATH = "/tmp/export-probe-scaffold/PLAN.md"
+_PHASE_HEADER_RE = re.compile(
+    r"^#{1,3}\s+Phase\s+(\d+)[:.]?\s*(.*)$", re.MULTILINE
+)
+
+
+WRITE_PLAN_MD_SCHEMA = {
+    "name": "write_plan_md",
+    "description": (
+        "Write a PLAN.md file that decomposes a long-horizon task into "
+        "phases for sequential dispatch.\n\n"
+        "USE THIS TOOL at the start of any long-horizon classified task, "
+        "BEFORE dispatching workers. The PLAN.md file structures your "
+        "decomposition so that each phase becomes a self-contained "
+        "worker-spawn goal for `delegate_worker` (v1).\n\n"
+        "REQUIRED PLAN.md format — each phase MUST include:\n\n"
+        "  ## Phase N: <short name>\n"
+        "  - Objective: <one imperative line>\n"
+        "  - Paths: <comma-separated absolute file paths>\n"
+        "  - Acceptance Criteria: <verifiable 'done' definition>\n"
+        "  - Size estimate: 1pt / 2pt / 3pt / 5pt\n\n"
+        "OPTIONAL per-phase field — DECLARE IT WHEN VERIFIABLE:\n\n"
+        "  - Acceptance Command: <single executable invocation>\n\n"
+        "When you declare an Acceptance Command, the verifier (tier 3.7) "
+        "actually EXECUTES the command in the scaffold root with a B1-style "
+        "PYTHONPATH (scaffold .venv site-packages prepended). Exit 0 = phase "
+        "passes; non-zero = real failure with stdout/stderr captured into "
+        "corrective_dispatch so the next worker can fix it. Without an "
+        "Acceptance Command, the verifier only runs static checks (presence, "
+        "syntax, imports, wiring) — your phase can verify-pass while the "
+        "actual acceptance criterion silently fails. DECLARE IT WHENEVER A "
+        "PHASE HAS A RUNNABLE CHECK (pytest, custom script, lint, etc.).\n\n"
+        "FORMAT — Acceptance Command must be a single executable invocation. "
+        "NO shell builtins (no `cd`, `&&`, `||`, `;`, pipes). The verifier "
+        "parses the command via shlex.split and runs subprocess.run with "
+        "cwd=scaffold_root, so use cwd-relative paths and a single binary as "
+        "argv[0]. Examples:\n"
+        "  GOOD: `.venv/bin/python -m pytest tests/test_export.py`\n"
+        "  GOOD: `.venv/bin/pytest tests/test_export.py`\n"
+        "  BAD:  `cd /tmp/scaffold && pytest tests/test_export.py`\n"
+        "         (cd is a shell builtin; && requires a shell)\n"
+        "  BAD:  `pytest tests/ | tee log.txt`\n"
+        "         (pipe requires a shell)\n\n"
+        "STANDARD PATTERN — one phase per session:\n"
+        "After each phase verifies passed, call end_session_for_handoff so "
+        "the wrapper starts the next phase in fresh context. Don't batch "
+        "multiple phases inline — fresh context preserves verification "
+        "independence across phases.\n\n"
+        "Produce 3–5 phases total. Each phase should be completable in "
+        "20 turns by a fresh worker given only the phase's Objective + "
+        "Paths + Acceptance Criteria + (optional) Acceptance Command.\n\n"
+        "Typical flow for long-horizon tasks:\n"
+        "  1. Classify long-horizon via `delegate_worker_v2`.\n"
+        "  2. `write_plan_md` with the phase breakdown (this tool).\n"
+        "  3. `todo` list mirroring the PLAN.md phases for state tracking.\n"
+        "  4. `delegate_worker` (v1) for each phase — pass the phase's "
+        "     Objective + Paths + Acceptance Criteria as the single `goal` "
+        "     string.\n"
+        "  5. After each child return, run `verify_phase`. If passed, call "
+        "     `end_session_for_handoff` to advance to the next phase in "
+        "     fresh context.\n\n"
+        "Worked example — PLAN.md contents for a CSV/JSON/PDF export "
+        "feature with permissions + tests + docs:\n\n"
+        "  # Export Feature Plan\n\n"
+        "  ## Phase 1: Core Serializers\n"
+        "  - Objective: Implement CSV, JSON, and PDF serializer functions.\n"
+        "  - Paths: /tmp/scaffold/src/export/{csv,json,pdf}.py\n"
+        "  - Acceptance Criteria: Each serializer defined with signature "
+        "(records: list[dict]) -> str|bytes; empty-list case handled.\n"
+        "  - Size estimate: 3pt\n\n"
+        "  ## Phase 2: API Endpoints + Permissions\n"
+        "  - Objective: Add 3 GET endpoints in src/api/export.py with "
+        "has_permission filter.\n"
+        "  - Paths: /tmp/scaffold/src/api/export.py\n"
+        "  - Acceptance Criteria: 3 @router.get routes; each filters via "
+        "has_permission; media_types correct.\n"
+        "  - Size estimate: 3pt\n\n"
+        "  ## Phase 3: Tests + Documentation\n"
+        "  - Objective: Implement test bodies and update API docs.\n"
+        "  - Paths: /tmp/scaffold/tests/test_export.py, /tmp/scaffold/docs/api.md\n"
+        "  - Acceptance Criteria: Test functions defined for each format + "
+        "permission-denied; docs/ reflects new endpoints; pytest passes.\n"
+        "  - Acceptance Command: .venv/bin/python -m pytest tests/test_export.py\n"
+        "  - Size estimate: 2pt\n"
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "content": {
+                "type": "string",
+                "description": (
+                    "The PLAN.md file contents, formatted as described "
+                    "above. Include 3–5 phases, each with Objective, "
+                    "Paths, Acceptance Criteria, and Size estimate."
+                ),
+            },
+            "path": {
+                "type": "string",
+                "description": (
+                    "Optional file path. Defaults to "
+                    "/tmp/export-probe-scaffold/PLAN.md."
+                ),
+            },
+        },
+        "required": ["content"],
+    },
+}
+
+
+def write_plan_md(content=None, path=None, parent_agent=None):
+    """Write PLAN.md. Returns metadata including best-effort phase count.
+
+    Intentionally non-validating — malformed content is not rejected; the
+    parent sees phase_count=0 and can rewrite. Teaching is schema-level,
+    not handler-level.
+    """
+    if not isinstance(content, str) or not content.strip():
+        return {"error": "content must be a non-empty string"}
+
+    target_path = path if isinstance(path, str) and path.strip() else _DEFAULT_PLAN_PATH
+
+    try:
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        with open(target_path, "w") as f:
+            f.write(content)
+    except Exception as e:
+        return {"error": f"failed to write PLAN.md at {target_path}: {e}"}
+
+    # Best-effort parse for phase metadata (not validation)
+    phase_matches = _PHASE_HEADER_RE.findall(content)
+    phase_names = [(num, (name or "<no name>").strip()) for num, name in phase_matches]
+    phase_count = len(phase_matches)
+    bytes_written = len(content.encode("utf-8"))
+
+    result = {
+        "ok": True,
+        "path": target_path,
+        "bytes_written": bytes_written,
+        "phase_count": phase_count,
+        "phase_names": [f"Phase {n}: {name}" for n, name in phase_names],
+    }
+
+    if phase_count == 0:
+        result["notice"] = (
+            "PLAN.md written but no `## Phase N:` headers detected. "
+            "If you intended a phase decomposition, re-run with the "
+            "required format (see tool description)."
+        )
+    elif phase_count == 1:
+        result["notice"] = (
+            "PLAN.md has only 1 phase. A 1-phase plan is not actually "
+            "decomposed — consider dispatching directly as structured "
+            "(skipping long-horizon) or splitting the phase further."
+        )
+    else:
+        result["notice"] = (
+            f"PLAN.md written with {phase_count} phases. Next: use `todo` "
+            f"to track each phase, then dispatch each via `delegate_worker` "
+            f"(v1) with goal=Phase N's Objective + Paths + Acceptance "
+            f"Criteria."
+        )
+
+    return result
+
+
+registry.register(
+    name="write_plan_md",
+    toolset="delegation",
+    schema=WRITE_PLAN_MD_SCHEMA,
+    handler=lambda args, **kw: write_plan_md(
+        content=args.get("content"),
+        path=args.get("path"),
+        parent_agent=kw.get("parent_agent"),
+    ),
+    check_fn=lambda: True,
+    emoji="📋",
+)
