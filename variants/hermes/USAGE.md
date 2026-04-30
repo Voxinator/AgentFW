@@ -316,6 +316,121 @@ Phase N — Tests
 Scaffold root: /tmp/<your-scaffold>
 ```
 
+### How tests work — two patterns
+
+You don't write pytest code yourself in the most common case — the parent agent does. Your job is to specify **what behavior should be tested**, not to write the test functions. There are two valid patterns; pick based on how much control you want over the test surface.
+
+#### Pattern A — Let the parent write the tests (the default)
+
+You describe assertions in plain English in `USER-PROMPT.md`; the parent writes the actual pytest code. This is what Levels 2, 3, and 4 demonstrate.
+
+You write:
+```markdown
+Phase 2 — Tests
+  Write tests/test_strutil.py with pytest tests that prove:
+    - reverse("hello") == "olleh"
+    - reverse("") == ""
+    - count_vowels("hello") == 2
+    - count_vowels("xyz") == 0
+  Tests MUST pass. Acceptance Command: .venv/bin/pytest tests/test_strutil.py
+```
+
+The parent (during phase 2) writes:
+```python
+# tests/test_strutil.py — written by the AI
+from src.strutil import reverse, count_vowels
+
+def test_reverse_basic():
+    assert reverse("hello") == "olleh"
+
+def test_reverse_empty():
+    assert reverse("") == ""
+
+def test_count_vowels_basic():
+    assert count_vowels("hello") == 2
+
+def test_count_vowels_no_vowels():
+    assert count_vowels("xyz") == 0
+```
+
+Tier 3.7 then runs the acceptance command, gets pytest exit 0, marks the phase verified_passed.
+
+**Use Pattern A when**: greenfield work; you want fast iteration; you don't have strong opinions about test naming or structure; you want to see what the parent comes up with.
+
+**Pattern A tradeoff**: tests vary trial-to-trial (different parents produce different test counts/shapes — see n=5 baseline: 6 tests vs 11 tests vs 15 tests across SUCCESS trials, all passing). Useful as a behavioral spec; not as a stable regression suite.
+
+#### Pattern B — You ship the tests, parent only writes implementation
+
+You write the test file ahead of time and place it in the scaffold before running the trial. `USER-PROMPT.md` then says "make these tests pass" without asking the parent to write any test code.
+
+```bash
+# Build the scaffold structure
+ssh $HERMES_HOST '
+SCAFFOLD=/tmp/r7.11-mytask
+rm -rf $SCAFFOLD && mkdir -p $SCAFFOLD/src $SCAFFOLD/tests
+PY=$(readlink -f ~/.hermes/hermes-agent/venv/bin/python)
+$PY -m venv $SCAFFOLD/.venv
+$SCAFFOLD/.venv/bin/pip install --quiet pytest
+touch $SCAFFOLD/src/__init__.py $SCAFFOLD/tests/__init__.py
+'
+
+# YOU write the tests up front — this is your behavioral spec
+ssh $HERMES_HOST "cat > /tmp/r7.11-mytask/tests/test_strutil.py" <<'EOF'
+from src.strutil import reverse, count_vowels
+
+def test_reverse_basic():
+    assert reverse("hello") == "olleh"
+
+def test_reverse_empty():
+    assert reverse("") == ""
+
+def test_count_vowels_basic():
+    assert count_vowels("hello") == 2
+
+def test_count_vowels_no_vowels():
+    assert count_vowels("xyz") == 0
+EOF
+
+# USER-PROMPT.md tells the parent to make tests pass; doesn't ask
+# for new test code
+ssh $HERMES_HOST "cat > /tmp/r7.11-mytask/USER-PROMPT.md" <<'EOF'
+Implement src/strutil.py with reverse(s) and count_vowels(s).
+
+Tests already exist at tests/test_strutil.py. Your job is to make them pass.
+Do NOT modify the tests.
+
+Acceptance Command: .venv/bin/pytest tests/test_strutil.py
+
+Scaffold root: /tmp/r7.11-mytask
+EOF
+
+ssh $HERMES_HOST "cat > /tmp/r7.11-mytask/verify-config.json" <<'EOF'
+{"schema_version": "1.0", "verify_phase": {}, "wrapper": {}}
+EOF
+```
+
+PLAN.md will collapse to one phase ("implement strutil.py to pass tests/test_strutil.py"). Tier 3.7 runs your test file; verdict is exact and reproducible.
+
+**Use Pattern B when**: you have a precise behavioral spec; tests-first / TDD; refactoring with existing regression tests; porting a test suite to new code; you want stable, repeatable acceptance across runs.
+
+**Pattern B tradeoff**: more upfront work for you. Worth it when test stability matters.
+
+#### Decision matrix
+
+| Use case | Pattern |
+|---|---|
+| Quick greenfield exploration | A (let parent write) |
+| You have a precise behavioral spec | B (write tests yourself) |
+| Refactor — existing tests must still pass | B (use existing test file as-is) |
+| TDD-style — tests-first | B |
+| You're not sure what test names/shape are right | A |
+| You want repeatable acceptance criteria across runs | B (your tests deterministic; parent-written tests vary) |
+| Multi-trial reliability measurement (like n=5) | B (so trials aren't comparing against different test surfaces) |
+
+#### Hybrid pattern (used by the T6 baseline scaffold)
+
+The campaign scaffold ships some baseline test stubs at `tests/test_*.py` (per the F-9 part C convention) but doesn't require the parent to use them. The parent typically creates a new test file (e.g., `tests/test_export.py`) declared in PLAN.md phase N. Result: baseline stubs sit untouched alongside the parent's new file. content_verify reports those baseline stubs as `[high/test-stub]` findings (F-12 noise; not a real architectural defect). Avoid this pattern unless you specifically want fallback test stubs visible to the parent for inspiration — Pattern A or B is cleaner.
+
 ### Writing a good `Acceptance Command:`
 
 **Rules** (taught to the parent via `write_plan_md`'s description; you can declare them directly to be sure):
