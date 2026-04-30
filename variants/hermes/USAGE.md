@@ -7,8 +7,9 @@ Progressive examples of how to use the r7.11 firmware, ordered from "10-second s
 **Conventions** in this doc:
 - `$HERMES_HOST` — your ssh alias for the VM (default `ubuntu-vm`)
 - `$HERMES_PATH` — Hermes path on VM, `$HOME`-relative (default `.hermes/hermes-agent`)
-- `$OMLX_API_KEY` — your local-dev oMLX auth token (set in env)
 - `$REPO` — your AgentFW repo path; substitute as needed
+
+**About auth and model defaults**: this guide does NOT pass `OMLX_API_KEY` or `-m <model>` in most example commands because Hermes already has defaults from `~/.hermes/config.yaml` on the VM (`api_key:` and `default_model:`). The wrapper inherits the env and falls through to Hermes' config; Hermes falls through to its own config when no flag is passed. Override only when you actually want a non-default model or a different key — otherwise the cleaner form below works.
 
 ---
 
@@ -17,12 +18,14 @@ Progressive examples of how to use the r7.11 firmware, ordered from "10-second s
 **Demonstrates**: the staged firmware loads cleanly into Hermes; tools register without error.
 
 ```bash
-OMLX_API_KEY=... bash variants/hermes/install.sh --smoke
+bash variants/hermes/install.sh --smoke
 ```
+
+(If your `~/.hermes/config.yaml` doesn't have `api_key:` set, prefix with `OMLX_API_KEY=...`. The smoke test will warn at startup if no key is detected anywhere.)
 
 **Success signal**: report at `/tmp/r7.11-smoke-report.md` shows tool dispatch worked. No `tool.*load.*error` or `cannot.*import.*tools.*r7_11_lib` in stderr.
 
-**If it fails**: check `--check` first (firmware integrity); check `OMLX_API_KEY` is valid; check oMLX is reachable from the VM.
+**If it fails**: check `--check` first (firmware integrity); check oMLX is running and reachable from the VM; check Hermes' config.yaml has a valid `api_key:`.
 
 ---
 
@@ -31,11 +34,12 @@ OMLX_API_KEY=... bash variants/hermes/install.sh --smoke
 **Demonstrates**: the four r7.11 tools (`verify_phase`, `end_session_for_handoff`, `escalate_to_operator`, `write_plan_md`) are visible to a fresh `hermes chat` invocation.
 
 ```bash
-ssh $HERMES_HOST "cd ~/$HERMES_PATH && OMLX_API_KEY='$OMLX_API_KEY' \
-  ./venv/bin/hermes chat -m gemma-4-26B-A4B-it-MLX-8bit -Q --max-turns 1 \
+ssh $HERMES_HOST "cd ~/$HERMES_PATH && ./venv/bin/hermes chat -Q --max-turns 1 \
   -t hermes-cli \
   -q 'List the names of all tools you have available. Just list them, do not call them.'"
 ```
+
+(Inherits `api_key:` and `default_model:` from `~/.hermes/config.yaml` on the VM. Add `-m <other-model>` explicitly if you want to test against a non-default model.)
 
 **Success signal**: response includes `verify_phase`, `end_session_for_handoff`, `escalate_to_operator`, `write_plan_md` (alongside the standard Hermes tools like `read_file`, `write_file`, `delegate_worker`, `todo`).
 
@@ -83,8 +87,8 @@ ls $SCAFFOLD
 
 ```bash
 ssh $HERMES_HOST "cd /media/psf/$REPO/variants/hermes/r7.9-research/r7.11/ && \
-  OMLX_API_KEY='$OMLX_API_KEY' python3 hermes_multi.py run /tmp/r7.11-mini/ \
-  --transport local" 2>&1 | tee /tmp/r7.11-mini.log
+  python3 hermes_multi.py run /tmp/r7.11-mini/ --transport local" 2>&1 \
+  | tee /tmp/r7.11-mini.log
 ```
 
 (Adjust the `cd` path to where the r7.11 source is mounted on your VM; on the tested rig it's `/media/psf/Projects/AgentFW/variants/hermes/r7.9-research/r7.11/`.)
@@ -169,8 +173,8 @@ echo "multi-phase scaffold ready at $SCAFFOLD"
 
 ```bash
 ssh $HERMES_HOST "cd /media/psf/$REPO/variants/hermes/r7.9-research/r7.11/ && \
-  OMLX_API_KEY='$OMLX_API_KEY' python3 hermes_multi.py run /tmp/r7.11-multi/ \
-  --transport local" 2>&1 | tee /tmp/r7.11-multi.log
+  python3 hermes_multi.py run /tmp/r7.11-multi/ --transport local" 2>&1 \
+  | tee /tmp/r7.11-multi.log
 ```
 
 ### Step 3c — Verify the synthesis-trust mechanism
@@ -237,8 +241,8 @@ echo "scaffold reset to pristine"
 
 ```bash
 ssh $HERMES_HOST "cd /media/psf/$REPO/variants/hermes/r7.9-research/r7.11/ && \
-  OMLX_API_KEY='$OMLX_API_KEY' python3 hermes_multi.py run /tmp/r7.11-item8-scaffold/ \
-  --transport local" 2>&1 | tee /tmp/r7.11-baseline.log
+  python3 hermes_multi.py run /tmp/r7.11-item8-scaffold/ --transport local" 2>&1 \
+  | tee /tmp/r7.11-baseline.log
 ```
 
 ### Step 4c — Score the result
@@ -453,8 +457,8 @@ Same pattern as Level 2/3:
 
 ```bash
 ssh $HERMES_HOST "cd /media/psf/$REPO/variants/hermes/r7.9-research/r7.11/ && \
-  OMLX_API_KEY='$OMLX_API_KEY' python3 hermes_multi.py run /tmp/<your-scaffold>/ \
-  --transport local" 2>&1 | tee /tmp/<your-scaffold>.log
+  python3 hermes_multi.py run /tmp/<your-scaffold>/ --transport local" 2>&1 \
+  | tee /tmp/<your-scaffold>.log
 ```
 
 ### When NOT to use r7.11

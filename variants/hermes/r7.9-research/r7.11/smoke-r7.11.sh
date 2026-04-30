@@ -46,7 +46,12 @@ PROMPT='Call verify_phase for phase 1 on /tmp/r7.11-smoke-scaffold (scaffold_roo
 log() { echo "[smoke-r7.11] $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
 
-# Source OMLX_API_KEY — accept either the standard location or env var.
+# Source OMLX_API_KEY — accept env var, ~/.hermes-omlx-key file, OR
+# fall through to Hermes' ~/.hermes/config.yaml on the VM (which is
+# Hermes' standard auth location). When env is unset and file is absent,
+# we don't hard-fail — the wrapper passes nothing through, and Hermes
+# uses its own config. If the config is also empty, Hermes itself errors
+# at API-call time with a clear message.
 if [[ -z "${OMLX_API_KEY:-}" ]]; then
   if [[ -f "$HOME/.hermes-omlx-key" ]]; then
     # shellcheck disable=SC1091
@@ -54,7 +59,8 @@ if [[ -z "${OMLX_API_KEY:-}" ]]; then
   fi
 fi
 if [[ -z "${OMLX_API_KEY:-}" ]]; then
-  die "OMLX_API_KEY not set in environment and ~/.hermes-omlx-key not found. Export OMLX_API_KEY before running this script."
+  log "OMLX_API_KEY not set in env and ~/.hermes-omlx-key absent;"
+  log "  smoke will inherit auth from VM's ~/.hermes/config.yaml api_key."
 fi
 
 # --- Phase A: build scaffold on VM ---
@@ -96,7 +102,14 @@ log "Phase B: launch hermes chat (timeout ${HARD_TIMEOUT_S}s, model ${MODEL}, to
 
 local_start=$(date +%s)
 set +e
-ssh "$REMOTE_HOST" "cd ~/${R_AGENT} && OMLX_API_KEY='${OMLX_API_KEY}' timeout ${HARD_TIMEOUT_S} ./venv/bin/hermes chat \
+# Only export OMLX_API_KEY when the env var is set; an unset key should
+# fall through to ~/.hermes/config.yaml on the VM rather than override
+# it with an empty string.
+KEY_PREFIX=""
+if [[ -n "${OMLX_API_KEY:-}" ]]; then
+  KEY_PREFIX="OMLX_API_KEY='${OMLX_API_KEY}' "
+fi
+ssh "$REMOTE_HOST" "cd ~/${R_AGENT} && ${KEY_PREFIX}timeout ${HARD_TIMEOUT_S} ./venv/bin/hermes chat \
   -m ${MODEL} \
   -Q \
   --max-turns 15 \

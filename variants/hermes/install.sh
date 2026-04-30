@@ -345,8 +345,9 @@ run_smoke() {
   header "Phase 6: Smoke test"
 
   if [[ -z "${OMLX_API_KEY:-}" ]]; then
-    fail "OMLX_API_KEY not set in env — required for smoke test"
-    return 6
+    log "OMLX_API_KEY not set in env; smoke will inherit auth from VM's"
+    log "  ~/$HERMES_PATH/../config.yaml. If your config doesn't have"
+    log "  api_key set, the smoke test will fail with auth error."
   fi
 
   if ! R_AGENT="$HERMES_PATH" REMOTE_HOST="$HERMES_HOST" \
@@ -420,6 +421,18 @@ case "$MODE" in
     ;;
   install)
     mac_preflight || exit $?
+    # If VM is already staged AND user only asked for --smoke, skip the
+    # full install pipeline and just run the smoke against existing
+    # firmware. This is the natural "smoke-test what's installed" flow.
+    if [[ "$RUN_SMOKE" -eq 1 ]]; then
+      if ssh -o BatchMode=yes -o ConnectTimeout=10 "$HERMES_HOST" "test -d ~/$HERMES_PATH/tools/r7_11_lib" 2>/dev/null; then
+        log "VM is already staged; running --smoke against existing firmware (skipping re-install)"
+        run_smoke || exit $?
+        log ""
+        log "=== Smoke complete on existing install ==="
+        exit 0
+      fi
+    fi
     vm_preflight  || exit $?
     run_local_tests || exit $?
     stage_firmware  || exit $?
