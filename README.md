@@ -6,11 +6,15 @@ AI capabilities look jagged when you ask for one-shot answers. The same model th
 
 AgentFW encodes that lesson as standing instructions for AI agents. It is not a framework, library, or SDK. It's a set of structured Markdown documents that teach agents how to plan work, delegate to sub-agents, verify results with role separation, manage persistent state across sessions, and recover from errors. You install it by giving it to your agent as instructions.
 
-## Hermes variant status (pre-release)
+## Hermes variant status (internal RC)
 
-The Hermes variant — Gemma-4 running AgentFW as a local orchestrator on Hermes Agent — is at **`r7.5-hermes-prerelease`**. The β-fuse dispatch architecture is validated (MoE 17/20 strict first-attempt on r7.4; 11.5×–17× lift over pre-intervention baselines). The worker-quality ship gate is **not yet met** (r7.5: 3/20 PASS vs ≥15/20 floor). Production-ready: not yet. Worker-quality work is r7.6 scope. See `/RELEASE-NOTES-r7.5-hermes-prerelease.md` and `variants/hermes/INSTALL.md`.
+The Hermes variant — Gemma-4 running AgentFW as a local orchestrator on Hermes Agent — has reached **`hermes-r7.11-rc1` internal RC** (2026-04-30). r7.11 introduces the verified-state multi-session resumable architecture with execution-tier acceptance verification (tier 3.7), closing the synthesis-trust gap that r7.5–r7.10 surfaced (verifier-pass without acceptance-pass).
 
-Non-Hermes variants (claude-code, claude-projects, generic) are byte-identical to r7 and unaffected by the r7.x Hermes probe campaign.
+Empirical baseline (item 9, n=5 on T6 capability-curve workload): **3/5 strict completion** (cleared the pre-committed RC threshold). 0/5 trials reproduced the trial-3 verifier-pass / acceptance-fail mode. See `variants/hermes/r7.9-research/r7.11/README.md` for the full milestone tree (source modules, design, HANDOFF, test suite, followup ledger). Tag: `hermes-r7.11-rc1` (pre-release; not merged to main; sits as a stable variant milestone).
+
+The β-fuse dispatch architecture from r7.4 (still part of the worked stack) and the r7.5 worker-quality ship gate are now subsumed by r7.11's parent-as-orchestrator + per-phase verification design. Worker-quality concerns from r7.5 are addressed via the verified-state-between-phases mechanism rather than direct worker-side intervention.
+
+Non-Hermes variants (claude-code, claude-projects, generic) are byte-identical to r7 and unaffected by the r7.x–r7.11 Hermes probe and campaign work.
 
 ## Quick Install
 
@@ -129,6 +133,17 @@ agentfw/
 - **Fresh context as a design feature** — Context window limits are a feature, not a bug. A fresh agent with a summary of what was learned beats a stale agent drowning in accumulated errors. AgentFW is designed around this.
 - **Autonomous vs Guided modes** — Autonomous mode dispatches sub-agent judges. Guided mode uses the human as judge. Both enforce role separation.
 
+## What Changed in r7.11 (Hermes — internal RC)
+
+- **Hermes variant reaches internal RC** — tagged `hermes-r7.11-rc1` (pre-release on GitHub; branch `hermes-r7.11-internal-rc` not merged to main). Full milestone tree at `variants/hermes/r7.9-research/r7.11/`. Self-contained: source modules, 227-test suite, original DESIGN doc, HANDOFF campaign-close runbook, schema/howto docs, followup ledger.
+- **Verified-state multi-session resumable architecture.** `verified-state.json` is the machine-authoritative phase state file; the parent's narrative is non-authoritative. Each phase runs as its own Hermes session via a thin Python wrapper (`hermes_multi.py`); session boundaries are sentinel-file driven. The wrapper polls sentinels, archives sessions, and routes via the state file (read-only).
+- **Execution-tier verification (tier 3.7 acceptance-runner).** First execution-based verification tier in the campaign. Subprocess-runs the phase's stated `Acceptance Command:` (declared in PLAN.md per phase) under a B1-style augmented PYTHONPATH; structured exit-code interpretation distinguishes `[ACCEPTANCE_PASSED]` / `[ACCEPTANCE_FAILED:N]` / `[ENVIRONMENT:reason]` / `[INCONCLUSIVE:reason]`. Static-only verification (presence + syntax + imports + wiring + opt-in importlib smoke) is necessary but not sufficient — tier 3.7 closes the synthesis-trust gap.
+- **Tool-description teaching as the working doctrine-delivery mechanism.** Loud doctrine in HERMES.md or system prompts reaches the parent at 0% in pre-r7.11 measurements; teaching embedded in tool descriptions (e.g., `write_plan_md`'s acceptance_command teaching, `end_session_for_handoff`'s STANDARD PATTERN nudge) reaches the parent at 60-100% across n=5.
+- **Item 9 n=5 confirmation: 3/5 strict completion on T6.** Pre-committed RC threshold: ≥3/5. Met. Two ESCALATEs surfaced parent-side variance (recovery quality on tier-3 catches; bootstrap ceremonial-sentinel-firing) — both fired correctly per design with operator-actionable corrective_dispatch. **0/5 trials reproduced the trial-3 failure mode** (verifier-pass without acceptance-pass).
+- **6 followups CLOSED in r7.11**: B1 (F-5 resolution: PYTHONPATH-injection at probe time only), F-4 (content_verify absolute-path), F-7 (synthesis-trust gap → tier 3.7), F-8 (parent batches phases → handoff nudge), F-9 part B (orphan-collision detection in tier 3) + part C (scaffold-baseline empty-stub convention), F-11 (write_plan_md acceptance_command teaching).
+- **6 followups DEFERRED to r7.12**: F-1 (Hermes SessionDB regression — independent), F-2 (registry.dispatch upstream), F-10 (tier-3.5 path-walker), F-12 (content_verify rubric noise), plus 2 new from n=5 (parent-recovery quality on tier-3 catches; bootstrap-handoff ceremony strengthening). r7.12 architecture review is the next planning milestone.
+- **AgentFW-portable findings** (these inform AgentFW core; documented in the variant README): verified-state-between-phases as the synthesis-trust mechanism; execution-tier verification pattern; wrapper-as-dumb-substrate / parent-as-orchestrator; tool-description teaching; sentinel-file-driven session boundaries; tiered verifier with structured exit-code interpretation. The variant README also calls out Hermes-specific implementation mechanics (the `_session_messages_live` patch, parser-bug workaround, tool registration mechanics, SessionDB regression workarounds) that should NOT generalize without substrate knowledge.
+
 ## What Changed in r7.5 (Hermes pre-release)
 
 - **Hermes variant reaches pre-release status** — tagged `r7.5-hermes-prerelease`. See `/RELEASE-NOTES-r7.5-hermes-prerelease.md`.
@@ -210,3 +225,5 @@ agentfw/
 - **r7.3** (2026-04-18/19): Layer 1+2 remediation attempt (toolset restriction + escape-hatch removal) — FAILED dispatch thresholds (1/15 both models); diagnosis led to β-fuse design
 - **r7.4** (2026-04-19): β-fuse structural dispatch (`delegate_worker_v2` with classification as a required argument) — SHIP-WITH-CAVEAT for dispatch layer; MoE 17/20, dense 77% measured, 11.5×–17× lift over r7.3 baseline
 - **r7.5** (2026-04-19): Hermes pre-release — turn-0 toolset restriction + SIGTERM mitigation + worker-quality ship gate measurement. HOLD-narrow verdict: dispatch thesis intact, worker-quality gate failed (3/20 vs 15/20 floor), tracked as r7.6 scope
+- **r7.6–r7.10** (2026-04-20 → 2026-04-25): Hermes worker-quality / decomposition campaign — explored child-side interventions, then pivoted to parent-decomposition via `write_plan_md` minimum-mechanism (CEILING FINDING: tool-description teaching reaches the parent reliably; r7.10 budget-n10 + n5 found 0/25 strict completion content-verified, surfacing the synthesis-trust gap that motivated r7.11)
+- **r7.11** (2026-04-26 → 2026-04-30): Hermes internal RC — verified-state multi-session resumable architecture with execution-tier acceptance verification (tier 3.7). Item 9 n=5: 3/5 strict completion on T6 (cleared pre-committed RC threshold). 0/5 trials reproduced the trial-3 failure mode. Tag `hermes-r7.11-rc1`
