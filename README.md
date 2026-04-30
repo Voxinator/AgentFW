@@ -10,7 +10,15 @@ AgentFW encodes that lesson as standing instructions for AI agents. It is not a 
 
 The Hermes variant — Gemma-4 running AgentFW as a local orchestrator on Hermes Agent — has reached **`hermes-r7.11-rc1` internal RC** (2026-04-30). r7.11 introduces the verified-state multi-session resumable architecture with execution-tier acceptance verification (tier 3.7), closing the synthesis-trust gap that r7.5–r7.10 surfaced (verifier-pass without acceptance-pass).
 
-Empirical baseline (item 9, n=5 on T6 capability-curve workload): **3/5 strict completion** (cleared the pre-committed RC threshold). 0/5 trials reproduced the trial-3 verifier-pass / acceptance-fail mode. See `variants/hermes/r7.9-research/r7.11/README.md` for the full milestone tree (source modules, design, HANDOFF, test suite, followup ledger). Tag: `hermes-r7.11-rc1` (pre-release; not merged to main; sits as a stable variant milestone).
+Empirical baseline (item 9, n=5 on T6 capability-curve workload): **3/5 strict completion** (cleared the pre-committed RC threshold). 0/5 trials reproduced the trial-3 verifier-pass / acceptance-fail mode. See `variants/hermes/r7.9-research/r7.11/README.md` for the full milestone tree (source modules, design, HANDOFF, test suite, followup ledger). Tag: `hermes-r7.11-rc1`.
+
+**Install** (requires Hermes Agent on a remote VM; see `variants/hermes/INSTALL.md` for prerequisites + manual procedure):
+
+```bash
+bash variants/hermes/install.sh --check    # pre-flight only
+bash variants/hermes/install.sh            # install
+bash variants/hermes/install.sh --uninstall # restore canonical
+```
 
 The β-fuse dispatch architecture from r7.4 (still part of the worked stack) and the r7.5 worker-quality ship gate are now subsumed by r7.11's parent-as-orchestrator + per-phase verification design. Worker-quality concerns from r7.5 are addressed via the verified-state-between-phases mechanism rather than direct worker-side intervention.
 

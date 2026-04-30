@@ -1,246 +1,222 @@
-# Hermes Variant — Installation
+# Hermes Variant — Installation (r7.11 internal RC)
 
-**Status:** pre-release. The dispatch layer is validated; the worker-quality ship gate is not yet met. See `/RELEASE-NOTES-r7.5-hermes-prerelease.md` for what this means for your use case. This file supersedes `IMPLEMENTATION.md` (frozen as historical) as the authoritative install procedure.
+**Status**: internal RC. Tag `hermes-r7.11-rc1` (pre-release on GitHub).
 
-**Audience:** someone installing the variant from a clone of this repo onto a Mac + VM rig matching `DEPENDENCIES.md`.
+This is the authoritative install procedure for the Hermes variant of AgentFW. It installs the **r7.11** firmware — the verified-state multi-session resumable architecture with execution-tier acceptance verification (tier 3.7) — onto a Hermes Agent installation on a remote VM.
+
+The installer is canonical-preserving: every file it mutates is backed up via the `.probe-r7.11-orig` convention and restored on `--uninstall`. The canonical Hermes install is byte-identical before and after install/uninstall cycles.
+
+For background on what r7.11 is and what it changes, see:
+- `r7.9-research/r7.11/README.md` — milestone tree overview
+- `r7.9-research/r7.11/HANDOFF-r7.11-current.md` — campaign-close runbook with empirical baseline
+
+For dependency versions tested, see `DEPENDENCIES.md`.
+
+---
+
+## Quick install (recommended)
+
+From the AgentFW repo root:
+
+```bash
+bash variants/hermes/install.sh
+```
+
+That runs pre-flight checks (Mac + VM), the 227-test local suite, then stages the firmware. ~30 seconds end-to-end. Idempotent (refuses to re-stage over existing staged state).
+
+To verify everything is in place without mutating anything:
+
+```bash
+bash variants/hermes/install.sh --check
+```
+
+To restore the canonical Hermes install:
+
+```bash
+bash variants/hermes/install.sh --uninstall
+```
+
+To run a smoke test after install (requires `OMLX_API_KEY`):
+
+```bash
+OMLX_API_KEY=... bash variants/hermes/install.sh --smoke
+```
+
+To target a non-default ssh alias:
+
+```bash
+bash variants/hermes/install.sh --host=my-hermes-vm
+```
+
+See `bash variants/hermes/install.sh --help` for the full flag list.
+
+---
+
+## What the installer does
+
+### Phase 1 — Mac-side pre-flight
+
+- Checks `ssh` and `python3` on PATH
+- Checks the r7.11 milestone tree exists at `variants/hermes/r7.9-research/r7.11/`
+- Checks all required source files are present (probe scripts, source modules, r7.10 carry-forward dependency)
+
+### Phase 2 — VM-side pre-flight
+
+- Checks ssh to the VM works (BatchMode; key auth required)
+- Checks Hermes installed at `~/.hermes/hermes-agent/`
+- Checks canonical baseline md5s match: `HERMES.md`, `run_agent.py`, `toolsets.py`, `model_tools.py` (any drift halts install)
+- Checks Hermes' Python is 3.11.x (warns if not — scaffold venvs must match for ABI compatibility, see F-6 in `r7.x-followups.md`)
+- Checks no stale `.probe-r7.11-orig` backups (would indicate a prior install that wasn't unstaged cleanly)
+- Checks no prior r7.11 staging (idempotency: refuses to re-stage; uninstall first)
+
+### Phase 3 — Local test suite (227 tests)
+
+Runs all 7 r7.11 test files locally on the Mac. Halts before staging if any test fails — won't stage broken firmware. Skip with `--skip-tests` if you've already verified.
+
+### Phase 4 — Stage firmware on VM
+
+Invokes `r7.9-research/r7.11/probe-r7.11-stage.sh stage`, which:
+
+1. Backs up `~/.hermes/hermes-agent/toolsets.py` and `model_tools.py` to `.probe-r7.11-orig`
+2. Creates `~/.hermes/hermes-agent/tools/r7_11_lib/`
+3. Copies 4 lib modules (`verified_state.py`, `verify_phase.py`, `verify_phase_tool.py`, `handoff_tools.py`) with import-path rewrites
+4. Copies the r7.10 carry-forward `write_plan_md.py` to `~/.hermes/hermes-agent/tools/`
+5. Writes 3 thin shim files at `tools/r7_11_*.py` for Hermes' tool registration
+6. Patches `toolsets.py` (appends 4 names to `_HERMES_CORE_TOOLS`) and `model_tools.py` (appends 4 imports)
+7. Runs `python3 -m py_compile` on the patched files for syntax sanity
+8. Snapshots the post-stage md5 set to `/tmp/r7.11-stage-md5s.txt`
+
+### Phase 5 — Post-stage verification
+
+Confirms each expected staged file is present on the VM, and that the canonical tripwires (`HERMES.md`, `run_agent.py`) are still byte-identical to the baseline.
+
+### Phase 6 (optional, `--smoke`) — Smoke test
+
+Invokes `r7.9-research/r7.11/smoke-r7.11.sh`, which runs a minimal `hermes chat` invocation against the staged firmware to confirm tool registration is healthy end-to-end. Requires `OMLX_API_KEY` in env (any oMLX-compatible auth token).
 
 ---
 
 ## Prerequisites
 
-See `DEPENDENCIES.md` for exact tested versions. Summary:
+See `DEPENDENCIES.md` for full tested-version detail. Summary:
 
-- A Mac with oMLX `0.3.6` installed, serving on `localhost:8000`, with at least one Gemma model loaded:
-  - `gemma-4-31b-it-4bit` (dense, covered by r7.4 probe), or
-  - `gemma-4-26B-A4B-it-MLX-8bit` (MoE, covered by r7.4 + r7.5 probes — recommended)
-- Hermes Agent `v0.8.0` (`v2026.4.8`, commit `86960cdb`) on a Linux VM. Tested combo: Parallels Desktop 26.3.0 + Ubuntu 24.04.4 LTS.
-- SSH alias `ubuntu-vm` in your `~/.ssh/config` pointing at the VM.
-- The VM can reach oMLX at `10.211.55.2:8000`.
-- `OMLX_API_KEY` exported in the operator's Mac shell (optional — only required for authenticated oMLX health probes). The probe scripts do NOT persist the key; pass it via environment.
+### Mac side
 
----
+- Bash, `ssh`, `python3` (3.9+ on the Mac for running tests; the VM needs 3.11)
+- This repo cloned
+- `~/.ssh/config` alias pointing at the Hermes VM (default `ubuntu-vm`; override via `--host=` or `HERMES_HOST` env var)
+- A local OpenAI-compatible inference endpoint (oMLX recommended; `gemma-4-26B-A4B-it-MLX-8bit` MoE was the n=5 baseline model)
 
-## Files in this variant
+### VM side
 
-### Under `variants/hermes/` (source of truth)
+- Linux VM with `ssh` access from Mac
+- Hermes Agent installed at `~/.hermes/hermes-agent/` (upstream `github.com/NousResearch/hermes-agent`, tested at `v0.8.0` / commit `86960cdb`)
+- Hermes' Python venv at `~/.hermes/hermes-agent/venv/` running Python 3.11.x (uv-managed cpython-3.11.15 on the tested rig)
+- Canonical Hermes install (no prior modifications to `HERMES.md`, `run_agent.py`, `toolsets.py`, or `model_tools.py`); the installer halts on canonical drift
 
-| File | Purpose | Current shipped state |
-|------|---------|-----------------------|
-| `HERMES.md` | Canonical base system prompt (no harness). Byte-identical to upstream Hermes. md5 `0780c232a6cb52e13e432261f0d68ad9`. | Frozen — do not edit. |
-| `HERMES-variantB.md` | Probe sibling: hard classification contract only. | Frozen. |
-| `HERMES-variantD.md` | r7 ship candidate — retained for historical re-probe. md5 `4477b8ee1d87c3a3afa9e8646168841f`. | Superseded by variantF. |
-| `HERMES-variantE.md` | r7.3 sibling: escape-hatch-removed. | Superseded by variantF. |
-| `HERMES-variantF.md` | **r7.5 active harness prompt** — β-fuse + turn-0 toolset restriction expectations. md5 `01c0e77bb2a6e753a8ea9063784a25e0`. | Current pre-release. |
-| `delegate_worker.py` | r7 legacy single-arg dispatch tool (retained; emits deprecation notice). | Legacy. |
-| `delegate_worker_v2.py` | **β-fuse tool.** Requires `classification` (`one-shot` / `structured` / `long-horizon`), `justification` (≥30 chars), and `goal` (conditionally required). md5 `d31876fe987331a26c8640202334fd46`. | Current. |
-| `DESIGN.md`, `DEPENDENCIES.md`, `INSTALL.md`, `NEXT-STEPS.md`, `PROBE-RESULTS-r7.md` | Documentation. | |
-| `IMPLEMENTATION.md` | Historical r7 install doc. | Frozen — use `INSTALL.md` instead. |
+### To run trials post-install
 
-### At repo root (probe infrastructure, run from Mac)
-
-| Script | What it does |
-|--------|--------------|
-| `probe-variantF-stage.sh` | Stage/unstage `delegate_worker_v2` + the three Hermes source patches (`model_tools.py`, `toolsets.py`, `run_agent.py` terminal-binding edits). Layers below variantG. |
-| `probe-variantG-stage.sh` | Stage/unstage the r7.5 turn-0 toolset restriction hook on `run_agent.py`. Layers on top of variantF. |
-| `probe-variantF-wrapper.sh`, `probe-variantF-check.py` | β-fuse-aware wrapper + gate-check analyzer (classification reads directly from `tool_calls[0].function.arguments`). |
-| `probe-variantG-wrapper.sh`, `probe-variantG-check.py` | r7.5 wrapper + analyzer with SIGTERM content-match recovery (`--expected-prompt-prefix-b64`) and `ERROR:WRONG_SESSION` verdict. |
-| `probe-variantD-stage.sh`, `probe-variantE-wrapper.sh`, `probe-variantE-check.py` | r7 / r7.3 predecessors. Retained for legacy re-probes. |
-| `probe-omlx-health-check.sh` | Mac-side oMLX health probe (free memory, swap, loaded models). Invoke from the VM via ssh or run locally. |
-| `probe-swap.sh` | Swap `HERMES.md` between canonical and a variant sibling on the VM. |
-| `probe-tasks.md` | The 10 probe tasks used across all r7.x campaigns. |
-| `probe-reproducibility.md` | Environment snapshot (oMLX config, model sampling, VM state). |
+- A scaffold directory on the VM with:
+  - `USER-PROMPT.md` — the task description for the parent agent
+  - `verify-config.json` — verifier configuration (defaults are fine; see `r7.9-research/r7.11/VERIFY-CONFIG-SCHEMA.md`)
+  - `.venv/` — a Python venv built with the **same Python version Hermes uses** (3.11.x), with the project's third-party deps installed (per F-6, mismatched Python versions cause silent ABI failures at acceptance-runner time)
+- See `r7.9-research/r7.11/HOWTO-r7.11-multi.md` for scaffold preparation detail
 
 ---
 
-## HERMES.md, SOUL.md, and the prompt assembly
+## Manual procedure (fallback)
 
-Read this section before installing if your Hermes install already has a customized `SOUL.md`, `USER.md`, or `MEMORY.md`. The variant's contract is carried by `HERMES.md`, but it shares the system prompt with those files, and their content can interact with it in ways that shift measured dispatch behavior.
+If you'd rather run the steps by hand (or the installer doesn't fit your environment), here's the manual procedure. The automated installer is just a wrapper around this.
 
-### What each file is
+```bash
+cd variants/hermes/r7.9-research/r7.11
 
-- **`HERMES.md`** — The AgentFW harness instructions for Hermes. The canonical file lives at `~/.hermes/hermes-agent/HERMES.md` on the VM. Hermes auto-discovers it via a cwd-walk-to-git-root lookup in its prompt-builder. The variantF version (β-fuse) teaches the model to call `delegate_worker_v2` as its first action on every task.
-- **`SOUL.md`** — Persona and standing behavioral rules. A Hermes-native file, NOT shipped with this variant — every operator writes their own. Loaded into the system prompt alongside `HERMES.md`.
-- **`USER.md` / `MEMORY.md`** — User context (rolodex, preferences) and cross-session memory. Same injection pattern as `SOUL.md`; same operator-owned status.
+# Run the test suite
+for f in test_verified_state test_verify_phase test_verify_phase_tool \
+         test_handoff_tools test_hermes_multi test_content_verify test_probe_r7_11; do
+  python3 ${f}.py 2>&1 | tail -1
+done
+# Expect: all "passed" / "OK"
 
-### How they appear in the system prompt
+# Verify VM canonical state
+ssh ubuntu-vm 'md5sum ~/.hermes/hermes-agent/HERMES.md \
+                       ~/.hermes/hermes-agent/run_agent.py \
+                       ~/.hermes/hermes-agent/toolsets.py \
+                       ~/.hermes/hermes-agent/model_tools.py'
+# Expect:
+#   0780c232a6cb52e13e432261f0d68ad9  HERMES.md
+#   94ad8712678df5e96b9f407446edf249  run_agent.py
+#   5d126e7f1987468c0514cbc474ba12eb  toolsets.py
+#   10aaf53294ba39569844ebac7076e9c9  model_tools.py
 
-Reverse-engineered from `_build_system_prompt` in `~/.hermes/hermes-agent/agent/run_agent.py` (~lines 2582-2740), the current assembly order is:
+# Stage
+bash probe-r7.11-stage.sh stage
 
-1. system role markers
-2. `SOUL.md` (persona block; near the sink zone — high attention)
-3. `USER.md` (user context)
-4. `MEMORY.md` (cross-session memory)
-5. date/time
-6. platform banner
-7. toolsets / tools declaration
-8. active-skills list
-9. skills index (large — ~11.8 KB)
-10. **`HERMES.md`** (the `context_files_prompt` block)
-11. active-file context (if any)
-12. `PLATFORM_HINTS[cli]` (CLI markdown formatting hint)
+# Verify staged state
+ssh ubuntu-vm 'ls ~/.hermes/hermes-agent/tools/r7_11_lib \
+                  ~/.hermes/hermes-agent/tools/r7_11_*.py \
+                  ~/.hermes/hermes-agent/tools/write_plan_md.py'
+```
 
-Slot numbers are rough and may shift across Hermes versions. The load-bearing fact is that **`HERMES.md` sits at slot 10, behind the skills index, not in the recency zone** — while `SOUL.md` sits near the top (sink zone, also high attention).
+To uninstall manually:
 
-### Why this matters for the variant's contract
-
-- `HERMES.md` teaches the first-tool-call contract (`delegate_worker_v2` first). For the model to obey it, the teaching has to compete successfully against everything else in high-attention regions of the prompt.
-- `SOUL.md` sits in the sink zone. Its content competes with `HERMES.md` for the model's output shaping.
-- **Interaction risk:** `SOUL.md` directives that bias toward prose-first or conversational responses (e.g., "match his register", "be concise and conversational", "write naturally") can push the model away from the tool-call-first contract. Even when `HERMES.md` is explicit, a `SOUL.md` that says "answer naturally" is telling the model to generate prose before tool calls — and on a 4-bit quantized local model, that pressure sometimes wins.
-
-### Guidance for installers
-
-- **If you don't have a `SOUL.md` already:** start with a minimal one, or none. Without a competing persona block, `HERMES.md` is the main signal shaping output.
-- **If you have a customized `SOUL.md`:** audit it before installing the variant. Red flags that can conflict with the first-tool-call contract:
-  - "Be conversational" / "match register" / "write naturally"
-  - "Answer concisely" / "don't be verbose"
-  - Any directive that says "when X, respond with prose" without carving out tool-calling exceptions
-- **Dogfood before production.** Run a representative structured task through the variant BEFORE swapping `HERMES.md` canonical on a production install. Watch for the model emitting prose before tool calls. If it happens repeatedly, your `SOUL.md` is probably dominating.
-- **Don't trim `SOUL.md`/`USER.md`/`MEMORY.md` casually.** If those files are load-bearing for your working relationship with Hermes, changes need to be probed empirically — they can shift classification and dispatch behavior in non-obvious ways. See the `ARTIFACT-r7.4-phase-d-*` series for what a proper probe matrix looks like.
-
-### Future direction (not in this pre-release)
-
-- **IMPL-4 Option A2** — a proposed prompt-builder edit that moves `HERMES.md` from slot 10 to slot 12 (recency zone). May improve classification-first attention. Not yet landed; gated on 8 operator-decision questions about `SOUL.md`/`USER.md`/`MEMORY.md` trim scope. Full analysis in `archive/hermes-probe-r7.2-r7.3-2026-04-18/ARTIFACT-impl-4-soul-restructure.md`.
-- **`HERMES-WORKER.md` analog** (r7.6 scope) — extends the first-tool-call contract to CHILD sessions, which currently have no harness-side scaffolding. Addresses the worker-quality failure modes identified in the r7.5 probe.
+```bash
+bash variants/hermes/r7.9-research/r7.11/probe-r7.11-unstage.sh
+```
 
 ---
 
-## Installation procedure
+## Running a trial post-install
 
-Run all commands from `/Users/briantaylor/Projects/AgentFW/` on the Mac host. Steps 2 and 3 stage VM-side patches; step 4 swaps the canonical prompt; step 5 verifies.
-
-### Step 1 — Clone and confirm tools
+Once installed, a trial runs as:
 
 ```bash
-git clone <your-fork-url> AgentFW
-cd AgentFW
-ssh ubuntu-vm 'md5sum ~/.hermes/hermes-agent/HERMES.md'
-# Expected: 0780c232a6cb52e13e432261f0d68ad9  (canonical baseline)
+ssh ubuntu-vm \
+  "cd /path/to/AgentFW/variants/hermes/r7.9-research/r7.11/ && \
+   OMLX_API_KEY='...' python3 hermes_multi.py run /path/to/scaffold/ \
+     --transport local"
 ```
 
-If your VM's HERMES.md md5 differs from `0780c232…`, reconcile before staging: either your fork is ahead, or a previous variant was left staged. `probe-variantF-stage.sh status` will report.
+`hermes_multi.py run` drives bootstrap → phase loop → completion / escalate. Polls sentinels, archives sessions, routes via `verified-state.json`. See `HOWTO-r7.11-multi.md` for the full subcommand reference (`run`, `resume`, `status`).
 
-### Step 2 — Stage variantF (β-fuse dispatch)
-
-```bash
-./probe-variantF-stage.sh stage
-```
-
-This uploads `variants/hermes/delegate_worker_v2.py` to the VM and patches `model_tools.py` (+1 line import), `toolsets.py` (registers `delegate_worker_v2` in the `delegation` bundle), and `run_agent.py` (both `delegate_task` dispatch sites extended to handle `delegate_worker_v2`). All patches create `.probe-r7.4-orig` backups before editing. Idempotent — safe to re-run.
-
-Verify:
-
-```bash
-./probe-variantF-stage.sh status
-```
-
-### Step 3 — Stage variantG (r7.5 turn-0 toolset restriction)
-
-```bash
-./probe-variantG-stage.sh stage
-```
-
-This patches `run_agent.py` with a `_resolve_tools_for_turn_r75a` method and wires it into both the Anthropic-branch and OpenAI-branch tool lists inside `_build_api_kwargs`. Creates `.probe-r7.5-orig` backup. The hook fires ONLY when the session's `enabled_toolsets` is exactly `{delegation, todo, clarify, file_readonly}` — canonical cron / hermes-cli / hermes-telegram sessions are untouched.
-
-Verify:
-
-```bash
-./probe-variantG-stage.sh status
-# Expected: "STATE: STAGED (r7.5 Variant G on top of r7.4 Variant F)"
-```
-
-### Step 4 — Swap HERMES.md to variantF
-
-```bash
-scp variants/hermes/HERMES-variantF.md ubuntu-vm:~/.hermes/hermes-agent/HERMES-variantF.md
-ssh ubuntu-vm 'cd ~/.hermes/hermes-agent && cp HERMES.md HERMES-canonical-backup.md && cp HERMES-variantF.md HERMES.md && md5sum HERMES.md'
-# Expected: 01c0e77bb2a6e753a8ea9063784a25e0
-```
-
-The `HERMES-canonical-backup.md` on the VM is the rollback target. Do not delete it.
-
-### Step 5 — Verify installation with a smoke trial
-
-```bash
-MODEL=gemma-4-26b-a4b-it-mlx-8bit TOOLSETS='delegation,todo,clarify,file_readonly' \
-  ./probe-variantG-wrapper.sh smoke-01 <<'EOF'
-What is 2+2? Answer in one sentence.
-EOF
-```
-
-Expected `OUTCOME` line: `RESULT=COMPLIANT attempts=1` on this one-shot. If you see `VIOLATION:NO_MARKER` or `ERROR:WRONG_SESSION`, see "Known issues" below.
-
-For a structured-class smoke, substitute a prompt from `probe-tasks.md` (T4 refactor is the most stable).
+The wrapper exits with:
+- `0` — all phases verified (success)
+- `2` — escalate (parent called `escalate_to_operator` OR max revisions exceeded)
+- `3` — wrapper internal error
+- `4` — malformed scaffold or config
 
 ---
 
-## Rollback
+## Troubleshooting
 
-Reverse order:
+| Problem | Likely cause | Action |
+|---|---|---|
+| `cannot ssh to ubuntu-vm` | ssh config or key auth | Test `ssh ubuntu-vm true` directly; check `~/.ssh/config` |
+| `Hermes not installed at ~/.hermes/hermes-agent` | Hermes Agent isn't installed on the VM | Install Hermes Agent first (see upstream); installer assumes Hermes is already present |
+| `md5 mismatch` on canonical files | Prior modifications to canonical Hermes | Either restore canonical Hermes OR (if you've intentionally modified Hermes) update the baseline md5s in `install.sh` |
+| `stale .probe-r7.11-orig backup(s) detected` | Previous install didn't unstage cleanly | Run `bash install.sh --uninstall` to restore canonical |
+| `r7.11 firmware appears already staged` | Prior install hasn't been removed | Run `bash install.sh --uninstall` first, then re-install |
+| Test suite fails locally | Source-tree integrity issue | Investigate the failing test; do NOT bypass with `--skip-tests` unless you know what you're doing |
+| `hermes_multi.py run` escalates on phase 1 with `command-not-found: cd` | F-11 not landed (your r7.11 source is older than 2026-04-30) | Update to current r7.11 |
+| Acceptance command runs but tests fail with `ModuleNotFoundError` | Scaffold `.venv/` Python version doesn't match Hermes' Python | Rebuild scaffold venv with Hermes' Python 3.11 (see F-6) |
 
-```bash
-# 4 — restore canonical HERMES.md
-ssh ubuntu-vm 'cd ~/.hermes/hermes-agent && cp HERMES-canonical-backup.md HERMES.md && md5sum HERMES.md'
-# Expected: 0780c232a6cb52e13e432261f0d68ad9
-
-# 3 — unstage variantG
-./probe-variantG-stage.sh unstage
-
-# 2 — unstage variantF
-./probe-variantF-stage.sh unstage
-```
-
-Unstage is idempotent. Both scripts restore from their `.probe-r7.5-orig` / `.probe-r7.4-orig` backups. Post-unstage, `grep -c delegate_worker_v2 ~/.hermes/hermes-agent/run_agent.py` on the VM should report 0 (canonical has no v2 references).
+For deeper troubleshooting see `r7.9-research/r7.11/r7.x-followups.md` (F-1 through F-12 with closure status).
 
 ---
 
-## Known issues and their workarounds
+## What "internal RC" means
 
-- **SIGTERM truncation on long trials (>15 min).** The wrapper's per-trial timeout (`TIMEOUT_PER_TURN`, default 900s) can kill the Hermes parent process mid-turn, truncating the parent session JSON before the `delegate_worker_v2` tool call persists. Tier-1 mitigation is landed: `probe-variantG-wrapper.sh` passes `--expected-prompt-prefix-b64` to the analyzer, which matches a candidate session to the original prompt content before accepting it as the parent (prevents mis-attachment of a child session when the parent's `session_id:` stdout line was lost). Tier-3 mitigation (upstream Hermes SIGTERM handler) is designed (`ARTIFACT-r7.4-sigterm-research.md`) but not applied. For tasks that routinely exceed 15 min, raise `TIMEOUT_PER_TURN` via env var to 1500s+.
-- **Pre-existing slice error in the v2 handler.** Observed on some r7.5 structured trials; does not block dispatch but can surface on specific tool-call shapes. Tracked for r7.6 follow-up.
-- **oMLX memory-pressure accumulation on sustained dense-model runs.** Across multi-hour campaigns the dense model's engine pool state can drift. Symptom: response latency creeps up; `/health` reports degraded free memory. Mitigation: restart oMLX between campaigns. `probe-omlx-health-check.sh` is a VM-side probe that reads oMLX `/health` via SSH to the Mac (path: from VM, `ssh <mac-host-alias> bash < probe-omlx-health-check.sh`).
-- **Turn-0 hook does not fire under canonical toolsets.** By design. If you invoke `hermes chat` without `-t delegation,todo,clarify,file_readonly`, the r7.5 hook short-circuits and you get vanilla variantF behavior. Verify your wrapper invocation sets `TOOLSETS` correctly.
-- **Child sessions run with full Hermes toolset by default.** This is the r7.5 worker-quality ship-gate failure surface. Children dispatched via `delegate_worker_v2` inherit the full canonical toolset (not the β-fuse-restricted one) and no HERMES-WORKER.md analog — they are AgentFW-dispatched but not AgentFW-constrained. If your use case depends on child quality, read `RELEASE-NOTES-r7.5-hermes-prerelease.md` and `ARTIFACT-r7.5-SHIP-judge-verdict.md` carefully before relying on child output.
+n=5 confirmation on the T6 capability-curve workload landed 3/5 strict completion (cleared the pre-committed RC threshold). 0/5 trials reproduced the trial-3 failure mode (verifier-pass without acceptance-pass). Every load-bearing architectural component held in every trial that exercised it.
 
----
+The 2 trials that escalated did so on real, operator-actionable issues (parent recovery exhaustion on a tier-3 catch; bootstrap ceremonial-sentinel-firing) — both are deferred to r7.12 reliability tuning.
 
-## How to probe your installation
-
-Run the full campaign (20 trials across 4 tasks, 5 runs each):
-
-```bash
-MODEL=gemma-4-26b-a4b-it-mlx-8bit \
-TOOLSETS='delegation,todo,clarify,file_readonly' \
-TIMEOUT_PER_TURN=900 \
-  ./probe-variantG-wrapper.sh t4-r1 < <(sed -n '/^## T4/,/^## T5/p' probe-tasks.md | head -N)
-```
-
-Adapt the shell fragment above to iterate T4 / T5 / T6 / T10 × runs 1–5. See `ARTIFACT-r7.5-F2-probe-results.md` for the reference matrix and `probe-tasks.md` for verbatim task prompts.
-
-Expected numbers on this pre-release (MoE, 20 trials):
-- Dispatch first-attempt strict PASS: ~16/20 (r7.5 measured; r7.4 baseline was 17/20)
-- Worker-quality 5-criterion PASS: ~3/20 (r7.5 measured — BELOW the operator's 75% floor)
-
-If your numbers differ by more than 2–3 trials in either direction, read `probe-reproducibility.md`, check oMLX health, and review `NEXT-STEPS.md` for known failure modes.
+This is internal-grade infrastructure: shippable for use against T6-class workloads with operator-supervised execution. Not yet vetted for production-autonomous use; r7.12 work addresses the remaining reliability surfaces.
 
 ---
 
-## Directory layout on VM after a clean install
+## Versioning + provenance
 
-```
-~/.hermes/hermes-agent/
-├── HERMES.md                             # md5 01c0e77b… (variantF active)
-├── HERMES-canonical-backup.md            # md5 0780c232… (rollback target)
-├── HERMES-variantF.md                    # md5 01c0e77b… (staging source)
-├── tools/
-│   ├── delegate_worker.py                # legacy v1 (deprecation-notice emitter)
-│   └── delegate_worker_v2.py             # β-fuse tool
-├── model_tools.py                        # patched (+1 import)
-├── model_tools.py.probe-d-orig           # backup
-├── toolsets.py                           # patched (delegation, core tools)
-├── toolsets.py.probe-d-orig              # backup
-├── run_agent.py                          # patched (variantF + variantG hooks)
-├── run_agent.py.probe-r7.4-orig          # variantF backup
-└── run_agent.py.probe-r7.5-orig          # variantG backup
-```
-
-`core/`, `references/`, `playbooks/`, `templates/`, and non-Hermes variants on the repo side are untouched throughout. Cross-model integrity is a hard constraint — if staging ever touches a file outside `variants/hermes/` or the VM's `hermes-agent/` install, stop and investigate.
+- Tag: `hermes-r7.11-rc1`
+- Branch: `hermes-r7.11-internal-rc` (merged to main 2026-04-30)
+- Pre-release URL: https://github.com/Voxinator/agentfw/releases/tag/hermes-r7.11-rc1
+- This file (`INSTALL.md`) is the authoritative install procedure for the Hermes variant. Older release notes (e.g., `RELEASE-NOTES-r7.5-hermes-prerelease.md`, `IMPLEMENTATION.md`) are historical and do not describe r7.11.
