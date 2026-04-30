@@ -20,6 +20,8 @@ bash variants/hermes/install.sh            # install
 bash variants/hermes/install.sh --uninstall # restore canonical
 ```
 
+**Use it**: see `variants/hermes/USAGE.md` for progressive examples — Level 0 (10-second smoke) through Level 5 (build your own scaffold). Levels 0-2 take under 5 minutes total and prove the lifecycle works; Level 4 reproduces the campaign-baseline T6 result.
+
 The β-fuse dispatch architecture from r7.4 (still part of the worked stack) and the r7.5 worker-quality ship gate are now subsumed by r7.11's parent-as-orchestrator + per-phase verification design. Worker-quality concerns from r7.5 are addressed via the verified-state-between-phases mechanism rather than direct worker-side intervention.
 
 Non-Hermes variants (claude-code, claude-projects, generic) are byte-identical to r7 and unaffected by the r7.x–r7.11 Hermes probe and campaign work.
