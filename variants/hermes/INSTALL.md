@@ -184,7 +184,9 @@ bash variants/hermes/r7.9-research/r7.11/probe-r7.11-unstage.sh
 
 ## Running a trial post-install
 
-Once installed, a trial runs as:
+**See `USAGE.md` for progressive examples** — Level 0 (smoke) through Level 5 (your own task). Levels 0-2 take under 5 minutes and prove the full lifecycle works.
+
+Quick reference for direct invocation:
 
 ```bash
 ssh ubuntu-vm \
