@@ -16,7 +16,7 @@ sentinel files, snapshots session state, and routes via `verified-state.json`
    `VERIFY-CONFIG-SCHEMA.md`).
 2. Remote host (default `ubuntu-vm`) with Hermes + r7.11 shims staged via
    `probe-r7.11-stage.sh`.
-3. `OMLX_API_KEY` env var if oMLX auth is required.
+3. oMLX auth: by default the wrapper inherits whatever's in env and Hermes falls through to `~/.hermes/config.yaml` (`api_key:` field). Set `OMLX_API_KEY` env var only to override.
 
 ## Subcommands
 
