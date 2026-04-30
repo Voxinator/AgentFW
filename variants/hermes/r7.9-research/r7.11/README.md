@@ -101,7 +101,7 @@ These are mechanics that are specific to Hermes' implementation choices. Other A
 
 - Hermes installed at canonical path (`~/.hermes/hermes-agent/`) — see Hermes documentation for setup
 - Python 3.11 (Hermes' base Python version; scaffold venvs must match for ABI compatibility — F-6)
-- Local-dev oMLX or equivalent OpenAI-compatible inference endpoint, with `OMLX_API_KEY` env var set
+- Local-dev oMLX or equivalent OpenAI-compatible inference endpoint. Auth via `~/.hermes/config.yaml` (`api_key:`) on the VM by default; `OMLX_API_KEY` env var only needed to override
 - Read access to a scaffold dir (e.g. `/tmp/scaffold/`); scaffold must contain `USER-PROMPT.md`, `verify-config.json`, and a `.venv/` matching Hermes' Python version
 - ssh access to the Hermes-running host (or LocalProcessTransport for VM-local execution)
 

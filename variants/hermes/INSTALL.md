@@ -36,11 +36,13 @@ To restore the canonical Hermes install:
 bash variants/hermes/install.sh --uninstall
 ```
 
-To run a smoke test after install (requires `OMLX_API_KEY`):
+To run a smoke test after install:
 
 ```bash
-OMLX_API_KEY=... bash variants/hermes/install.sh --smoke
+bash variants/hermes/install.sh --smoke
 ```
+
+(Inherits auth from `~/.hermes/config.yaml` on the VM. If your config doesn't have `api_key:` set, prefix with `OMLX_API_KEY=...`. If r7.11 is already staged, `--smoke` skips the re-install and just runs the smoke against the existing firmware.)
 
 To target a non-default ssh alias OR a non-default Hermes path on the VM:
 
@@ -107,7 +109,7 @@ Confirms each expected staged file is present on the VM, and that the canonical 
 
 ### Phase 6 (optional, `--smoke`) — Smoke test
 
-Invokes `r7.9-research/r7.11/smoke-r7.11.sh`, which runs a minimal `hermes chat` invocation against the staged firmware to confirm tool registration is healthy end-to-end. Requires `OMLX_API_KEY` in env (any oMLX-compatible auth token).
+Invokes `r7.9-research/r7.11/smoke-r7.11.sh`, which runs a minimal `hermes chat` invocation against the staged firmware to confirm tool registration is healthy end-to-end. Inherits auth from `~/.hermes/config.yaml` on the VM (`api_key:` field). Override with `OMLX_API_KEY` env var only if you want to test against a non-default key.
 
 ---
 
@@ -186,14 +188,15 @@ bash variants/hermes/r7.9-research/r7.11/probe-r7.11-unstage.sh
 
 **See `USAGE.md` for progressive examples** — Level 0 (smoke) through Level 5 (your own task). Levels 0-2 take under 5 minutes and prove the full lifecycle works.
 
-Quick reference for direct invocation:
+Quick reference for direct invocation (inherits auth + model from `~/.hermes/config.yaml`):
 
 ```bash
 ssh ubuntu-vm \
   "cd /path/to/AgentFW/variants/hermes/r7.9-research/r7.11/ && \
-   OMLX_API_KEY='...' python3 hermes_multi.py run /path/to/scaffold/ \
-     --transport local"
+   python3 hermes_multi.py run /path/to/scaffold/ --transport local"
 ```
+
+(Prefix with `OMLX_API_KEY=...` only if your config.yaml doesn't have `api_key:` set.)
 
 `hermes_multi.py run` drives bootstrap → phase loop → completion / escalate. Polls sentinels, archives sessions, routes via `verified-state.json`. See `HOWTO-r7.11-multi.md` for the full subcommand reference (`run`, `resume`, `status`).
 

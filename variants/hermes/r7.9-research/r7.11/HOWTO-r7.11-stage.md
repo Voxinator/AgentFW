@@ -17,8 +17,9 @@ VM at canonical:
 | `~/.hermes/hermes-agent/model_tools.py` | `10aaf53294ba39569844ebac7076e9c9` |
 
 Stage's pre-flight checks the first two; the others are recorded for
-visual confirmation. `OMLX_API_KEY` must be exported before
-`smoke-r7.11.sh`. Stage/unstage do not need it.
+visual confirmation. `smoke-r7.11.sh` inherits oMLX auth from
+`~/.hermes/config.yaml` on the VM (`api_key:` field) by default; export
+`OMLX_API_KEY` only to override. Stage/unstage do not need it.
 
 ## 2. Stage
 
@@ -43,9 +44,12 @@ model_tools.py md5s changed; 5 files in `r7_11_lib/`; 3 shims in
 ## 3. Smoke
 
 ```bash
-export OMLX_API_KEY=...   # if not set
 bash smoke-r7.11.sh
 ```
+
+(Inherits auth from `~/.hermes/config.yaml` on the VM. Prefix with
+`OMLX_API_KEY=...` only if your config.yaml doesn't have `api_key:` set
+or you want to override it.)
 
 Builds `/tmp/r7.11-smoke-scaffold/` (PLAN.md + real-not-stub `src/foo.py`
 + verify-config.json), launches `hermes chat -Q --max-turns 15
