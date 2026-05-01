@@ -173,7 +173,30 @@ The unstage script's Phase 1 + 2 restores these from the `.probe-r7.11-orig` bac
 
 ## 7. Next steps — r7.12 planning (deferred to next session)
 
-**Do NOT start r7.12 in this session.** The findings from n=5 (5.3 parent-recovery quality, 5.4 bootstrap-handoff ceremony) plus the deferred items (F-1, F-2, F-10, F-12) plus architectural questions r7.12 may surface (tier 4 semantic verifier, generalization beyond T6, AgentFW-core vs Hermes-variant separation) are non-trivial scope decisions that deserve their own session with the campaign result as input — not compressed into r7.11 cleanup.
+**Do NOT start r7.12 in this session.** The findings from n=5 (5.3 parent-recovery quality, 5.4 bootstrap-handoff ceremony) plus the deferred items (F-1, F-2, F-10, F-12) plus architectural questions r7.12 may surface (tier 4 semantic verifier, generalization beyond T6, AgentFW-core vs Hermes-variant separation, the Hermes-as-interface vs wrapper-as-interface architectural framing) are non-trivial scope decisions that deserve their own session with the campaign result as input — not compressed into r7.11 cleanup.
+
+### r7.12 carry-forward findings (surfaced post-cleanup-discussion 2026-05-01)
+
+**A. Operator UX critique** (the campaign drifted from product thesis): r7.11's wrapper became operator-facing infrastructure (Mac-side `hermes_multi.py` + manual scaffold prep + log tailing). Original thesis was Hermes-as-interface (operator talks to Hermes; Hermes orchestrates). The verified-state mechanism is the load-bearing innovation and carries forward; the wrapper-as-orchestrator topology does not generalize to chat UX. r7.12 architectural question: **for each component, which delegation primitive composes best with verified-state-as-truth + Discord-as-interface?**
+
+**B. Hermes has TWO delegation primitives, not one** — they compose; r7.12 likely uses both:
+| Primitive | Process model | Ownership | Output composition | When |
+|---|---|---|---|---|
+| Hermes `delegate_task` (in-process) | Same Python process; threaded; child AIAgent inherits parent runtime; agent-loop intercept | Parent owns children; interrupt propagates | Final summary into parent context; intermediate via progress callback (CLI tree-view OR gateway-batched) | Per-phase work within a single session; parallel fan-out (3 concurrent default); when output should compose into parent conversation |
+| Subprocess multi-session (`hermes_multi.py` pattern) | Separate `hermes chat` invocations; per-session context budget | Wrapper owns subprocess lifecycle | `verified-state.json` + sentinels (filesystem only) | Cross-context-window long-horizon work; CI-style automated runs; fresh-context isolation per phase |
+
+Initial r7.12 component-by-primitive sketch:
+- Operator-facing surface: in-process Hermes session (the conversation IS the interface)
+- Per-phase work dispatch: `delegate_task` for parallel fan-out within a phase
+- Cross-phase state: `verified-state.json` on disk (carried forward from r7.11)
+- Tier 3.7 acceptance verification: unchanged from r7.11 — runs against the workspace regardless of who wrote it (in-process or subprocess)
+- Long-horizon escalation: subprocess multi-session as a tool the parent can invoke when context limits approach; operator never sees it directly
+
+**C. Synthesis-trust invariant must hold across the in-process delegation boundary** — this is r7.11-RC-blocker-equivalent if missed in r7.12. `delegate_task` children return summaries that compose into parent context; that summary IS parent-narrative relative to the verifier. **`verify_phase` must always run against the workspace, not against the child's summary, even for in-process delegation.** Otherwise the F-7 synthesis-trust gap reopens inside the in-process pattern. (Already structurally true in r7.11 — verify_phase takes `scaffold_root`, not agent state — but worth being explicit so it's not bolted on retroactively.)
+
+**D. Two-primitive composability framing is the right shape**, not "pick one and force everything through it." r7.12's value comes from using each primitive where it composes best. Architectural decisions framed as impossibilities ("can't do X") should be challenged: which primitive does the constraint apply to?
+
+**E. Campaign-meta lesson** (carries to discipline, not just r7.12): architectural claims about Hermes must ground in the substrate's actual capabilities, not in the model of "what tools of that name might do." The same synthesis-untethered-from-verified-state pattern that produced trial 3's failure mode can produce architectural-decision failure modes in conversation. Apply r7.11 discipline (verify against actual state) to r7.12 design conversations.
 
 **r7.12 planning session inputs (when convened)**:
 - This HANDOFF (campaign-close runbook)
