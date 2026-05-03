@@ -179,15 +179,49 @@ preflight_local() {
 }
 
 # --- pre-flight: VM is at canonical state ---
+# Hermes v0.12 renamed HERMES.md -> AGENTS.md. We probe both and use whichever
+# exists so the staging works against either filename convention.
 preflight_canonical() {
-  local md_h md_r
-  md_h=$(md5_remote "${R_AGENT}/HERMES.md")
+  local md_h md_r system_prompt_path
+  system_prompt_path="${R_AGENT}/HERMES.md"
+  if ! remote_test_f "$system_prompt_path"; then
+    if remote_test_f "${R_AGENT}/AGENTS.md"; then
+      system_prompt_path="${R_AGENT}/AGENTS.md"
+      log "note: HERMES.md absent; using AGENTS.md (Hermes v0.12+ filename)"
+    fi
+  fi
+  md_h=$(md5_remote "$system_prompt_path")
   md_r=$(md5_remote "${R_AGENT}/run_agent.py")
+  if [[ "${R7_11_ALLOW_DRIFT:-0}" -eq 1 ]]; then
+    [[ "$md_h" != "$CANONICAL_HERMES_MD" ]] && log "WARN: canonical drift on $(basename "$system_prompt_path") (md5=$md_h); proceeding because R7_11_ALLOW_DRIFT=1"
+    [[ "$md_r" != "$CANONICAL_RUN_AGENT" ]] && log "WARN: canonical drift on run_agent.py (md5=$md_r); proceeding because R7_11_ALLOW_DRIFT=1"
+    return 0
+  fi
   if [[ "$md_h" != "$CANONICAL_HERMES_MD" ]]; then
-    die "canonical drift: HERMES.md md5=$md_h expected=$CANONICAL_HERMES_MD. VM was modified by something else; refusing to stage. Investigate before re-running."
+    die "canonical drift: $(basename "$system_prompt_path") md5=$md_h expected=$CANONICAL_HERMES_MD. VM was modified by something else; refusing to stage. Investigate before re-running."
   fi
   if [[ "$md_r" != "$CANONICAL_RUN_AGENT" ]]; then
     die "canonical drift: run_agent.py md5=$md_r expected=$CANONICAL_RUN_AGENT. VM was modified by something else; refusing to stage. Investigate before re-running."
+  fi
+}
+
+# Detect how the target Hermes registers tools.
+#   "auto"             — v0.12+: model_tools.py uses discover_builtin_tools(),
+#                        no explicit import list to patch. Drop shims in tools/
+#                        and they're auto-discovered.
+#   "explicit-current" — explicit list with `tools.delegate_tool` anchor.
+#   "explicit-legacy"  — explicit list with the original `tools.delegate_worker`
+#                        anchor (pre-baseline; kept for completeness).
+#   "unknown"          — neither pattern matched; refuse to patch.
+detect_model_tools_style() {
+  if ssh_run "grep -q 'discover_builtin_tools' ${R_MODEL_TOOLS}" 2>/dev/null; then
+    echo "auto"
+  elif ssh_run "grep -qE '\"tools\\.delegate_tool\",' ${R_MODEL_TOOLS}" 2>/dev/null; then
+    echo "explicit-current"
+  elif ssh_run "grep -qE '\"tools\\.delegate_worker\",' ${R_MODEL_TOOLS}" 2>/dev/null; then
+    echo "explicit-legacy"
+  else
+    echo "unknown"
   fi
 }
 
@@ -484,7 +518,14 @@ cmd_stage() {
   # Phase 6: patch toolsets.py + model_tools.py in place.
   # Strategy: write each patcher to a tempfile, ship to /tmp on remote,
   # invoke. In fixture mode the tempfile lives locally and is invoked locally.
-  log "Phase 6: patch toolsets.py + model_tools.py"
+  #
+  # On Hermes v0.12+ model_tools.py uses discover_builtin_tools() — there is
+  # no explicit import list to append to. The shim files self-register via
+  # tools.registry.register() and are picked up by auto-discovery, so the
+  # model_tools.py patch is a no-op on that branch.
+  local mt_style
+  mt_style=$(detect_model_tools_style)
+  log "Phase 6: patch toolsets.py + model_tools.py (model_tools style: $mt_style)"
   local patcher_toolsets patcher_model_tools
   patcher_toolsets=$(mktemp)
   patcher_model_tools=$(mktemp)
@@ -494,18 +535,71 @@ import sys, re
 path = sys.argv[1]
 with open(path) as f:
     src = f.read()
-# Option A anchoring: a single r7.11-tagged insertion that also carries
-# write_plan_md (r7.10 carry-forward; teaches `## Phase N:` PLAN.md format).
-new_names = ['"verify_phase"', '"end_session_for_handoff"', '"escalate_to_operator"', '"write_plan_md"']
-if all(n in src for n in new_names):
-    print("toolsets.py: r7.11 tool names already present, no-op"); sys.exit(0)
-m = re.search(r'(_HERMES_CORE_TOOLS\s*=\s*\[)(.*?)(\n\])', src, re.DOTALL)
-if not m:
-    print("ERROR: anchor missing in toolsets.py", file=sys.stderr); sys.exit(1)
-ins = '    # r7.11: phase verification + handoff (probe-r7.11) + write_plan_md (r7.10 carry-forward)\n    "verify_phase", "end_session_for_handoff", "escalate_to_operator", "write_plan_md",\n'
-patched = src[:m.end(2)] + '\n' + ins + src[m.start(3)+1:]
-open(path, "w").write(patched)
-print("toolsets.py: appended r7.11 tool names to _HERMES_CORE_TOOLS")
+
+# r7.11 must register its 4 tool names with whatever toolset(s) the target
+# Hermes' platform actually enables. v0.8 surfaces all builtin tools through
+# `_HERMES_CORE_TOOLS` (consumed by the `hermes-cli` toolset). v0.12+ enables
+# a *set* of focused toolsets per platform (delegation, file, terminal, ...);
+# `_HERMES_CORE_TOOLS` is still defined but no longer feeds the active surface.
+#
+# We patch both anchors when present:
+#   - `_HERMES_CORE_TOOLS = [...]` — kept for v0.8 + future-proofing
+#   - `"delegation": { "tools": [...] }` — required on v0.12 because the
+#     shims register with toolset="delegation"; without this the registry
+#     contains them but resolve_toolset("delegation") still reads the static
+#     list and skips them.
+new_names_q = ['"verify_phase"', '"end_session_for_handoff"', '"escalate_to_operator"', '"write_plan_md"']
+patched_any = False
+notes = []
+
+# --- Patch 1: _HERMES_CORE_TOOLS list (v0.8 anchor, also present on v0.12) ---
+m_hct = re.search(r'(_HERMES_CORE_TOOLS\s*=\s*\[)(.*?)(\n\])', src, re.DOTALL)
+if m_hct:
+    if all(n in m_hct.group(2) for n in new_names_q):
+        notes.append("_HERMES_CORE_TOOLS: already present, no-op")
+    else:
+        ins = '    # r7.11: phase verification + handoff (probe-r7.11) + write_plan_md (r7.10 carry-forward)\n    "verify_phase", "end_session_for_handoff", "escalate_to_operator", "write_plan_md",\n'
+        src = src[:m_hct.end(2)] + '\n' + ins + src[m_hct.start(3)+1:]
+        patched_any = True
+        notes.append("_HERMES_CORE_TOOLS: appended r7.11 names")
+else:
+    notes.append("_HERMES_CORE_TOOLS: anchor not found, skipping")
+
+# --- Patch 2: delegation toolset tools list (v0.12 anchor) ---
+# Match the "delegation": {...} block and append our names to its "tools" list.
+# Anchored on the literal `"tools": ["delegate_task"]` form to avoid touching
+# unrelated toolsets. If a future version reorders the keys we fall back to a
+# scoped search inside the delegation block.
+deleg_pat = re.compile(
+    r'("delegation"\s*:\s*\{[^{}]*?"tools"\s*:\s*\[)([^\]]*?)(\])',
+    re.DOTALL,
+)
+m_deleg = deleg_pat.search(src)
+if m_deleg:
+    inner = m_deleg.group(2)
+    if all(n in inner for n in new_names_q):
+        notes.append("TOOLSETS[delegation]: already present, no-op")
+    else:
+        # Strip trailing comma+whitespace from existing inner so we can append cleanly
+        inner_stripped = inner.rstrip().rstrip(',')
+        appended = ', "verify_phase", "end_session_for_handoff", "escalate_to_operator", "write_plan_md"'
+        new_block = m_deleg.group(1) + inner_stripped + appended + m_deleg.group(3)
+        src = src[:m_deleg.start()] + new_block + src[m_deleg.end():]
+        patched_any = True
+        notes.append("TOOLSETS[delegation]: appended r7.11 names to tools list")
+else:
+    notes.append("TOOLSETS[delegation]: anchor not found, skipping")
+
+if not (m_hct or m_deleg):
+    print("ERROR: neither _HERMES_CORE_TOOLS nor TOOLSETS[delegation] anchors found in toolsets.py", file=sys.stderr)
+    sys.exit(1)
+
+if patched_any:
+    with open(path, "w") as f:
+        f.write(src)
+
+for n in notes:
+    print(f"toolsets.py: {n}")
 EOPY
 
   cat > "$patcher_model_tools" <<'EOPY'
@@ -531,15 +625,23 @@ EOPY
 
   if [[ -n "$FIXTURE_ROOT" ]]; then
     python3 "$patcher_toolsets"    "$R_TOOLSETS"
-    python3 "$patcher_model_tools" "$R_MODEL_TOOLS"
+    if [[ "$mt_style" == "auto" ]]; then
+      log "  model_tools.py: auto-discovery in use; skipping import-list patch"
+    else
+      python3 "$patcher_model_tools" "$R_MODEL_TOOLS"
+    fi
   else
     scp -q "$patcher_toolsets"    "${REMOTE_HOST}:/tmp/r7.11-patch-toolsets.py"
-    scp -q "$patcher_model_tools" "${REMOTE_HOST}:/tmp/r7.11-patch-model-tools.py"
     ssh "$REMOTE_HOST" "python3 /tmp/r7.11-patch-toolsets.py    $R_TOOLSETS"
-    ssh "$REMOTE_HOST" "python3 /tmp/r7.11-patch-model-tools.py $R_MODEL_TOOLS"
+    if [[ "$mt_style" == "auto" ]]; then
+      log "  model_tools.py: auto-discovery in use; skipping import-list patch (shims auto-register via tools.registry)"
+    else
+      scp -q "$patcher_model_tools" "${REMOTE_HOST}:/tmp/r7.11-patch-model-tools.py"
+      ssh "$REMOTE_HOST" "python3 /tmp/r7.11-patch-model-tools.py $R_MODEL_TOOLS"
+    fi
   fi
   rm -f "$patcher_toolsets" "$patcher_model_tools"
-  ssh_run "echo 'phase6: toolsets.py + model_tools.py patched' >> $R_MUTLOG"
+  ssh_run "echo 'phase6: toolsets.py patched (model_tools style: $mt_style)' >> $R_MUTLOG"
 
   # Phase 7: py_compile sanity
   log "Phase 7: py_compile sanity check"

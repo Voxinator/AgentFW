@@ -289,6 +289,7 @@ run_local_tests() {
 stage_firmware() {
   header "Phase 4: Stage firmware on $HERMES_HOST (path: ~/$HERMES_PATH)"
   if ! R_AGENT="$HERMES_PATH" REMOTE_HOST="$HERMES_HOST" \
+        R7_11_ALLOW_DRIFT="$ALLOW_CANONICAL_DRIFT" \
         bash "$R7_11_DIR/probe-r7.11-stage.sh" stage 2>&1 | sed 's/^/  /'; then
     fail "staging script returned non-zero"
     return 4
@@ -366,6 +367,7 @@ run_smoke() {
 run_uninstall() {
   header "Uninstall: restore canonical via probe-r7.11-unstage.sh"
   if ! R_AGENT="$HERMES_PATH" REMOTE_HOST="$HERMES_HOST" \
+        R7_11_ALLOW_DRIFT="$ALLOW_CANONICAL_DRIFT" \
         bash "$R7_11_DIR/probe-r7.11-unstage.sh" 2>&1 | sed 's/^/  /'; then
     fail "unstage script returned non-zero"
     return 10

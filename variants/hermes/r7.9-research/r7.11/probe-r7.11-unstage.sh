@@ -110,18 +110,31 @@ cmd_unstage() {
 }
 
 verify_canonical_post() {
-  # Confirm canonical md5s for HERMES.md + run_agent.py — these were never
-  # touched by r7.11 staging; if they diverge, something else is wrong.
-  local md_h md_r
-  md_h=$(md5_remote "${R_AGENT}/HERMES.md")
+  # Confirm canonical md5s for HERMES.md (or AGENTS.md on v0.12+) + run_agent.py
+  # — these were never touched by r7.11 staging; if they diverge, something
+  # else is wrong.
+  local md_h md_r system_prompt_path
+  system_prompt_path="${R_AGENT}/HERMES.md"
+  if ! remote_test_f "$system_prompt_path"; then
+    if remote_test_f "${R_AGENT}/AGENTS.md"; then
+      system_prompt_path="${R_AGENT}/AGENTS.md"
+    fi
+  fi
+  md_h=$(md5_remote "$system_prompt_path")
   md_r=$(md5_remote "${R_AGENT}/run_agent.py")
+  if [[ "${R7_11_ALLOW_DRIFT:-0}" -eq 1 ]]; then
+    [[ "$md_h" != "$CANONICAL_HERMES_MD" ]] && log "WARN: post-unstage drift on $(basename "$system_prompt_path") (md5=$md_h); proceeding because R7_11_ALLOW_DRIFT=1"
+    [[ "$md_r" != "$CANONICAL_RUN_AGENT" ]] && log "WARN: post-unstage drift on run_agent.py (md5=$md_r); proceeding because R7_11_ALLOW_DRIFT=1"
+    log "  canonical md5s checked (drift allowed)"
+    return 0
+  fi
   if [[ "$md_h" != "$CANONICAL_HERMES_MD" ]]; then
-    die "post-unstage canonical drift: HERMES.md md5=$md_h expected=$CANONICAL_HERMES_MD. R7.11 unstage is complete but VM is NOT at canonical — something else modified it. Investigate."
+    die "post-unstage canonical drift: $(basename "$system_prompt_path") md5=$md_h expected=$CANONICAL_HERMES_MD. R7.11 unstage is complete but VM is NOT at canonical — something else modified it. Investigate."
   fi
   if [[ "$md_r" != "$CANONICAL_RUN_AGENT" ]]; then
     die "post-unstage canonical drift: run_agent.py md5=$md_r expected=$CANONICAL_RUN_AGENT. R7.11 unstage is complete but VM is NOT at canonical — something else modified it. Investigate."
   fi
-  log "  canonical md5s OK (HERMES.md, run_agent.py)"
+  log "  canonical md5s OK ($(basename "$system_prompt_path"), run_agent.py)"
 }
 
 case "${1:-unstage}" in
