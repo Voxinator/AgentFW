@@ -1,0 +1,87 @@
+{
+  "strict_passed": false,
+  "charitable_passed": false,
+  "content_verify_strict": false,
+  "content_verify_charitable": false,
+  "all_phases_verified_passed": false,
+  "phases_pending_or_failed": [
+    3,
+    4
+  ],
+  "campaign_findings": [
+    "[ORCHESTRATOR_TERMINATED_EARLY] phases [3, 4] not verified_passed; campaign-strict and campaign-charitable forced False regardless of content_verify verdict."
+  ],
+  "findings": [
+    {
+      "category": "test-stub",
+      "detail": "2 test files contain only NotImplementedError stub bodies; parent left test stubs uncorrected (consolidated single architectural defect): tests/test_api_export.py, tests/test_csv.py",
+      "evidence": {
+        "consolidated_from": [
+          "test-stub-per-file"
+        ],
+        "stub_count": 2,
+        "stub_files": [
+          "tests/test_api_export.py",
+          "tests/test_csv.py"
+        ]
+      },
+      "line": null,
+      "path": null,
+      "severity": "high"
+    },
+    {
+      "category": "unwired-api",
+      "detail": "API file does not import any serializer module (serializer modules in project: ['src.export.csv', 'src.export.json', 'src.export.pdf']); endpoints likely inline serialization or return raw data",
+      "evidence": {
+        "api_imports": [
+          "src",
+          "src.auth",
+          "src.auth.permissions"
+        ],
+        "serializer_modules": [
+          "src.export.csv",
+          "src.export.json",
+          "src.export.pdf"
+        ]
+      },
+      "line": null,
+      "path": "/tmp/r7.11-item8-scaffold/src/api/export.py",
+      "severity": "high"
+    },
+    {
+      "category": "unwired-api",
+      "detail": "API file does not import any serializer module (serializer modules in project: ['src.export.csv', 'src.export.json', 'src.export.pdf']); endpoints likely inline serialization or return raw data",
+      "evidence": {
+        "api_imports": [
+          "src",
+          "src.auth",
+          "src.auth.permissions"
+        ],
+        "serializer_modules": [
+          "src.export.csv",
+          "src.export.json",
+          "src.export.pdf"
+        ]
+      },
+      "line": null,
+      "path": "src/api/export.py",
+      "severity": "high"
+    }
+  ],
+  "files_inspected": [
+    "src/__init__.py",
+    "src/api/__init__.py",
+    "src/api/export.py",
+    "src/auth/__init__.py",
+    "src/auth/permissions.py",
+    "src/export/__init__.py",
+    "src/export/csv.py",
+    "src/export/formats.py",
+    "src/export/json.py",
+    "src/export/pdf.py",
+    "tests/__init__.py",
+    "tests/fixtures.py",
+    "tests/test_api_export.py",
+    "tests/test_csv.py"
+  ]
+}

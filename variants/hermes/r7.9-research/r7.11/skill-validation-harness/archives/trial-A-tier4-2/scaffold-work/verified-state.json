@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Permissions & API Endpoints"
+      },
+      {
+        "id": 3,
+        "title": "Tests & Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_failed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T01:17:17Z",
+      "session_id": "tool-call-1777943837",
+      "missing_paths": [],
+      "integrity_issues": [
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/export/csv.py \u2014 function `serialize_csv` defined but never referenced",
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/export/json.py \u2014 function `serialize_json` defined but never referenced",
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/export/pdf.py \u2014 function `serialize_pdf` defined but never referenced"
+      ],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": "Re-dispatch with explicit focus on: /tmp/r7.11-item8-scaffold/src/export/csv.py \u2014 function `serialize_csv` defined but never referenced, /tmp/r7.11-item8-scaffold/src/export/json.py \u2014 function `serialize_json` defined but never referenced, /tmp/r7.11-item8-scaffold/src/export/pdf.py \u2014 function `serialize_pdf` defined but never referenced. Phase 1 cleared tier 1 (presence) but failed tier 3 (wiring) with: CAT1: [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/export/csv.py \u2014 function `serialize_csv` defined but never referenced; [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/export/json.py \u2014 function `serialize_json` defined but never referenced; [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/export/pdf.py \u2014 function `serialize_pdf` defined but never referenced. [CAT1:defined-unused] Remove unused definitions OR ensure they're invoked from a runtime call site.",
+      "revision_count": 4,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777942777",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:59:37Z"
+    },
+    {
+      "session_id": "tool-call-1777942877",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:01:17Z"
+    },
+    {
+      "session_id": "tool-call-1777943706",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:15:06Z"
+    },
+    {
+      "session_id": "tool-call-1777943837",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:17:17Z"
+    }
+  ]
+}

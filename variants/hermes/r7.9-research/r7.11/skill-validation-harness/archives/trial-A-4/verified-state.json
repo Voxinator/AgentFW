@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "API Endpoints and Permissions"
+      },
+      {
+        "id": 3,
+        "title": "Testing and Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_failed",
+      "tier_run": 1,
+      "verified_at": "2026-05-04T02:44:17Z",
+      "session_id": "tool-call-1777862657",
+      "missing_paths": [
+        "/tmp/r7.11-item8-scaffold/src/export/csv.py (present but only 1 non-blank lines < 3)",
+        "/tmp/r7.11-item8-scaffold/src/export/json.py (present but only 1 non-blank lines < 3)",
+        "/tmp/r7.11-item8-scaffold/src/export/pdf.py (present but only 1 non-blank lines < 3)",
+        "/tmp/r7.11-item8-scaffold/src/export/formats.py (present but too small: 0 bytes < 50)"
+      ],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": "Re-dispatch with explicit focus on: /tmp/r7.11-item8-scaffold/src/export/csv.py, /tmp/r7.11-item8-scaffold/src/export/json.py, /tmp/r7.11-item8-scaffold/src/export/pdf.py, /tmp/r7.11-item8-scaffold/src/export/formats.py. Phase 1 declared these paths in PLAN.md but tier 1 (presence) found them missing or stub-shaped: /tmp/r7.11-item8-scaffold/src/export/csv.py (present but only 1 non-blank lines < 3); /tmp/r7.11-item8-scaffold/src/export/json.py (present but only 1 non-blank lines < 3); /tmp/r7.11-item8-scaffold/src/export/pdf.py (present but only 1 non-blank lines < 3); /tmp/r7.11-item8-scaffold/src/export/formats.py (present but too small: 0 bytes < 50). Write each missing file with a non-trivial body (real implementation, not a docstring stub or NotImplementedError placeholder).",
+      "revision_count": 2,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777862438",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T02:40:38Z"
+    },
+    {
+      "session_id": "tool-call-1777862657",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T02:44:17Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "strict_passed": false,
+  "charitable_passed": true,
+  "content_verify_strict": false,
+  "content_verify_charitable": true,
+  "all_phases_verified_passed": true,
+  "phases_pending_or_failed": [],
+  "campaign_findings": [],
+  "findings": [
+    {
+      "category": "unwired-api",
+      "detail": "API file does not import any serializer module (serializer modules in project: ['src.export.csv', 'src.export.json', 'src.export.pdf']); endpoints likely inline serialization or return raw data",
+      "evidence": {
+        "api_imports": [
+          "src",
+          "src.auth"
+        ],
+        "serializer_modules": [
+          "src.export.csv",
+          "src.export.json",
+          "src.export.pdf"
+        ]
+      },
+      "line": null,
+      "path": "/tmp/r7.11-item8-scaffold/src/auth/permissions.py",
+      "severity": "high"
+    }
+  ],
+  "files_inspected": [
+    "src/__init__.py",
+    "src/api/__init__.py",
+    "src/api/export.py",
+    "src/auth/__init__.py",
+    "src/auth/permissions.py",
+    "src/export/__init__.py",
+    "src/export/csv.py",
+    "src/export/formats.py",
+    "src/export/json.py",
+    "src/export/pdf.py",
+    "tests/__init__.py",
+    "tests/fixtures.py",
+    "tests/test_api_export.py",
+    "tests/test_csv.py"
+  ]
+}

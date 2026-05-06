@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/preflight-2b",
+    "plan_md_path": "/tmp/preflight-2b/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Implementation"
+      },
+      {
+        "id": 2,
+        "title": "Testing"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-04T00:16:52Z",
+      "session_id": "tool-call-1777853812",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-04T00:18:03Z",
+      "session_id": "tool-call-1777853883",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [
+        "[ACCEPTANCE_PASSED] acceptance command exited 0: `.venv/bin/pytest tests/test_calc.py`"
+      ],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777853779",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T00:16:19Z"
+    },
+    {
+      "session_id": "tool-call-1777853812",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-04T00:16:52Z"
+    },
+    {
+      "session_id": "tool-call-1777853883",
+      "phase_id": 2,
+      "verdict": "passed",
+      "ts": "2026-05-04T00:18:03Z"
+    }
+  ]
+}

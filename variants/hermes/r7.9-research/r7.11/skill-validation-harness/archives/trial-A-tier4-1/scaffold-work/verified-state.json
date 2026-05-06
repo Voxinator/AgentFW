@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Auth & API Endpoints"
+      },
+      {
+        "id": 3,
+        "title": "Tests & Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T00:07:48Z",
+      "session_id": "tool-call-1777939668",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 7,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_failed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T00:24:18Z",
+      "session_id": "tool-call-1777940658",
+      "missing_paths": [],
+      "integrity_issues": [
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/auth/permissions.py \u2014 function `has_permission` defined but never referenced",
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_csv` defined but never referenced",
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_json` defined but never referenced",
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_pdf` defined but never referenced",
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `get_records_for_user` defined but never referenced"
+      ],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": "Re-dispatch with explicit focus on: /tmp/r7.11-item8-scaffold/src/auth/permissions.py \u2014 function `has_permission` defined but never referenced, /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_csv` defined but never referenced, /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_json` defined but never referenced, /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_pdf` defined but never referenced, /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `get_records_for_user` defined but never referenced. Phase 2 cleared tier 1 (presence) but failed tier 3 (wiring) with: CAT1: [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/auth/permissions.py \u2014 function `has_permission` defined but never referenced; [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_csv` defined but never referenced; [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_json` defined but never referenced; [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_pdf` defined but never referenced; [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `get_records_for_user` defined but never referenced. [CAT1:defined-unused] Remove unused definitions OR ensure they're invoked from a runtime call site.",
+      "revision_count": 8,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777938777",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T23:52:57Z"
+    },
+    {
+      "session_id": "tool-call-1777938988",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T23:56:28Z"
+    },
+    {
+      "session_id": "tool-call-1777939037",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T23:57:17Z"
+    },
+    {
+      "session_id": "tool-call-1777939175",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T23:59:35Z"
+    },
+    {
+      "session_id": "tool-call-1777939280",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:01:20Z"
+    },
+    {
+      "session_id": "tool-call-1777939391",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:03:11Z"
+    },
+    {
+      "session_id": "tool-call-1777939508",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:05:08Z"
+    },
+    {
+      "session_id": "tool-call-1777939668",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-05T00:07:48Z"
+    },
+    {
+      "session_id": "tool-call-1777940187",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:16:27Z"
+    },
+    {
+      "session_id": "tool-call-1777940278",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:17:58Z"
+    },
+    {
+      "session_id": "tool-call-1777940313",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:18:33Z"
+    },
+    {
+      "session_id": "tool-call-1777940382",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:19:42Z"
+    },
+    {
+      "session_id": "tool-call-1777940457",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:20:57Z"
+    },
+    {
+      "session_id": "tool-call-1777940515",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:21:55Z"
+    },
+    {
+      "session_id": "tool-call-1777940584",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:23:04Z"
+    },
+    {
+      "session_id": "tool-call-1777940658",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T00:24:18Z"
+    }
+  ]
+}

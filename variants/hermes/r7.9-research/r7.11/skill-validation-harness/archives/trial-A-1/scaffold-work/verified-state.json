@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Permissions & API Integration"
+      },
+      {
+        "id": 3,
+        "title": "Tests & Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-04T01:01:18Z",
+      "session_id": "tool-call-1777856478",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-04T01:08:03Z",
+      "session_id": "tool-call-1777856883",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 3,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-04T01:15:41Z",
+      "session_id": "tool-call-1777857341",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [
+        "[INCONCLUSIVE:no-importable-modules] phase declared no .py files with valid module names"
+      ],
+      "acceptance_runner_findings": [
+        "[ACCEPTANCE_PASSED] acceptance command exited 0: `.venv/bin/pytest /tmp/r7.11-item8-scaffold/tests/`"
+      ],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777856373",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T00:59:33Z"
+    },
+    {
+      "session_id": "tool-call-1777856478",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-04T01:01:18Z"
+    },
+    {
+      "session_id": "tool-call-1777856587",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-04T01:03:07Z"
+    },
+    {
+      "session_id": "tool-call-1777856701",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-04T01:05:01Z"
+    },
+    {
+      "session_id": "tool-call-1777856801",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-04T01:06:41Z"
+    },
+    {
+      "session_id": "tool-call-1777856883",
+      "phase_id": 2,
+      "verdict": "passed",
+      "ts": "2026-05-04T01:08:03Z"
+    },
+    {
+      "session_id": "tool-call-1777857193",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-04T01:13:13Z"
+    },
+    {
+      "session_id": "tool-call-1777857341",
+      "phase_id": 3,
+      "verdict": "passed",
+      "ts": "2026-05-04T01:15:41Z"
+    }
+  ]
+}

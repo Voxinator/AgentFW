@@ -1,0 +1,14 @@
+{
+  "phase_dispatches": 0,
+  "verify_calls": 0,
+  "state_reads": 0,
+  "sequential_loop_adherence": true,
+  "sequential_violations": [],
+  "skipped_verify_phase_count": 0,
+  "narrative_routing_count": 0,
+  "declared_terminal_success": false,
+  "all_phases_passed": false,
+  "partial_success_misreport": false,
+  "inappropriate_session_end_count": 0,
+  "inappropriate_session_end_tools": []
+}

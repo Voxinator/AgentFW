@@ -1,0 +1,26 @@
+{
+  "strict_passed": true,
+  "charitable_passed": true,
+  "content_verify_strict": true,
+  "content_verify_charitable": true,
+  "all_phases_verified_passed": true,
+  "phases_pending_or_failed": [],
+  "campaign_findings": [],
+  "findings": [],
+  "files_inspected": [
+    "src/__init__.py",
+    "src/api/__init__.py",
+    "src/api/export.py",
+    "src/auth/__init__.py",
+    "src/auth/permissions.py",
+    "src/export/__init__.py",
+    "src/export/csv.py",
+    "src/export/formats.py",
+    "src/export/json.py",
+    "src/export/pdf.py",
+    "tests/__init__.py",
+    "tests/fixtures.py",
+    "tests/test_api_export.py",
+    "tests/test_csv.py"
+  ]
+}

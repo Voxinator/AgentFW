@@ -1,0 +1,18 @@
+{
+  "phase_dispatches_initial": 6,
+  "phase_dispatches_revise": 4,
+  "verify_calls": 9,
+  "state_reads": 0,
+  "sequential_loop_adherence": false,
+  "sequential_violations": [
+    "phase 3 initial-dispatch at msg 57 without verify_phase(2) preceding"
+  ],
+  "skipped_verify_phase_count": 1,
+  "revisions_without_preceding_verify": 0,
+  "narrative_routing_count": 4,
+  "declared_terminal_success": true,
+  "all_phases_passed": true,
+  "partial_success_misreport": false,
+  "inappropriate_session_end_count": 0,
+  "inappropriate_session_end_tools": []
+}

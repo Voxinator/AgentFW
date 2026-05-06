@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Permissions & API Endpoints"
+      },
+      {
+        "id": 3,
+        "title": "Tests & Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T06:06:51Z",
+      "session_id": "tool-call-1777961211",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 2,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_failed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T06:20:45Z",
+      "session_id": "tool-call-1777962045",
+      "missing_paths": [],
+      "integrity_issues": [
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 variable `_` defined but never referenced"
+      ],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": "Re-dispatch with explicit focus on: /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 variable `_` defined but never referenced. Phase 2 cleared tier 1 (presence) but failed tier 3 (wiring) with: CAT1: [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 variable `_` defined but never referenced. [CAT1:defined-unused] Remove unused definitions OR ensure they're invoked from a runtime call site.",
+      "revision_count": 4,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T06:33:45Z",
+      "session_id": "tool-call-1777962825",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [
+        "[ACCEPTANCE_PASSED] acceptance command exited 0: `.venv/bin/pytest /tmp/r7.11-item8-scaffold/tests/`"
+      ],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777961078",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:04:38Z"
+    },
+    {
+      "session_id": "tool-call-1777961132",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:05:32Z"
+    },
+    {
+      "session_id": "tool-call-1777961211",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-05T06:06:51Z"
+    },
+    {
+      "session_id": "tool-call-1777961458",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:10:58Z"
+    },
+    {
+      "session_id": "tool-call-1777961693",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:14:53Z"
+    },
+    {
+      "session_id": "tool-call-1777961860",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:17:40Z"
+    },
+    {
+      "session_id": "tool-call-1777962045",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:20:45Z"
+    },
+    {
+      "session_id": "tool-call-1777962550",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-05T06:29:10Z"
+    },
+    {
+      "session_id": "tool-call-1777962825",
+      "phase_id": 3,
+      "verdict": "passed",
+      "ts": "2026-05-05T06:33:45Z"
+    }
+  ]
+}

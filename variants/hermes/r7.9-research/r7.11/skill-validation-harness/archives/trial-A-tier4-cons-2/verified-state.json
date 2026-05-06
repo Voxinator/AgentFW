@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Permissions and API Endpoints"
+      },
+      {
+        "id": 3,
+        "title": "Tests and Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T05:06:11Z",
+      "session_id": "tool-call-1777957571",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 4,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T05:18:55Z",
+      "session_id": "tool-call-1777958335",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 2,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T05:58:10Z",
+      "session_id": "tool-call-1777960690",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [
+        "[INCONCLUSIVE:interrupted]"
+      ],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777956295",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T04:44:55Z"
+    },
+    {
+      "session_id": "tool-call-1777957016",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T04:56:56Z"
+    },
+    {
+      "session_id": "tool-call-1777957177",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T04:59:37Z"
+    },
+    {
+      "session_id": "tool-call-1777957402",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T05:03:22Z"
+    },
+    {
+      "session_id": "tool-call-1777957571",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-05T05:06:11Z"
+    },
+    {
+      "session_id": "tool-call-1777957830",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T05:10:30Z"
+    },
+    {
+      "session_id": "tool-call-1777958094",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T05:14:54Z"
+    },
+    {
+      "session_id": "tool-call-1777958335",
+      "phase_id": 2,
+      "verdict": "passed",
+      "ts": "2026-05-05T05:18:55Z"
+    },
+    {
+      "session_id": "tool-call-1777960690",
+      "phase_id": 3,
+      "verdict": "passed",
+      "ts": "2026-05-05T05:58:10Z"
+    }
+  ]
+}

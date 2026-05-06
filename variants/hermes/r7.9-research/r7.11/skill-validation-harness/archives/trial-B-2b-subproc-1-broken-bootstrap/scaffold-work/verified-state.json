@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "API Endpoints + Permission Logic"
+      },
+      {
+        "id": 3,
+        "title": "Tests + Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-04T03:54:15Z",
+      "session_id": "tool-call-1777866855",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [
+        "[INCONCLUSIVE:no-importable-modules] phase declared no .py files with valid module names"
+      ],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 2,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777866441",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T03:47:21Z"
+    },
+    {
+      "session_id": "tool-call-1777866773",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-04T03:52:53Z"
+    },
+    {
+      "session_id": "tool-call-1777866849",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-04T03:54:09Z"
+    },
+    {
+      "session_id": "tool-call-1777866855",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-04T03:54:15Z"
+    }
+  ]
+}

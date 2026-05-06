@@ -1,0 +1,5 @@
+# venv directories are regenerable; never commit
+**/.venv/
+__pycache__/
+*.pyc
+*.pyo

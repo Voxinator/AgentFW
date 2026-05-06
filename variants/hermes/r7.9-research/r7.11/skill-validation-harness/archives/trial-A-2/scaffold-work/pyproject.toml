@@ -1,0 +1,12 @@
+[project]
+name = "export-probe"
+version = "0.0.1"
+description = "Scaffold for r7.9 capability-curve probes (disposable)"
+requires-python = ">=3.11"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

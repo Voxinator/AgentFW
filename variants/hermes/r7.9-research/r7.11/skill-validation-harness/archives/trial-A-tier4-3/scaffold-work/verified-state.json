@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Auth & Permissions"
+      },
+      {
+        "id": 3,
+        "title": "API Endpoints"
+      },
+      {
+        "id": 4,
+        "title": "Tests & Documentation"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T01:25:48Z",
+      "session_id": "tool-call-1777944348",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 2,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T01:28:49Z",
+      "session_id": "tool-call-1777944529",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T01:47:54Z",
+      "session_id": "tool-call-1777945674",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    },
+    {
+      "id": 4,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T01:41:27Z",
+      "session_id": "tool-call-1777945287",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [
+        "[ACCEPTANCE_PASSED] acceptance command exited 0: `.venv/bin/python -m pytest /tmp/r7.11-item8-scaffold/tests/`"
+      ],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777944170",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:22:50Z"
+    },
+    {
+      "session_id": "tool-call-1777944272",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:24:32Z"
+    },
+    {
+      "session_id": "tool-call-1777944348",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-05T01:25:48Z"
+    },
+    {
+      "session_id": "tool-call-1777944448",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:27:28Z"
+    },
+    {
+      "session_id": "tool-call-1777944529",
+      "phase_id": 2,
+      "verdict": "passed",
+      "ts": "2026-05-05T01:28:49Z"
+    },
+    {
+      "session_id": "tool-call-1777944842",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:34:02Z"
+    },
+    {
+      "session_id": "tool-call-1777945013",
+      "phase_id": 3,
+      "verdict": "passed",
+      "ts": "2026-05-05T01:36:53Z"
+    },
+    {
+      "session_id": "tool-call-1777945287",
+      "phase_id": 4,
+      "verdict": "passed",
+      "ts": "2026-05-05T01:41:27Z"
+    },
+    {
+      "session_id": "tool-call-1777945674",
+      "phase_id": 3,
+      "verdict": "passed",
+      "ts": "2026-05-05T01:47:54Z"
+    }
+  ]
+}

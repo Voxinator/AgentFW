@@ -1,0 +1,96 @@
+{
+  "strict_passed": false,
+  "charitable_passed": false,
+  "content_verify_strict": false,
+  "content_verify_charitable": false,
+  "all_phases_verified_passed": true,
+  "phases_pending_or_failed": [],
+  "campaign_findings": [],
+  "findings": [
+    {
+      "category": "unwired-api",
+      "detail": "API file does not import any serializer module (serializer modules in project: ['src.export.serializers']); endpoints likely inline serialization or return raw data",
+      "evidence": {
+        "api_imports": [
+          "asyncio",
+          "fastapi",
+          "src",
+          "src.auth",
+          "src.auth.permissions",
+          "src.export"
+        ],
+        "serializer_modules": [
+          "src.export.serializers"
+        ]
+      },
+      "line": null,
+      "path": "/tmp/r7.11-item8-scaffold/src/api/export.py",
+      "severity": "high"
+    },
+    {
+      "category": "unwired-api",
+      "detail": "API file does not import any serializer module (serializer modules in project: ['src.export.serializers']); endpoints likely inline serialization or return raw data",
+      "evidence": {
+        "api_imports": [
+          "src",
+          "src.auth"
+        ],
+        "serializer_modules": [
+          "src.export.serializers"
+        ]
+      },
+      "line": null,
+      "path": "/tmp/r7.11-item8-scaffold/src/auth/permissions.py",
+      "severity": "high"
+    },
+    {
+      "category": "unwired-api",
+      "detail": "API file does not import any serializer module (serializer modules in project: ['src.export.serializers']); endpoints likely inline serialization or return raw data",
+      "evidence": {
+        "api_imports": [
+          "asyncio",
+          "fastapi",
+          "src",
+          "src.auth",
+          "src.auth.permissions",
+          "src.export"
+        ],
+        "serializer_modules": [
+          "src.export.serializers"
+        ]
+      },
+      "line": null,
+      "path": "src/api/export.py",
+      "severity": "high"
+    },
+    {
+      "category": "test-stub",
+      "detail": "all 2 test function(s) raise NotImplementedError; file is a pure stub",
+      "evidence": {
+        "stub_lines": [
+          8,
+          14
+        ],
+        "stub_tests": 2,
+        "total_tests": 2
+      },
+      "line": 8,
+      "path": "tests/test_csv.py",
+      "severity": "high"
+    }
+  ],
+  "files_inspected": [
+    "src/__init__.py",
+    "src/api/__init__.py",
+    "src/api/export.py",
+    "src/auth/__init__.py",
+    "src/auth/permissions.py",
+    "src/export/__init__.py",
+    "src/export/serializers.py",
+    "tests/__init__.py",
+    "tests/fixtures.py",
+    "tests/test_api_export.py",
+    "tests/test_csv.py",
+    "tests/test_phase1.py"
+  ]
+}

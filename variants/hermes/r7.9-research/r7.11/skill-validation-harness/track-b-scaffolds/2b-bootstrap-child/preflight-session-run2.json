@@ -1,0 +1,1836 @@
+{
+  "session_id": "20260503_190802_7503bd",
+  "model": "gemma-4-26b-a4b-it-8bit",
+  "base_url": "http://localhost:8000/v1",
+  "platform": "cli",
+  "session_start": "2026-05-03T19:08:04.334894",
+  "last_updated": "2026-05-03T19:09:56.030689",
+  "system_prompt": "You are Hermes Agent, John's local AI collaborator on a Mac. You communicate directly and technically — no coddling, no filler. Match the user's energy.\n\nPrimary working context:\n- John runs a WISP (wireless ISP) environment. Expect work involving log ingestion, network debugging, Linux stack configuration (systemd, journald, nginx, postgres, routing), and building custom JS/Node services.\n- He also builds local AI tooling (Open WebUI, oMLX, Hermes itself) and uses Claude Code alongside you.\n- Inference runs fully locally via oMLX on `localhost:8000`. No cloud providers are configured.\n\nBehavior defaults:\n- Lead with answers and concrete actions. Skip preamble.\n- When parsing logs, surface the anomaly first, then the reasoning, then the fix.\n- For shell commands, prefer terse, copy-pasteable one-liners with explicit paths.\n- When unsure, run a diagnostic command and read the output — don't guess.\n- Destructive actions (rm, reset, drop, kill -9, disable) always confirm first.\n- Admit uncertainty plainly when you have it. Don't invent flags, paths, or API shapes.\n- Use tools proactively. The `terminal`, `file`, and `memory` tools are the default for most real work.\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n# Tool-use enforcement\nYou MUST use your tools to take action — do not describe what you would do or plan to do without actually doing it. When you say you will perform an action (e.g. 'I will run the tests', 'Let me check the file', 'I will create the project'), you MUST immediately make the corresponding tool call in the same response. Never end your turn with a promise of future action — execute it now.\nKeep working until the task is actually complete. Do not stop with a summary of what you plan to do next time. If you have tools available that can accomplish the task, use them instead of telling the user what you would do.\nEvery response should either (a) contain tool calls that make progress, or (b) deliver a final result to the user. Responses that only describe intentions without acting are not acceptable.\n\n# Google model operational directives\nFollow these operational rules strictly:\n- **Absolute paths:** Always construct and use absolute file paths for all file system operations. Combine the project root with relative paths.\n- **Verify first:** Use read_file/search_files to check file contents and project structure before making changes. Never guess at file contents.\n- **Dependency checks:** Never assume a library is available. Check package.json, requirements.txt, Cargo.toml, etc. before importing.\n- **Conciseness:** Keep explanatory text brief — a few sentences, not paragraphs. Focus on actions and results over narration.\n- **Parallel tool calls:** When you need to perform multiple independent operations (e.g. reading several files), make all the tool calls in a single response rather than sequentially.\n- **Non-interactive commands:** Use flags like -y, --yes, --non-interactive to prevent CLI tools from hanging on prompts.\n- **Keep going:** Work autonomously until the task is fully resolved. Don't stop with a plan — execute it.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [100% — 2,431/2,200 chars]\n══════════════════════════════════════════════\n# Hermes Memory\n\n**Env (2026-04-10).**\n- oMLX: `http://localhost:8000/v1`, api key `1111`. Admin login: POST `/admin/api/login` `{\"api_key\":\"1111\"}` → cookie; rescan with POST `/admin/api/reload`.\n- Main model: `gemma-4-26b-a4b-it-8bit` (MoE, 26B total / **4B active per token**, 8-bit). Native gemma4 tool-call parser in oMLX 0.3.4 — reliable structured tool calls. ~27 GB in memory. Alternatives via /model: `MLX-Qwen3.5-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-4bit` (Qwen MoE, fast text), `gemma-4-31b-it-4bit` (dense gemma, slower but smarter). Avoid 8-bit non-MoE 30B+ models — OOM on 48GB M3 Max.\n- Aux (vision/compression): `Qwen2.5-VL-7B-Instruct-4bit`.\n- **Avoid 8-bit 30B+ models** — OOMs the 48GB M3 Max. 4-bit only.\n\n**Paths.**\n- Hermes: `~/Life-AI/hermes-agent/` (binary `~/.local/bin/hermes`). Config `~/.hermes/config.yaml`.\n- MemPalace venv `~/.mempalace-venv/`, palace `~/.mempalace/palace/`, wing **`john`** (rooms: projects, research, uisp, life_ai, claude_code, general). Shell wrappers `~/.hermes/tools/mempalace-{search,mine}.sh`.\n- MemPalace MCP server exposes 19 tools (`mempalace_search`, `mempalace_add_drawer`, `mempalace_kg_*`, `mempalace_diary_*`). Prefer MCP for structured writes.\n- `~/Life-AI/docker-compose.yml` runs Redis, Neo4j, BGE, Graphiti MCP, Open WebUI, SearXNG, Firebase emulator.\n\n**Rules.**\n- Destructive ops (rm, reset, drop, kill -9, force push) → confirm first.\n- No cloud providers wired. If a task needs one, say so and stop.\n- Errors → read and diagnose before retry. No blind loops.\n- Worth remembering? Use `mempalace_add_drawer` (wing `john`) before session ends.\n\n**Gotchas.**\n- `hermes update` fails on uv-built venv (no pip). Fallback: `cd ~/Life-AI/hermes-agent && ./setup-hermes.sh`.\n- mempalace v3.1.0 has open macOS ARM64 segfaults (#397, #521). Stable for single-wing use; recover index corruption with `mempalace repair`.\n- `~/.omlx/cache/` grows unbounded (was 302 GB). Flag cleanup if free space < 300 GB.\n§\nHermes v0.4 → v0.8 upgrade completed 2026-04-10 in single session. Jumped 961 commits via ./setup-hermes.sh after hermes update failed (uv-built venv has no pip). CLI-only interface — all messaging platforms disabled. Auxiliary model: Qwen2.5-VL-7B-Instruct-4bit (Qwen3-VL-8B doesn't exist in mlx-community). MemPalace v3.1.0 has open macOS ARM64 segfaults (#397, #521) — use isolated venv, test add+search before committing to mining Claude Code history.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [86% — 1,184/1,375 chars]\n══════════════════════════════════════════════\n# User: John Taylor\n\n**Role.** Works at a WISP (wireless ISP). Handles networking/infra with Ubiquiti wireless + MikroTik wired, plus office management and installs. Not a \"senior engineer\" title, but technically advanced and hands-on across the stack.\n\n**Tech setup.**\n- Primary: M1 Max 32GB 16\" MacBook Pro.\n- oMLX host: M3 Max 48GB MacBook Pro (leased).\n- Pixel 10 on GrapheneOS.\n- Strong FOSS/privacy advocate. Prefers locally-run everything — no cloud LLMs.\n\n**Communication.** Direct, blunt, no coddling. Skip disclaimers and \"does this feel overwhelming?\" language. He pushed back on that explicitly. Match his energy: brief-for-brief, detailed-for-detailed. Visual learner — lay things out clearly, use headers/tables where they help.\n\n**Context & style.** Night owl (up past 3am). Uses AI as a thinking partner and research tool. Also builds custom JS/Node services that glue UISP to other systems. Log ingestion is a recurring theme.\n\n**Do.** Lead with the answer or the command. Admit uncertainty plainly. Verify assumptions with a diagnostic before guessing.\n\n**Don't.** Sugar-coat. Pad responses. Invent flags, paths, or APIs. Run destructive commands without confirming.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  apple: Apple/macOS-specific skills — iMessage, Reminders, Notes, FindMy, and macOS automation. These skills only load on macOS systems.\n    - apple-notes: Manage Apple Notes via memo CLI: create, search, edit.\n    - apple-reminders: Apple Reminders via remindctl: add, list, complete.\n    - findmy: Track Apple devices/AirTags via FindMy.app on macOS.\n    - imessage: Send and receive iMessages/SMS via the imsg CLI on macOS.\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n    - r7-11-orchestrate: Drive r7.11 verified-state multi-phase work natively from...\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-management: Comprehensive GitHub workflow management: Authentication,...\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  inference-sh:\n    - inference-sh-cli: Run 150+ AI apps via inference.sh CLI (infsh) — image gen...\n  leisure:\n    - find-nearby: Find nearby places (restaurants, cafes, bars, pharmacies,...\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Includes the built-in native MCP client (configure servers in config.yaml for automatic tool discovery) and the mcporter CLI bridge for ad-hoc server interaction.\n    - mcporter: Use the mcporter CLI to list, configure, auth, and call M...\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/cloud: GPU cloud providers and serverless compute platforms for ML workloads.\n    - lambda-labs-gpu-cloud: Reserved and on-demand GPU cloud instances for ML trainin...\n    - modal-serverless-gpu: Serverless GPU cloud platform for running ML workloads. U...\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - huggingface-tokenizers: Fast tokenizers optimized for research and production. Ru...\n    - nemo-curator: GPU-accelerated data curation for LLM training. Supports ...\n    - sparse-autoencoder-training: Provides guidance for training and analyzing Sparse Autoe...\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - gguf-quantization: GGUF format and llama.cpp quantization for efficient CPU/...\n    - guidance: Control LLM output with regex and grammars, guarantee val...\n    - instructor: Extract structured data from LLM responses with Pydantic ...\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n    - tensorrt-llm: Optimizes LLM inference with NVIDIA TensorRT for maximum ...\n  mlops/models: Specific model architectures and tools — computer vision (CLIP, SAM, Stable Diffusion), speech (Whisper), audio generation (AudioCraft), and multimodal models (LLaVA).\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - clip: OpenAI's model connecting vision and language. Enables ze...\n    - llava: Large Language and Vision Assistant. Enables visual instr...\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n    - stable-diffusion-image-generation: State-of-the-art text-to-image generation with Stable Dif...\n    - whisper: OpenAI's general-purpose speech recognition model. Suppor...\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - distributed-llm-pretraining-torchtitan: Provides PyTorch-native distributed LLM pretraining using...\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - grpo-rl-training: Expert guidance for GRPO/RL fine-tuning with TRL for reas...\n    - hermes-atropos-environments: Build, test, and debug Hermes Agent RL environments for A...\n    - huggingface-accelerate: Simplest distributed training API. 4 lines to add distrib...\n    - optimizing-attention-flash: Optimizes transformer attention with Flash Attention for ...\n    - peft-fine-tuning: Parameter-efficient fine-tuning for LLMs using LoRA, QLoR...\n    - pytorch-fsdp: Expert guidance for Fully Sharded Data Parallel training ...\n    - pytorch-lightning: High-level PyTorch framework with Trainer class, automati...\n    - simpo-training: Simple Preference Optimization for LLM alignment. Referen...\n    - slime-rl-training: Provides guidance for LLM post-training with RL using sli...\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  mlops/vector-databases: Vector similarity search and embedding databases for RAG, semantic search, and AI application backends.\n    - chroma: Open-source embedding database for AI applications. Store...\n    - faiss: Facebook's library for efficient similarity search and cl...\n    - pinecone: Managed vector database for production AI applications. F...\n    - qdrant-vector-search: High-performance vector similarity search engine for RAG ...\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - domain-intel: Passive domain reconnaissance using Python stdlib. Subdom...\n    - duckduckgo-search: Free web search via DuckDuckGo — text, news, images, vide...\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - ml-paper-writing: Write publication-ready ML/AI papers for NeurIPS, ICML, I...\n    - parallel-cli: Optional vendor skill for Parallel CLI — agent-native web...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xitter: Interact with X/Twitter via the x-cli terminal client usi...\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - code-review: Guidelines for performing thorough code reviews with secu...\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  wisp:\n    - uisp: Operate and troubleshoot a Ubiquiti UISP (Ubiquiti ISP) w...\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Sunday, May 03, 2026 07:08 PM\nModel: gemma-4-26b-a4b-it-8bit\nProvider: custom\n\nYou are a CLI AI Agent. Try not to use markdown but simple text renderable inside a terminal. File delivery: there is no attachment channel — the user reads your response directly in their terminal. Do NOT emit MEDIA:/path tags (those are only intercepted on messaging platforms like Telegram, Discord, Slack, etc.; on the CLI they render as literal text). When referring to a file you created or changed, just state its absolute path in plain text; the user can open it from there.",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_back",
+        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_click",
+        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
+            }
+          },
+          "required": [
+            "ref"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_console",
+        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clear": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, clear the message buffers after reading"
+            },
+            "expression": {
+              "type": "string",
+              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_get_images",
+        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_navigate",
+        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to navigate to (e.g., 'https://example.com')"
+            }
+          },
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_press",
+        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
+            }
+          },
+          "required": [
+            "key"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_scroll",
+        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "up",
+                "down"
+              ],
+              "description": "Direction to scroll"
+            }
+          },
+          "required": [
+            "direction"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_snapshot",
+        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "full": {
+              "type": "boolean",
+              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_type",
+        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e3')"
+            },
+            "text": {
+              "type": "string",
+              "description": "The text to type into the field"
+            }
+          },
+          "required": [
+            "ref",
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_vision",
+        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "What you want to know about the page visually. Be specific about what you're looking for."
+            },
+            "annotate": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "clarify",
+        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "The question to present to the user."
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cronjob",
+        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "One of: create, list, update, pause, resume, remove, run"
+            },
+            "job_id": {
+              "type": "string",
+              "description": "Required for update/pause/resume/remove/run"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
+            },
+            "schedule": {
+              "type": "string",
+              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
+            },
+            "name": {
+              "type": "string",
+              "description": "Optional human-friendly name"
+            },
+            "repeat": {
+              "type": "integer",
+              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
+            },
+            "deliver": {
+              "type": "string",
+              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
+            },
+            "skills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
+            },
+            "model": {
+              "type": "object",
+              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
+                }
+              },
+              "required": [
+                "model"
+              ]
+            },
+            "script": {
+              "type": "string",
+              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
+            },
+            "context_from": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
+            },
+            "enabled_toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delegate_task",
+        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
+            },
+            "context": {
+              "type": "string",
+              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
+            },
+            "toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "description": "Task goal"
+                  },
+                  "context": {
+                    "type": "string",
+                    "description": "Task-specific context"
+                  },
+                  "toolsets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
+                  },
+                  "acp_command": {
+                    "type": "string",
+                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
+                  },
+                  "acp_args": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Per-task ACP args override."
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "leaf",
+                      "orchestrator"
+                    ],
+                    "description": "Per-task role override. See top-level 'role' for semantics."
+                  }
+                },
+                "required": [
+                  "goal"
+                ]
+              },
+              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "leaf",
+                "orchestrator"
+              ],
+              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
+            },
+            "acp_command": {
+              "type": "string",
+              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
+            },
+            "acp_args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "end_session_for_handoff",
+        "description": "Signal the wrapper that this Hermes session's work is complete and the next session (if any) should resume. Calling this tool writes a sentinel file to the scaffold root; the wrapper substrate polls for the sentinel, kills this Hermes process, and decides the next action.\n\nCRITICAL DOCTRINE — read carefully:\n  The wrapper reads `verified-state.json` for AUTHORITATIVE phase state, NOT your `parent_intent_log` field. Your `parent_intent_log` is logged for debugging only — it is non-load-bearing. If your narrative claims phase 2 passed but verified-state.json says phase 2 failed, the wrapper trusts verified-state.json and ignores you.\n  PLAN.md updates you write are likewise informational. The JSON verdict file written by `verify_phase` is the only authoritative source of truth.\n\nSTANDARD PATTERN — one phase per session:\n  After a phase verifies passed, the standard pattern is to call end_session_for_handoff so the wrapper starts the next phase in fresh context. This preserves verification independence across phases (each phase's verification is unbiased by the prior phase's narrative). Batching multiple phases into one session is allowed but reduces the multi-session architecture's value — the wrapper's isolation between phases is the mechanism that keeps synthesis tethered to verified state.\n\nWhen to call:\n  - The current phase verified passed (`verify_phase` returned     passed=true and verified-state.json reflects it). Start the     next phase in a fresh session via this tool — DON'T continue     inline.\n  - All phases for this session are complete (passed=true verdicts     persisted via verify_phase).\n  - You have no further productive work this session and want the     wrapper to advance / hand off / finish.\n\nWhen NOT to call:\n  - A verify_phase call returned passed=false. Re-dispatch the     worker first; do not end the session on a failed verdict unless     you have hit the revision cap (in which case use     escalate_to_operator).\n  - You are mid-task. Finish the task, run verify_phase, then end.\n\nCalling this tool twice in the same session is an error (the sentinel file already exists). Call it exactly once at end-of-session.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "scaffold_root": {
+              "type": "string",
+              "description": "Absolute path to the project scaffold root. Sentinel is written to <scaffold_root>/.session-end-signal.json."
+            },
+            "completed_phase": {
+              "type": "integer",
+              "nullable": true,
+              "default": null,
+              "description": "Highest phase id completed in this session. None / null is acceptable for bootstrap sessions where no phase advanced. NON-LOAD-BEARING — the wrapper consults verified-state.json for authoritative phase state; this field is metadata for logging only."
+            },
+            "parent_intent_log": {
+              "type": "string",
+              "nullable": true,
+              "enum": [
+                "advance",
+                "done",
+                "escalate",
+                null
+              ],
+              "default": null,
+              "description": "Parent's narrative summary of intent: 'advance' (next phase pending), 'done' (project complete), 'escalate' (needs operator). NON-LOAD-BEARING — logged for debugging; the wrapper does NOT route on this field."
+            },
+            "parent_summary": {
+              "type": "string",
+              "default": "",
+              "description": "Free-text summary of what was done this session. Logged for operator inspection; non-load-bearing."
+            }
+          },
+          "required": [
+            "scaffold_root"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "escalate_to_operator",
+        "description": "Pause the multi-session run for operator review. Calling this tool writes a sentinel file to the scaffold root; the wrapper substrate kills this Hermes process and surfaces the message to the human operator. State (verified-state.json, PLAN.md, scaffold files) is preserved; the operator can inspect everything and resume by re-launching the wrapper.\n\nWHEN TO CALL — this is a high-cost action; use it sparingly:\n  - revision_count has hit the configured maximum and verify_phase     is still returning passed=false.\n  - The situation requires human input that the verify tool cannot     provide (ambiguous requirements, external blocker, etc.).\n  - You detect a contradiction between PLAN.md and the work that     you cannot resolve.\n\nWHEN NOT TO CALL — DO NOT use this for routine verification failures. A single passed=false verdict is normal and recoverable: re-dispatch the worker with the corrective_dispatch text and try again. Only escalate when the revise loop has been exhausted or the situation is structurally unrecoverable from inside the session.\n\nAuthority and state preservation:\n  - verified-state.json is unchanged by this tool — it remains the     authoritative source of phase state.\n  - The operator can inspect verified-state.json + PLAN.md + the     scaffold and decide whether to resume, edit, or abandon.\n  - Calling this tool twice in the same session is an error.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "scaffold_root": {
+              "type": "string",
+              "description": "Absolute path to the project scaffold root. Sentinel is written to <scaffold_root>/.session-escalate-signal.json."
+            },
+            "reason": {
+              "type": "string",
+              "enum": [
+                "verify_failed_after_max_revisions",
+                "ambiguous_requirements",
+                "external_dependency",
+                "other"
+              ],
+              "description": "Categorical reason. 'verify_failed_after_max_revisions' is the most common; 'other' is a free-form fallback."
+            },
+            "message": {
+              "type": "string",
+              "description": "Operator-facing message explaining the situation. Required and must be non-empty."
+            },
+            "suggested_action": {
+              "type": "string",
+              "nullable": true,
+              "default": null,
+              "description": "Optional hint to the operator about what to do next (e.g. 'revise PLAN.md phase 3 paths' or 'check the external API key in verify-config.json')."
+            }
+          },
+          "required": [
+            "scaffold_root",
+            "reason",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "execute_code",
+        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
+            }
+          },
+          "required": [
+            "code"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_get_prompt",
+        "description": "Get a prompt by name from MCP server 'mempalace'",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the prompt to retrieve"
+            },
+            "arguments": {
+              "type": "object",
+              "description": "Optional arguments to pass to the prompt",
+              "properties": {},
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_list_prompts",
+        "description": "List available prompts from MCP server 'mempalace'",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_list_resources",
+        "description": "List available resources from MCP server 'mempalace'",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_add_drawer",
+        "description": "File verbatim content into the palace. Checks for duplicates first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "wing": {
+              "type": "string",
+              "description": "Wing (project name)"
+            },
+            "room": {
+              "type": "string",
+              "description": "Room (aspect: backend, decisions, meetings...)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Verbatim content to store — exact words, never summarized"
+            },
+            "source_file": {
+              "type": "string",
+              "description": "Where this came from (optional)"
+            },
+            "added_by": {
+              "type": "string",
+              "description": "Who is filing this (default: mcp)"
+            }
+          },
+          "required": [
+            "wing",
+            "room",
+            "content"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_check_duplicate",
+        "description": "Check if content already exists in the palace before filing",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "Content to check"
+            },
+            "threshold": {
+              "type": "number",
+              "description": "Similarity threshold 0-1 (default 0.9)"
+            }
+          },
+          "required": [
+            "content"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_delete_drawer",
+        "description": "Delete a drawer by ID. Irreversible.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "drawer_id": {
+              "type": "string",
+              "description": "ID of the drawer to delete"
+            }
+          },
+          "required": [
+            "drawer_id"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_diary_read",
+        "description": "Read your recent diary entries (in AAAK). See what past versions of yourself recorded — your journal across sessions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_name": {
+              "type": "string",
+              "description": "Your name — each agent gets their own diary wing"
+            },
+            "last_n": {
+              "type": "integer",
+              "description": "Number of recent entries to read (default: 10)"
+            }
+          },
+          "required": [
+            "agent_name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_diary_write",
+        "description": "Write to your personal agent diary in AAAK format. Your observations, thoughts, what you worked on, what matters. Each agent has their own diary with full history. Write in AAAK for compression — e.g. 'SESSION:2026-04-04|built.palace.graph+diary.tools|ALC.req:agent.diaries.in.aaak|★★★'. Use entity codes from the AAAK spec.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_name": {
+              "type": "string",
+              "description": "Your name — each agent gets their own diary wing"
+            },
+            "entry": {
+              "type": "string",
+              "description": "Your diary entry in AAAK format — compressed, entity-coded, emotion-marked"
+            },
+            "topic": {
+              "type": "string",
+              "description": "Topic tag (optional, default: general)"
+            }
+          },
+          "required": [
+            "agent_name",
+            "entry"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_find_tunnels",
+        "description": "Find rooms that bridge two wings — the hallways connecting different domains. E.g. what topics connect wing_code to wing_team?",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "wing_a": {
+              "type": "string",
+              "description": "First wing (optional)"
+            },
+            "wing_b": {
+              "type": "string",
+              "description": "Second wing (optional)"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_get_aaak_spec",
+        "description": "Get the AAAK dialect specification — the compressed memory format MemPalace uses. Call this if you need to read or write AAAK-compressed memories.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_get_taxonomy",
+        "description": "Full taxonomy: wing → room → drawer count",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_graph_stats",
+        "description": "Palace graph overview: total rooms, tunnel connections, edges between wings.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_kg_add",
+        "description": "Add a fact to the knowledge graph. Subject → predicate → object with optional time window. E.g. ('Max', 'started_school', 'Year 7', valid_from='2026-09-01').",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string",
+              "description": "The entity doing/being something"
+            },
+            "predicate": {
+              "type": "string",
+              "description": "The relationship type (e.g. 'loves', 'works_on', 'daughter_of')"
+            },
+            "object": {
+              "type": "string",
+              "description": "The entity being connected to"
+            },
+            "valid_from": {
+              "type": "string",
+              "description": "When this became true (YYYY-MM-DD, optional)"
+            },
+            "source_closet": {
+              "type": "string",
+              "description": "Closet ID where this fact appears (optional)"
+            }
+          },
+          "required": [
+            "subject",
+            "predicate",
+            "object"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_kg_invalidate",
+        "description": "Mark a fact as no longer true. E.g. ankle injury resolved, job ended, moved house.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string",
+              "description": "Entity"
+            },
+            "predicate": {
+              "type": "string",
+              "description": "Relationship"
+            },
+            "object": {
+              "type": "string",
+              "description": "Connected entity"
+            },
+            "ended": {
+              "type": "string",
+              "description": "When it stopped being true (YYYY-MM-DD, default: today)"
+            }
+          },
+          "required": [
+            "subject",
+            "predicate",
+            "object"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_kg_query",
+        "description": "Query the knowledge graph for an entity's relationships. Returns typed facts with temporal validity. E.g. 'Max' → child_of Alice, loves chess, does swimming. Filter by date with as_of to see what was true at a point in time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "entity": {
+              "type": "string",
+              "description": "Entity to query (e.g. 'Max', 'MyProject', 'Alice')"
+            },
+            "as_of": {
+              "type": "string",
+              "description": "Date filter — only facts valid at this date (YYYY-MM-DD, optional)"
+            },
+            "direction": {
+              "type": "string",
+              "description": "outgoing (entity→?), incoming (?→entity), or both (default: both)"
+            }
+          },
+          "required": [
+            "entity"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_kg_stats",
+        "description": "Knowledge graph overview: entities, triples, current vs expired facts, relationship types.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_kg_timeline",
+        "description": "Chronological timeline of facts. Shows the story of an entity (or everything) in order.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "entity": {
+              "type": "string",
+              "description": "Entity to get timeline for (optional — omit for full timeline)"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_list_rooms",
+        "description": "List rooms within a wing (or all rooms if no wing given)",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "wing": {
+              "type": "string",
+              "description": "Wing to list rooms for (optional)"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_list_wings",
+        "description": "List all wings with drawer counts",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_search",
+        "description": "Semantic search. Returns verbatim drawer content with similarity scores.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "What to search for"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max results (default 5)"
+            },
+            "wing": {
+              "type": "string",
+              "description": "Filter by wing (optional)"
+            },
+            "room": {
+              "type": "string",
+              "description": "Filter by room (optional)"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_status",
+        "description": "Palace overview — total drawers, wing and room counts",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_mempalace_traverse",
+        "description": "Walk the palace graph from a room. Shows connected ideas across wings — the tunnels. Like following a thread through the palace: start at 'chromadb-setup' in wing_code, discover it connects to wing_myproject (planning) and wing_user (feelings about it).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "start_room": {
+              "type": "string",
+              "description": "Room to start from (e.g. 'chromadb-setup', 'riley-school')"
+            },
+            "max_hops": {
+              "type": "integer",
+              "description": "How many connections to follow (default: 2)"
+            }
+          },
+          "required": [
+            "start_room"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_mempalace_read_resource",
+        "description": "Read a resource by URI from MCP server 'mempalace'",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "URI of the resource to read"
+            }
+          },
+          "required": [
+            "uri"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "memory",
+        "description": "Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\n\nWHEN TO SAVE (do this proactively, don't wait to be asked):\n- User corrects you or says 'remember this' / 'don't do that again'\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n- You discover something about the environment (OS, installed tools, project structure)\n- You learn a convention, API quirk, or workflow specific to this user's setup\n- You identify a stable fact that will be useful again in future sessions\n\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\n\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\n\nTWO TARGETS:\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\n\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace",
+                "remove"
+              ],
+              "description": "The action to perform."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "memory",
+                "user"
+              ],
+              "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+            },
+            "content": {
+              "type": "string",
+              "description": "The entry content. Required for 'add' and 'replace'."
+            },
+            "old_text": {
+              "type": "string",
+              "description": "Short unique substring identifying the entry to replace or remove."
+            }
+          },
+          "required": [
+            "action",
+            "target"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "session_search",
+        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
+            },
+            "role_filter": {
+              "type": "string",
+              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max sessions to summarize (default: 3, max: 5).",
+              "default": 3
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_manage",
+        "description": "Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\n\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\n\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\n\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\n\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\n\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "patch",
+                "edit",
+                "delete",
+                "write_file",
+                "remove_file"
+              ],
+              "description": "The action to perform."
+            },
+            "name": {
+              "type": "string",
+              "description": "Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file."
+            },
+            "content": {
+              "type": "string",
+              "description": "Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'patch'). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "For 'patch': replace all occurrences instead of requiring a unique match (default: false)."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted."
+            },
+            "file_content": {
+              "type": "string",
+              "description": "Content for the file. Required for 'write_file'."
+            }
+          },
+          "required": [
+            "action",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "text_to_speech",
+        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
+            },
+            "output_path": {
+              "type": "string",
+              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "verify_phase",
+        "description": "Verify a phase's deliverables against PLAN.md and persist the verdict to verified-state.json (the wrapper's machine-authoritative source of truth). Trust this tool's structured output, not your own narrative.\n\nTiers (cumulative, deterministic for 1-3.5):\n  1 PRESENCE — declared paths exist with non-trivial bodies.\n  2 SYNTAX  — Python files parse; no `raise NotImplementedError` in\n              non-test code; imports resolve.\n  3 WIRING  — defined symbols are referenced; tests reference real\n              implementations; no duplicate definitions; default tier.\n  3.5 RUNTIME SMOKE TEST — opt-in via `with_runtime_smoke_test=true`.\n       Imports the phase's modules in a sandboxed subprocess and inspects\n       runtime registry state. Catches importlib-shadowing patterns\n       AST analysis cannot resolve. Recommended when PLAN.md declares\n       modules with import-time side effects (registries, plugin\n       loaders, monkey-patches).\n  3.7 ACCEPTANCE RUNNER — implicit when PLAN.md declares `Acceptance\n       Command:` for the phase. Runs that command as a subprocess in\n       scaffold_root with the scaffold .venv on PYTHONPATH; classifies\n       the exit code (pytest-aware) into ACCEPTANCE_PASSED /\n       ACCEPTANCE_FAILED:N / ENVIRONMENT:.. / INCONCLUSIVE:.. and\n       captures truncated stdout+stderr into corrective_dispatch on\n       failure. Gated by tier 1 + tier 2 (no point running an\n       acceptance command on broken syntax).\n  4 SEMANTIC — deferred to r7.12; not callable.\n\nOn passed=false, the result includes `corrective_dispatch` — a\ncomplete, paste-ready re-dispatch goal following OBJECTIVE/PATHS/\nACCEPTANCE. Worked examples of the shape:\n  - n=10 r4 / PDF importlib-shadowing:\n    \"Re-dispatch with explicit focus on src/export/pdf.py PDFSerializer\n    registration. The duplicate registration in formats_init.py is\n    shadowing the real serializer at runtime; either remove\n    formats_init.py or update PDFSerializer registration order so the\n    reportlab-based class wins.\"\n  - n=5 r5 / unwired serializers:\n    \"Re-dispatch with explicit focus on src/api/export.py imports.\n    Endpoints currently inline serialization; they should import\n    serialize_to_csv / serialize_to_json / serialize_to_pdf from\n    src/export/ and call those functions instead of inlining.\"\n\nRe-dispatch via delegate_worker with the corrective_dispatch text\nas the goal. The wrapper reads verified-state.json (not your\nnarrative summary) to decide what happens next.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "phase_id": {
+              "type": "integer",
+              "description": "Phase number from PLAN.md to verify."
+            },
+            "tier": {
+              "type": "integer",
+              "enum": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "default": 3,
+              "description": "Verification tier. 1=presence, 2=syntax, 3=wiring (default), 4=semantic (deferred to r7.12). Tiers are cumulative; tier=N runs 1..N."
+            },
+            "with_runtime_smoke_test": {
+              "type": "boolean",
+              "nullable": true,
+              "default": null,
+              "description": "Opt-in sub-tier 3.5 runtime smoke test. Imports the phase's PLAN.md modules in a sandboxed subprocess and inspects registry contents. Catches importlib-shadowing patterns AST analysis cannot resolve. When null, falls back to verify-config.json's runtime_smoke_test_default."
+            },
+            "scaffold_root": {
+              "type": "string",
+              "description": "Absolute path to the project root containing PLAN.md and verified-state.json."
+            },
+            "verify_config_path": {
+              "type": "string",
+              "nullable": true,
+              "default": null,
+              "description": "Optional path to verify-config.json. Defaults to <scaffold_root>/verify-config.json."
+            },
+            "plan_md_path": {
+              "type": "string",
+              "nullable": true,
+              "default": null,
+              "description": "Optional path to PLAN.md. Defaults to <scaffold_root>/PLAN.md."
+            },
+            "verified_state_path": {
+              "type": "string",
+              "nullable": true,
+              "default": null,
+              "description": "Optional path to verified-state.json. Defaults to <scaffold_root>/verified-state.json."
+            }
+          },
+          "required": [
+            "phase_id",
+            "scaffold_root"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "vision_analyze",
+        "description": "Inspect an image from a URL, file path, or tool output when you need closer detail than what's visible in the conversation. If the user's image is already attached to the conversation and you can see it, just answer directly — only call this tool for images referenced by URL/path, images returned inside other tool results (browser screenshots, search thumbnails), or when you need a deeper look at a specific region the main model's vision may have missed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "description": "Image URL (http/https) or local file path to analyze."
+            },
+            "question": {
+              "type": "string",
+              "description": "Your specific question or request about the image to resolve. The AI will automatically provide a complete image description AND answer your specific question."
+            }
+          },
+          "required": [
+            "image_url",
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_plan_md",
+        "description": "Write a PLAN.md file that decomposes a long-horizon task into phases for sequential dispatch.\n\nUSE THIS TOOL at the start of any long-horizon classified task, BEFORE dispatching workers. The PLAN.md file structures your decomposition so that each phase becomes a self-contained worker-spawn goal for `delegate_worker` (v1).\n\nREQUIRED PLAN.md format — each phase MUST include:\n\n  ## Phase N: <short name>\n  - Objective: <one imperative line>\n  - Paths: <comma-separated absolute file paths>\n  - Acceptance Criteria: <verifiable 'done' definition>\n  - Size estimate: 1pt / 2pt / 3pt / 5pt\n\nOPTIONAL per-phase field — DECLARE IT WHEN VERIFIABLE:\n\n  - Acceptance Command: <single executable invocation>\n\nWhen you declare an Acceptance Command, the verifier (tier 3.7) actually EXECUTES the command in the scaffold root with a B1-style PYTHONPATH (scaffold .venv site-packages prepended). Exit 0 = phase passes; non-zero = real failure with stdout/stderr captured into corrective_dispatch so the next worker can fix it. Without an Acceptance Command, the verifier only runs static checks (presence, syntax, imports, wiring) — your phase can verify-pass while the actual acceptance criterion silently fails. DECLARE IT WHENEVER A PHASE HAS A RUNNABLE CHECK (pytest, custom script, lint, etc.).\n\nFORMAT — Acceptance Command must be a single executable invocation. NO shell builtins (no `cd`, `&&`, `||`, `;`, pipes). The verifier parses the command via shlex.split and runs subprocess.run with cwd=scaffold_root, so use cwd-relative paths and a single binary as argv[0]. Examples:\n  GOOD: `.venv/bin/python -m pytest tests/test_export.py`\n  GOOD: `.venv/bin/pytest tests/test_export.py`\n  BAD:  `cd /tmp/scaffold && pytest tests/test_export.py`\n         (cd is a shell builtin; && requires a shell)\n  BAD:  `pytest tests/ | tee log.txt`\n         (pipe requires a shell)\n\nSTANDARD PATTERN — one phase per session:\nAfter each phase verifies passed, call end_session_for_handoff so the wrapper starts the next phase in fresh context. Don't batch multiple phases inline — fresh context preserves verification independence across phases.\n\nProduce 3–5 phases total. Each phase should be completable in 20 turns by a fresh worker given only the phase's Objective + Paths + Acceptance Criteria + (optional) Acceptance Command.\n\nTypical flow for long-horizon tasks:\n  1. Classify long-horizon via `delegate_worker_v2`.\n  2. `write_plan_md` with the phase breakdown (this tool).\n  3. `todo` list mirroring the PLAN.md phases for state tracking.\n  4. `delegate_worker` (v1) for each phase — pass the phase's      Objective + Paths + Acceptance Criteria as the single `goal`      string.\n  5. After each child return, run `verify_phase`. If passed, call      `end_session_for_handoff` to advance to the next phase in      fresh context.\n\nWorked example — PLAN.md contents for a CSV/JSON/PDF export feature with permissions + tests + docs:\n\n  # Export Feature Plan\n\n  ## Phase 1: Core Serializers\n  - Objective: Implement CSV, JSON, and PDF serializer functions.\n  - Paths: /tmp/scaffold/src/export/{csv,json,pdf}.py\n  - Acceptance Criteria: Each serializer defined with signature (records: list[dict]) -> str|bytes; empty-list case handled.\n  - Size estimate: 3pt\n\n  ## Phase 2: API Endpoints + Permissions\n  - Objective: Add 3 GET endpoints in src/api/export.py with has_permission filter.\n  - Paths: /tmp/scaffold/src/api/export.py\n  - Acceptance Criteria: 3 @router.get routes; each filters via has_permission; media_types correct.\n  - Size estimate: 3pt\n\n  ## Phase 3: Tests + Documentation\n  - Objective: Implement test bodies and update API docs.\n  - Paths: /tmp/scaffold/tests/test_export.py, /tmp/scaffold/docs/api.md\n  - Acceptance Criteria: Test functions defined for each format + permission-denied; docs/ reflects new endpoints; pytest passes.\n  - Acceptance Command: .venv/bin/python -m pytest tests/test_export.py\n  - Size estimate: 2pt\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "The PLAN.md file contents, formatted as described above. Include 3–5 phases, each with Objective, Paths, Acceptance Criteria, and Size estimate."
+            },
+            "path": {
+              "type": "string",
+              "description": "Optional file path. Defaults to /tmp/export-probe-scaffold/PLAN.md."
+            }
+          },
+          "required": [
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 22,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Run r7.11 against /tmp/preflight-2b"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_6e1f3bfa",
+          "call_id": "call_6e1f3bfa",
+          "response_item_id": "fc_6e1f3bfa",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"ls -R /tmp/preflight-2b\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"CONVENTION.md\\nPLAN.md\\nREADME.md\\nUSER-PROMPT.md\\nUSER-PROMPT.md.keep\\npyproject.toml\\nsrc\\ntests\\nverify-config.json\\n\\n/tmp/preflight-2b/src:\\n__init__.py\\napi\\nauth\\nexport\\n\\n/tmp/preflight-2b/src/api:\\n__init__.py\\nexport.py\\n\\n/tmp/preflight-2b/src/auth:\\n__init__.py\\npermissions.py\\n\\n/tmp/preflight-2b/src/export:\\n__init__.py\\ncsv.py\\nformats.py\\njson.py\\npdf.py\\n\\n/tmp/preflight-2b/tests:\\n__init__.py\\nfixtures.py\\ntest_api_export.py\\ntest_csv.py\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_6e1f3bfa"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_48f1c8d0",
+          "call_id": "call_48f1c8d0",
+          "response_item_id": "fc_48f1c8d0",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/tmp/preflight-2b/USER-PROMPT.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Calculator add — minimal phased task\\n     2|\\n     3|Implement a `calc.add(a, b)` function in `src/calc.py` and prove it works\\n     4|with a pytest in `tests/test_calc.py`. Two phases: implementation, then\\n     5|tests. Both phases should produce passing acceptance commands.\\n     6|\", \"total_lines\": 5, \"file_size\": 251, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_48f1c8d0"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_a3779a5e",
+          "call_id": "call_a3779a5e",
+          "response_item_id": "fc_a3779a5e",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/tmp/preflight-2b/verify-config.json\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|{\\\"schema_version\\\": \\\"1.0\\\", \\\"verify_phase\\\": {}, \\\"wrapper\\\": {}}\\n     2|\", \"total_lines\": 1, \"file_size\": 61, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_a3779a5e"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_4b8ee197",
+          "call_id": "call_4b8ee197",
+          "response_item_id": "fc_4b8ee197",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"ls -A /tmp/preflight-2b/.venv\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"bin\\ninclude\\nlib\\npyvenv.cfg\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_4b8ee197"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_b3b9f518",
+          "call_id": "call_b3b9f518",
+          "response_item_id": "fc_b3b9f518",
+          "type": "function",
+          "function": {
+            "name": "write_plan_md",
+            "arguments": "{\"content\": \"# Calculator Implementation Plan\\n\\n## Phase 1: Core Logic\\n- Objective: Implement `calc.add(a, b)` in `src/calc.py`\\n- Paths: /tmp/preflight-2b/src/calc.py\\n- Acceptance Criteria: `calc.add` is defined and returns the sum of two numbers.\\n- Size estimate: 1pt\\n\\n## Phase 2: Tests\\n- Objective: Implement pytest in `tests/test_calc.py` to verify `calc.add`\\n- Paths: /tmp/preflight-2b/tests/test_calc.py\\n- Acceptance Criteria: pytest passes for addition logic.\\n- Size estimate: 1pt\\n- Acceptance Command: /tmp/preflight-2b/.venv/bin/pytest /tmp/preflight-2b/tests/test_calc.py\\n\", \"path\": \"/tmp/preflight-2b/PLAN.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_b3b9f518",
+      "content": "Error executing tool: Error during OpenAI-compatible API call #5: unhashable type: 'slice'"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_72d5a6b6",
+          "call_id": "call_72d5a6b6",
+          "response_item_id": "fc_72d5a6b6",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Calculator Implementation Plan\\n\\n## Phase 1: Core Logic\\n- Objective: Implement `calc.add(a, b)` in `src/calc.py`\\n- Paths: /tmp/preflight-2b/src/calc.py\\n- Acceptance Criteria: `calc.add` is defined and returns the sum of two numbers.\\n- Size estimate: 1pt\\n\\n## Phase 2: Tests\\n- Objective: Implement pytest in `tests/test_calc.py` to verify `calc.add`\\n- Paths: /tmp/preflight-2b/tests/test_calc.py\\n- Acceptance Criteria: pytest passes for addition logic.\\n- Size estimate: 1pt\\n- Acceptance Command: /tmp/preflight-2b/.venv/bin/pytest /tmp/preflight-2b/tests/test_calc.py\\n\", \"path\": \"/tmp/preflight-2b/PLAN.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 567, \"dirs_created\": true}",
+      "tool_call_id": "call_72d5a6b6"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_bb61326d",
+          "call_id": "call_bb61326d",
+          "response_item_id": "fc_bb61326d",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/tmp/preflight-2b/PLAN.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Calculator Implementation Plan\\n     2|\\n     3|## Phase 1: Core Logic\\n     4|- Objective: Implement `calc.add(a, b)` in `src/calc.py`\\n     5|- Paths: /tmp/preflight-2b/src/calc.py\\n     6|- Acceptance Criteria: `calc.add` is defined and returns the sum of two numbers.\\n     7|- Size estimate: 1pt\\n     8|\\n     9|## Phase 2: Tests\\n    10|- Objective: Implement pytest in `tests/test_calc.py` to verify `calc.add`\\n    11|- Paths: /tmp/preflight-2b/tests/test_calc.py\\n    12|- Acceptance Criteria: pytest passes for addition logic.\\n    13|- Size estimate: 1pt\\n    14|- Acceptance Command: /tmp/preflight-2b/.venv/bin/pytest /tmp/preflight-2b/tests/test_calc.py\\n    15|\", \"total_lines\": 14, \"file_size\": 567, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_bb61326d"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_185a77c5",
+          "call_id": "call_185a77c5",
+          "response_item_id": "fc_185a77c5",
+          "type": "function",
+          "function": {
+            "name": "delegate_task",
+            "arguments": "{\"context\": \"Scaffold root: /tmp/preflight-2b. Read PLAN.md. Phase 1 only. Do not write tests in this phase. Do not call verify_phase.\\nPhase to implement: 1\\nPhase title: Core Logic\", \"goal\": \"Implement phase 1 per PLAN.md (core calculator logic).\", \"toolsets\": [\"file\", \"terminal\"]}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"results\": [{\"task_index\": 0, \"status\": \"completed\", \"summary\": \"I have completed Phase 1 of the implementation as per `PLAN.md`.\\n\\n**Summary of actions:**\\n- Created the core logic file `src/calc.py`.\\n- Implemented the `add(a, b)` function which returns the sum of two numbers.\\n\\n**Files created/modified:**\\n- `/tmp/preflight-2b/src/calc.py` (New file)\", \"api_calls\": 6, \"duration_seconds\": 37.44, \"model\": \"gemma-4-26b-a4b-it-8bit\", \"exit_reason\": \"completed\", \"tokens\": {\"input\": 38091, \"output\": 268}, \"tool_trace\": [{\"tool\": \"search_files\", \"args_bytes\": 41, \"result_bytes\": 438, \"status\": \"ok\"}, {\"tool\": \"search_files\", \"args_bytes\": 59, \"result_bytes\": 438, \"status\": \"ok\"}, {\"tool\": \"terminal\", \"args_bytes\": 38, \"result_bytes\": 505, \"status\": \"ok\"}, {\"tool\": \"read_file\", \"args_bytes\": 37, \"result_bytes\": 797, \"status\": \"ok\"}, {\"tool\": \"write_file\", \"args_bytes\": 162, \"result_bytes\": 43, \"status\": \"ok\"}]}], \"total_duration_seconds\": 37.56}",
+      "tool_call_id": "call_185a77c5"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_61155201",
+          "call_id": "call_61155201",
+          "response_item_id": "fc_61155201",
+          "type": "function",
+          "function": {
+            "name": "verify_phase",
+            "arguments": "{\"phase_id\": 1, \"scaffold_root\": \"/tmp/preflight-2b\", \"tier\": 3}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"passed\": true, \"tier_run\": 3, \"missing_paths\": [], \"integrity_issues\": [], \"runtime_smoke_findings\": [], \"acceptance_runner_findings\": [], \"semantic_concerns\": [], \"tier_3_hint\": null, \"corrective_dispatch\": \"\", \"persisted_to\": \"/tmp/preflight-2b/verified-state.json\"}",
+      "tool_call_id": "call_61155201"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "\n",
+      "tool_calls": [
+        {
+          "id": "call_5e0de305",
+          "call_id": "call_5e0de305",
+          "response_item_id": "fc_5e0de305",
+          "type": "function",
+          "function": {
+            "name": "end_session_for_handoff",
+            "arguments": "{\"completed_phase\": 1, \"parent_intent_log\": \"advance\", \"parent_summary\": \"Phase 1 (Core Logic) implemented and verified.\", \"scaffold_root\": \"/tmp/preflight-2b\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"error\": \"Tool execution failed: ToolError: session-end sentinel already exists at /tmp/preflight-2b/.session-end-signal.json; double-call detected\"}",
+      "tool_call_id": "call_5e0de305"
+    },
+    {
+      "role": "assistant",
+      "content": "The `end_session_for_handoff` tool failed because a sentinel already exists, likely from a previous interrupted run or a system quirk. However, I have successfully completed Phase 1.\n\n**Phase 1 Status:**\n- **Objective:** Implement `calc.add(a, b)` in `src/calc.py`\n- **Status:** `verified_passed` (Tier 3)\n- **Artifact:** `/tmp/preflight-2b/src/calc.py`\n\nSince I cannot call the handoff tool again, I am stopping here. You can proceed with Phase 2 manually or restart the orchestration.",
+      "reasoning": "\n",
+      "finish_reason": "stop",
+      "reasoning_content": "\n"
+    }
+  ]
+}

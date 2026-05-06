@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "campaign": "skill-validation-2026-05",
+  "track": "B-2b-subproc",
+  "trial_id": "trial-1",
+  "started_at": "2026-05-04T03:44:24Z",
+  "ended_at": "2026-05-04T04:08:44Z",
+  "scaffold_root": "/tmp/r7.11-item8-scaffold",
+  "scaffold_baseline_rev": "Brian's scaffold-baseline.tar.gz",
+  "baseline_tar_path": "/Users/johntaylor/Downloads/scaffold-baseline.tar.gz",
+  "baseline_tar_sha256": "9d0d08b77f1bc7aca403ac2c7e618249644baf97d2a8911eaa8334503d4b6d6c",
+  "skill": {
+    "name": "r7-11-orchestrate",
+    "path": "/Users/johntaylor/.hermes/skills/autonomous-ai-agents/r7-11-orchestrate",
+    "sha256": "9f20a821104e3de36427e54e4e5d14a2556bebd5cde44a5025d9d53d42bdf1a3"
+  },
+  "hermes": {
+    "agent_dir": "/Users/johntaylor/Life-AI/hermes-agent",
+    "agentfw_branch": "compat/hermes-v0.12",
+    "agentfw_commit": "5af15a332e66dadfed1bb3fdb8bc2f72911b7b95"
+  },
+  "model": {
+    "id": "gemma-4-26b-a4b-it-8bit",
+    "provider": "omlx",
+    "base_url": "http://localhost:8000/v1"
+  },
+  "python": {
+    "version": "3.11.15",
+    "venv_path": "/tmp/r7.11-item8-scaffold/.venv"
+  },
+  "verifier": {
+    "content_verify_path": "/Users/johntaylor/Life-AI/AgentFW/variants/hermes/r7.9-research/r7.11/skill-validation-harness/../content_verify.py",
+    "content_verify_sha256": "53744bc1ced20715511490d717efd33b2161eae2ae8515a57370cc87cd7a96ad",
+    "consolidation_rules": [
+      "UNWIRED_API + UNWIRED_INLINE on same file -> single HIGH",
+      "2+ TEST_STUB findings -> consolidated single finding"
+    ]
+  },
+  "user_prompt_path": "/tmp/r7.11-item8-scaffold/USER-PROMPT.md",
+  "user_prompt_sha256": "6ea3c28cdd305c71f024828f06b382ecd9434cfa3873982bced235477c0b5550",
+  "verify_config_path": "/tmp/r7.11-item8-scaffold/verify-config.json",
+  "outcome": {
+    "wallclock_seconds": 1456,
+    "phases_planned": null,
+    "phases_verified": null,
+    "revision_count_total": null,
+    "verifier_strict": false,
+    "verifier_charitable": false,
+    "halt_reason": null,
+    "launch_exit_code": 0,
+    "score_exit_code": 1,
+    "adherence_exit_code": 0
+  }
+}

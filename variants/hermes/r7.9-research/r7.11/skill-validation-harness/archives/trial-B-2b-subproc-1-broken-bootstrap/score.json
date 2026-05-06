@@ -1,0 +1,71 @@
+{
+  "strict_passed": false,
+  "charitable_passed": false,
+  "content_verify_strict": false,
+  "content_verify_charitable": false,
+  "all_phases_verified_passed": false,
+  "phases_pending_or_failed": [
+    2,
+    3
+  ],
+  "campaign_findings": [
+    "[ORCHESTRATOR_TERMINATED_EARLY] phases [2, 3] not verified_passed; campaign-strict and campaign-charitable forced False regardless of content_verify verdict."
+  ],
+  "findings": [
+    {
+      "category": "fabrication",
+      "detail": "PLAN.md phase 3 declares path '/tmp/r7.11-item8-scaffold/docs/api.md' which does not exist on disk; n=5 r4 fabrication pattern",
+      "evidence": {
+        "declared_path": "/tmp/r7.11-item8-scaffold/docs/api.md",
+        "phase_id": 3,
+        "phase_title": "Tests + Documentation"
+      },
+      "line": null,
+      "path": "/tmp/r7.11-item8-scaffold/docs/api.md",
+      "severity": "high"
+    },
+    {
+      "category": "fabrication",
+      "detail": "PLAN.md phase 3 declares path '/tmp/r7.11-item8-scaffold/tests/test_export.py' which does not exist on disk; n=5 r4 fabrication pattern",
+      "evidence": {
+        "declared_path": "/tmp/r7.11-item8-scaffold/tests/test_export.py",
+        "phase_id": 3,
+        "phase_title": "Tests + Documentation"
+      },
+      "line": null,
+      "path": "/tmp/r7.11-item8-scaffold/tests/test_export.py",
+      "severity": "high"
+    },
+    {
+      "category": "test-stub",
+      "detail": "all 2 test function(s) raise NotImplementedError; file is a pure stub",
+      "evidence": {
+        "stub_lines": [
+          8,
+          14
+        ],
+        "stub_tests": 2,
+        "total_tests": 2
+      },
+      "line": 8,
+      "path": "tests/test_csv.py",
+      "severity": "high"
+    }
+  ],
+  "files_inspected": [
+    "src/__init__.py",
+    "src/api/__init__.py",
+    "src/api/export.py",
+    "src/auth/__init__.py",
+    "src/auth/permissions.py",
+    "src/export/__init__.py",
+    "src/export/csv.py",
+    "src/export/formats.py",
+    "src/export/json.py",
+    "src/export/pdf.py",
+    "tests/__init__.py",
+    "tests/fixtures.py",
+    "tests/test_api_export.py",
+    "tests/test_csv.py"
+  ]
+}

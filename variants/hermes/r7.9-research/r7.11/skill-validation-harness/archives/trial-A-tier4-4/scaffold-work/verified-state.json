@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "spec": {
+    "scaffold_root": "/tmp/r7.11-item8-scaffold",
+    "plan_md_path": "/tmp/r7.11-item8-scaffold/PLAN.md",
+    "phases": [
+      {
+        "id": 1,
+        "title": "Core Serializers"
+      },
+      {
+        "id": 2,
+        "title": "Auth & Permissions"
+      },
+      {
+        "id": 3,
+        "title": "API Endpoints"
+      },
+      {
+        "id": 4,
+        "title": "Tests & Docs"
+      }
+    ]
+  },
+  "phase_state": [
+    {
+      "id": 1,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T01:57:40Z",
+      "session_id": "tool-call-1777946260",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    },
+    {
+      "id": 2,
+      "status": "verified_passed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T02:05:19Z",
+      "session_id": "tool-call-1777946719",
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 1,
+      "max_revisions": 3
+    },
+    {
+      "id": 3,
+      "status": "verified_failed",
+      "tier_run": 3,
+      "verified_at": "2026-05-05T02:34:06Z",
+      "session_id": "tool-call-1777948446",
+      "missing_paths": [],
+      "integrity_issues": [
+        "[CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_records` defined but never referenced",
+        "[CAT2:imported-unused] /tmp/r7.11-item8-scaffold/src/api/export.py:3 \u2014 import `User` (from `src.auth`) declared but never used",
+        "[CAT2:imported-unused] /tmp/r7.11-item8-scaffold/src/api/export.py:4 \u2014 import `has_permission` (from `src.auth.permissions`) declared but never used"
+      ],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": "Re-dispatch with explicit focus on: /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_records` defined but never referenced, /tmp/r7.11-item8-scaffold/src/api/export.py. Phase 3 cleared tier 1 (presence) but failed tier 3 (wiring) with: CAT1: [CAT1:defined-unused] /tmp/r7.11-item8-scaffold/src/api/export.py \u2014 function `export_records` defined but never referenced | CAT2: [CAT2:imported-unused] /tmp/r7.11-item8-scaffold/src/api/export.py:3 \u2014 import `User` (from `src.auth`) declared but never used; [CAT2:imported-unused] /tmp/r7.11-item8-scaffold/src/api/export.py:4 \u2014 import `has_permission` (from `src.auth.permissions`) declared but never used. [CAT1:defined-unused] Remove unused definitions OR ensure they're invoked from a runtime call site. [CAT2:imported-unused] Remove unused imports OR use them where intended.",
+      "revision_count": 4,
+      "max_revisions": 3
+    },
+    {
+      "id": 4,
+      "status": "pending",
+      "tier_run": null,
+      "verified_at": null,
+      "session_id": null,
+      "missing_paths": [],
+      "integrity_issues": [],
+      "runtime_smoke_findings": [],
+      "acceptance_runner_findings": [],
+      "semantic_concerns": [],
+      "corrective_dispatch": null,
+      "revision_count": 0,
+      "max_revisions": 3
+    }
+  ],
+  "history": [
+    {
+      "session_id": "tool-call-1777945996",
+      "phase_id": 1,
+      "verdict": "failed",
+      "ts": "2026-05-05T01:53:16Z"
+    },
+    {
+      "session_id": "tool-call-1777946260",
+      "phase_id": 1,
+      "verdict": "passed",
+      "ts": "2026-05-05T01:57:40Z"
+    },
+    {
+      "session_id": "tool-call-1777946592",
+      "phase_id": 2,
+      "verdict": "failed",
+      "ts": "2026-05-05T02:03:12Z"
+    },
+    {
+      "session_id": "tool-call-1777946719",
+      "phase_id": 2,
+      "verdict": "passed",
+      "ts": "2026-05-05T02:05:19Z"
+    },
+    {
+      "session_id": "tool-call-1777947212",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-05T02:13:32Z"
+    },
+    {
+      "session_id": "tool-call-1777947439",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-05T02:17:19Z"
+    },
+    {
+      "session_id": "tool-call-1777947677",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-05T02:21:17Z"
+    },
+    {
+      "session_id": "tool-call-1777948446",
+      "phase_id": 3,
+      "verdict": "failed",
+      "ts": "2026-05-05T02:34:06Z"
+    }
+  ]
+}

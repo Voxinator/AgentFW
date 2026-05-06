@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "campaign": "skill-validation-2026-05",
+  "track": "TRACK_PLACEHOLDER",
+  "trial_id": "TRIAL_ID_PLACEHOLDER",
+  "started_at": "ISO8601_PLACEHOLDER",
+  "ended_at": null,
+  "scaffold_root": "WORK_DIR_PLACEHOLDER",
+  "scaffold_baseline_rev": "BASELINE_REV_PLACEHOLDER",
+  "baseline_tar_path": "BASELINE_TAR_PLACEHOLDER",
+  "baseline_tar_sha256": "BASELINE_TAR_SHA_PLACEHOLDER",
+  "skill": {
+    "name": "r7-11-orchestrate",
+    "path": "SKILL_PATH_PLACEHOLDER",
+    "sha256": "SKILL_SHA_PLACEHOLDER"
+  },
+  "hermes": {
+    "agent_dir": "HERMES_AGENT_PLACEHOLDER",
+    "agentfw_branch": "AGENTFW_BRANCH_PLACEHOLDER",
+    "agentfw_commit": "AGENTFW_COMMIT_PLACEHOLDER"
+  },
+  "model": {
+    "id": "gemma-4-26b-a4b-it-8bit",
+    "provider": "omlx",
+    "base_url": "http://localhost:8000/v1"
+  },
+  "python": {
+    "version": "PYTHON_VERSION_PLACEHOLDER",
+    "venv_path": "WORK_DIR_PLACEHOLDER/.venv"
+  },
+  "verifier": {
+    "content_verify_path": "CONTENT_VERIFY_PATH_PLACEHOLDER",
+    "content_verify_sha256": "CONTENT_VERIFY_SHA_PLACEHOLDER",
+    "consolidation_rules": [
+      "UNWIRED_API + UNWIRED_INLINE on same file -> single HIGH",
+      "2+ TEST_STUB findings -> consolidated single finding"
+    ]
+  },
+  "user_prompt_path": "USER_PROMPT_PATH_PLACEHOLDER",
+  "user_prompt_sha256": "USER_PROMPT_SHA_PLACEHOLDER",
+  "verify_config_path": "VERIFY_CONFIG_PATH_PLACEHOLDER",
+  "outcome": {
+    "wallclock_seconds": null,
+    "phases_planned": null,
+    "phases_verified": null,
+    "revision_count_total": null,
+    "verifier_strict": null,
+    "verifier_charitable": null,
+    "halt_reason": null
+  }
+}
