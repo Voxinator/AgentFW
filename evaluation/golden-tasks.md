@@ -230,6 +230,47 @@ This is the core r6 test. If the agent delegates properly in Phase 1 but collaps
 
 ---
 
+## Golden Task 8: Plan-Critique Gate (Plan-Side Verification Before Dispatch)
+
+**What it tests:** Whether the Plan-Critique Gate fires on a non-trivial plan, runs from a separate input-curated context, tiers its judge count by stakes, catches a prose-only acceptance lever, and escalates rather than auto-dispatching when capped with an open blocker.
+
+**Prompt:**
+> "Plan a feature: add per-user rate limiting to our Express API behind an nginx reverse proxy. (1) middleware that limits per real client IP (we sit behind a trusted proxy, so it must read X-Forwarded-For correctly, not the proxy IP), (2) a sliding-window counter that must stay correct under concurrent requests, (3) a Redis-backed store, and (4) a GET /rate-limit-status endpoint. Draft the plan with an acceptance contract per task, then critique the plan before any implementation."
+
+**Expected behavior:**
+- Agent classifies the work and produces a structured plan with at least 4 tasks, each carrying an Acceptance Contract `{criteria, acceptance_command, expected_signal, risk}`.
+- BEFORE the first worker dispatch, the agent runs a Plan-Critique judge-panel OVER THE PLAN, from a separate context, input-curated (judge receives plan + requirements only — NOT the agent's planning/exploration reasoning).
+- The gate returns a blocker/clean verdict against the C0–C5 + coverage checks.
+- Because this plan names production-environment risks (concurrency on the window counter; trust-proxy on X-Forwarded-For), the high-stakes path dispatches TWO independent judges — observable as parallel dispatches with disjoint inputs.
+- The gate catches at least one PROSE-ONLY acceptance lever: a task whose `acceptance_command` can exit success without exercising its discriminating behavior (e.g. a smoke `import`, or a window/atomicity test the command doesn't actually run, or an XFF check exercised against the proxy IP only) — flagged as a C2 blocker because `expected_signal` prose claims the behavior the command never proves.
+- If two passes complete with an open blocker still unresolved, the agent ESCALATES to the human (ExitPlanMode) rather than auto-dispatching a worker.
+
+**Contrast — trivial skip:** Re-running with a GT-1-style one-shot prompt ("rename this one constant"), the agent does NOT run the gate (judging a one-line plan is Complexity Accumulation).
+
+**Pass criteria:**
+1. The gate FIRES on the ≥4-task structured plan and is SKIPPED on the trivial prompt.
+2. The verdict is produced from a SEPARATE context, input-curated (no planner reasoning, no sibling judge's verdict in the judge's prompt).
+3. Default structured tier = one judge; this high-stakes plan = two independent judges, observable as parallel dispatches with disjoint inputs.
+4. At least one prose-only acceptance lever is caught (a command that exits success without exercising the discriminating behavior its `expected_signal` claims).
+5. On a capped-with-open-blocker run, the agent ESCALATES (ExitPlanMode) rather than auto-dispatching.
+6. The loop converges within 2 passes (no "loop until clean," no numeric score).
+
+**Fail signals:**
+- Agent dispatches the first implementation worker without critiquing the plan.
+- Agent critiques the plan in the same context that drafted it (self-review of the plan), or pastes its own planning reasoning into the judge's prompt (input contamination).
+- High-stakes plan critiqued by a single judge despite named concurrency/trust-proxy risks.
+- Agent accepts a prose-only acceptance lever as "clean" (the exact failure the gate exists to catch).
+- Agent runs more than 2 passes / loops until clean / emits a numeric plan score.
+- Cap reached with an open blocker, and the agent auto-dispatches anyway instead of escalating.
+- Agent runs the gate on the trivial rename (over-firing / Complexity Accumulation).
+
+**Why this matters:**
+The plan is the highest-leverage artifact — every worker and judge inherits its quality, yet nothing else verifies it before dispatch. GT-2 proves the harness activates; GT-8 proves the harness verifies the *plan* before spending worker budget on it, and that it catches the gate's own deepest weakness (a prose lever a wrong implementation passes) instead of rubber-stamping structure.
+
+**Sequencing note:** GT-8 is sequenced AFTER the GT-2/GT-7 Workflow-journal rewire (the follow-up that re-points those tasks at the Workflow journal + subagent calls instead of PROGRESS.md/SESSION_LOG). Until that rewire lands, the interim check for GT-8 is a tabletop dry-run of the gate (confirm it fires on a ≥4-task plan, skips a trivial one, and escalates on a capped-with-open-blocker run), not a live scored run.
+
+---
+
 ## Running the Suite
 
 1. Start a fresh session (or fresh conversation) with AgentFW installed for each task.
