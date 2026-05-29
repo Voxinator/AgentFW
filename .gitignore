@@ -4,25 +4,19 @@
 *~
 .claude/
 
-# Added 2026-04-19 for r7.5-hermes-prerelease — session-state files
-# Ephemeral per-conversation artifacts (progress trackers, session handoffs).
-# If one of these ever needs to ship, commit with `git add -f <path>`.
+# Session-state files — ephemeral per-conversation artifacts (progress
+# trackers, session handoffs). If one of these ever needs to ship, commit
+# with `git add -f <path>`.
 PROGRESS.md
 HANDOFF-*.md
 SESSION_LOG.md
 SESSION-*.md
-
-# Exception: Hermes variant's campaign-handoff tree contains DURABLE handoff
-# docs (not ephemeral per-conversation artifacts). Commit those.
-!variants/hermes/campaign-handoff/
-!variants/hermes/campaign-handoff/HANDOFF-*.md
 
 # Probe infrastructure backups — session-local one-time snapshots.
 # Naming convention: <script>.pre-<revision>-orig or .probe-*-orig
 *.pre-*-orig
 *.probe-*-orig
 
-# Local tmp + logs for probe runs (project-directory ephemera — NOT the
-# Hermes campaign tmp-archive, which is tracked under variants/hermes/archive/*/tmp-archive/)
+# Local tmp + logs for probe runs (project-directory ephemera)
 /tmp/probe-*
 

@@ -1,14 +1,10 @@
-# AgentFW r6 — Bootstrap Install
+# AgentFW r8 — Bootstrap Install
 
-You are about to install AgentFW r6. This restructures how you work — from single-turn chatbot to structured agent with decomposition, verification, role separation, and persistent state.
+You are about to install AgentFW r8. This restructures how you work — from single-turn chatbot to a governance layer over Claude Code 2.1's native runtime primitives (Workflow tool, Agent subagents, Plan mode, Skills, MEMORY, hooks, permission modes). The firmware decides whether/when/how-well to orchestrate; the runtime executes how. v8 is Claude-Code-only.
 
-## Step 1: Detect Your Environment
+## Step 1: Confirm Your Environment
 
-Determine which AI client you're running in:
-
-- **Claude Code**: You have access to file system tools (Read, Write, Edit, Bash, Glob, Grep). You can read and write files directly.
-- **Claude Projects**: You're in a Claude project with custom instructions and knowledge files. No file system access.
-- **Other**: You're in a generic chat or API environment.
+AgentFW v8 targets **Claude Code** exclusively. You have access to file system tools (Read, Write, Edit, Bash, Glob, Grep) and to the Claude Code 2.1 runtime primitives the firmware governs. If you are not in Claude Code, v8 does not apply.
 
 ## Step 2: Locate AgentFW
 
@@ -17,13 +13,13 @@ The AgentFW files should be accessible at one of:
 - A path the user specifies
 - Files attached to this conversation
 
-If you're in Claude Code, read the directory listing to confirm the files exist. Look for the `variants/`, `core/`, `references/`, `playbooks/`, and `templates/` directories.
+Read the directory listing to confirm the files exist. Look for the `core/`, `references/`, `playbooks/`, and `templates/` directories.
 
 ## Step 3: Install
 
-### If Claude Code:
+### Claude Code:
 
-1. Read `variants/claude-code/CLAUDE.md` from the AgentFW directory
+1. Read `core/harness-core.md` from the AgentFW directory — in v8 this is the always-load core that installs as CLAUDE.md (it carries the v8 governance layer over the native primitives)
 2. Determine install scope with the user:
    - **Global** (all projects): Install to `~/.claude/CLAUDE.md`
    - **Project-level** (this project only): Install to the current project root as `CLAUDE.md`
@@ -36,28 +32,9 @@ If you're in Claude Code, read the directory listing to confirm the files exist.
    ```bash
    ln -s /actual/path/to/AgenticHarness ~/.claude/skills/agentfw
    ```
-6. Verify by reading back the installed file and confirming it contains the "AgentFW — Core Instructions" header and the Critical Rules section
+6. Verify by reading back the installed file and confirming it contains the "AgentFW — Core Instructions" header and the Critical Rules section (including Rule 6: PREFER NATIVE PRIMITIVES)
 
-### If Claude Projects:
-
-1. Read and output the full contents of `variants/claude-projects/custom-instructions.md`
-2. Instruct the user to:
-   - Open Project Settings
-   - Paste the content into Custom Instructions
-   - Save
-3. List the files from `references/`, `playbooks/`, and `templates/` that should be uploaded as project knowledge files:
-   - `core/permissions.md`
-   - All files in `references/`
-   - All files in `playbooks/`
-   - All `.md` files in `templates/`
-4. Walk the user through uploading them one section at a time
-
-### If Other:
-
-1. Read and output the full contents of `variants/generic/system-prompt.md`
-2. Instruct the user on how to use it as their system prompt or initial instructions
-3. Explain that reference files should be provided on demand when the agent requests them
-4. Suggest starting with the permissions reference and the playbook most relevant to their use case
+v8 is Claude-Code-only; there are no Claude Projects or generic client variants to install.
 
 ## Step 4: Post-Install Verification
 
@@ -75,14 +52,18 @@ Run a quick smoke test:
 Report the install result to the user:
 
 ```
-AgentFW r6 — Install Report
+AgentFW r8 — Install Report
 ====================================
-AgentFW version:      r6
-Install type:         [Global / Project-level / Custom Instructions / System Prompt]
+AgentFW version:      r8
+Install type:         [Global / Project-level]
 Install path:         [where it was installed]
 References accessible: [yes/no — path if yes]
 Status:               [Ready / Needs attention — details]
 ```
+
+## Upgrading from r6 / r7
+
+v8 installs `core/harness-core.md` as the CLAUDE.md core. If the user already has an r6 or r7 AgentFW core installed, the v8 install **overwrites the installed CLAUDE.md** — back it up first if the user wants to keep the prior version, then write the v8 core in its place. The behavioral fundamentals carry forward; v8 reframes the firmware as a governance layer over Claude Code 2.1's native primitives (it no longer hand-rolls the orchestration mechanics the runtime now provides).
 
 ## Upgrading from r3
 

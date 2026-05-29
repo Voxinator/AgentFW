@@ -1,17 +1,15 @@
 {
   "name": "agentfw",
   "display_name": "AgentFW",
-  "version": "7.5.0",
-  "revision": "r7.5",
-  "description": "Firmware for agent behavior — structured work via Decompose-Parallelize-Verify-Iterate, Planner-Worker-Judge architecture, permission model, structural enforcement gates, persistent state, context degradation resistance, and cross-model tuning (Opus 4.7 without non-target regression). r7.5 publishes the Hermes variant as a pre-release with β-fuse dispatch (validated) and worker quality (r7.6 scope).",
+  "version": "8.0.0",
+  "revision": "r8",
+  "description": "Firmware for agent behavior — a governance/policy layer over Claude Code 2.1's native runtime primitives (Workflow tool, Agent subagents, Plan mode, Skills, MEMORY, hooks, permission modes). The firmware decides whether/when/how-well to orchestrate; the runtime executes how (Rule 6: PREFER NATIVE PRIMITIVES). v8 keeps the surviving policy layer: the Classification Gate, role-separation policy + judge input-curation, the two Enforcement Gates (Tier-1 verification + Context Health), the new Plan-Critique Gate (critique the plan before the first worker dispatch), and the anti-pattern judgment layer (esp. Complexity Accumulation).",
   "author": "Brian Taylor",
   "created": "2025-03-01",
-  "updated": "2026-04-19",
-  "compatibility": ["claude-code", "claude-projects", "generic", "hermes"],
+  "updated": "2026-05-29",
+  "compatibility": ["claude-code"],
   "core_file": "core/harness-core.md",
   "bootstrap": "bootstrap.md",
   "license": "MIT",
-  "hermes_variant_status": "pre-release",
-  "hermes_variant_note": "r7.5-hermes-prerelease — β-fuse dispatch layer validated (MoE 17/20 strict first-attempt on r7.4, 11.5×–17× lift over r7.3 baselines); worker-quality ship gate not yet met (r7.5 probe: 3/20 vs 15/20 floor). Not production-ready. See RELEASE-NOTES-r7.5-hermes-prerelease.md and variants/hermes/INSTALL.md.",
-  "tags": ["agentfw", "firmware", "workflow", "agent-architecture", "planner-worker-judge", "verification", "role-separation", "cross-model-portability", "hermes-prerelease"]
+  "tags": ["agentfw", "firmware", "workflow", "agent-architecture", "planner-worker-judge", "verification", "role-separation", "native-primitive-delegation", "plan-critique-gate"]
 }

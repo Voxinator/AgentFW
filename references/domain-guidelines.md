@@ -22,7 +22,7 @@ Reasoning about whether code "looks correct" without executing it is not Tier 1 
 
 ### Long-Running Services (Web Apps, Gateways, Daemons)
 
-When modifying code for a running service — web applications, API servers, agent gateways (e.g., OpenClaw, Hermes), background workers, or any long-running process — **the worker or judge MUST restart the service** after applying changes. The change is not verifiable until the service is running the new code.
+When modifying code for a running service — web applications, API servers, agent gateways (e.g., OpenClaw), background workers, or any long-running process — **the worker or judge MUST restart the service** after applying changes. The change is not verifiable until the service is running the new code.
 
 Automate this. Do not leave "restart the server" as a manual step for the human. If you know the service command (e.g., `npm run dev`, `flask run`, `systemctl restart`, `docker compose restart`), run it. If you don't know it, check for common patterns (package.json scripts, Procfile, docker-compose.yml, systemd units) or ask.
 

@@ -1,5 +1,26 @@
 # AgentFW Changelog
 
+## r8 (2026-05-29) — v8 governance refactor + Hermes extraction
+
+### Context
+Claude Code 2.1 absorbed AgentFW's *mechanisms* as native runtime primitives — the Workflow tool (`agent()`, `parallel()`, `pipeline()`, judge-panel, resume/journal), Agent subagents, Plan mode + Plan agent, Skills (code-review, verify, security-review, deep-research), MEMORY, the Task system + Cron/schedule/loop, permission modes + allow/deny/ask + hooks + worktrees, and context compaction. The firmware no longer needs to *be* the machinery. r8 reframes AgentFW as a **governance/policy layer over those native primitives**: it decides *whether/when/how-well* to orchestrate; the runtime executes *how*. v8 is **Claude-Code-only** — all cross-model content is dropped. Microsoft 365 Copilot is a footnote-level candidate future target, not built or validated.
+
+### Reframed
+- **Firmware = governance layer, not machinery.** `core/harness-core.md` rewritten around the layering: the runtime supplies the harness (Workflow/subagents/Plan mode/Skills/MEMORY/hooks); the firmware supplies the classification, role discipline, verification standard, and restraint the runtime does not supply on its own.
+- **Rule 6: PREFER NATIVE PRIMITIVES.** New Critical Rule — don't hand-roll in prose what the runtime does natively; don't double-bookkeep against the platform.
+- **Surviving policy layer (what v8 KEEPS):** the Classification Gate (auditable, per-task), role-separation policy + judge **input-curation** (the runtime isolates a subagent's *output* but does not stop you contaminating a judge's *input*), the two Enforcement Gates (Tier-1 verification + Context Health — no native analog), and the anti-pattern judgment layer (esp. Complexity Accumulation — the counterweight to native tooling's bias toward more machinery).
+
+### Added
+- **Plan-Critique Gate + Acceptance-Contract spine (validated).** New gate with no native analog: before the first worker dispatch, drive a Workflow judge-panel OVER THE PLAN (input-curated: plan + requirements only), scored against checks C0–C5 + coverage. Each task carries an Acceptance Contract `{criteria, acceptance_command, expected_signal, risk}` whose discriminating lever must be MECHANICALLY REACHABLE by the `acceptance_command`, not merely asserted in prose. Hard 2-pass cap; cap-with-open-blocker escalates to the human via ExitPlanMode.
+- **`references/native-primitives.md`** (NEW) — the delegation map (each Claude Code 2.1 primitive → the firmware concept it executes + division of labor) and the operational Plan-Critique recipe (checklist, Acceptance-Contract schema with GOOD/BAD examples, signal-anchoring footguns, convergence/stop policy, illustrative recipe sketch).
+- **GT-8** — golden task that proves the harness verifies the *plan* before spending worker budget, and that the Plan-Critique Gate catches its own deepest weakness (a prose lever a wrong implementation passes) rather than rubber-stamping structure.
+
+### Removed
+- **Hermes variant extracted to its own project (`agentfw-hermes`) and removed from this repo.** The Gemma-4-on-Hermes-Agent local-orchestration variant and its r7.1–r7.11 probe/campaign work no longer live here. Forward docs (`README.md`, `DESIGN.md`, `metadata.json`, this changelog's top entry) drop Hermes references except an "moved to agentfw-hermes" pointer; historical commits and `archive/` entries are handled separately and left intact.
+- **All cross-model content dropped.** The `references/prompt-design.md` "Model-family knobs (non-binding)" subsection (Anthropic-specific Opus tuning) is removed; `compatibility` is now `["claude-code"]` only.
+
+---
+
 ## r7.5-campaign-arc (2026-04-21, post-tag) — HOLD
 
 Campaign arc addendum for the Hermes variant. Three follow-up campaigns (r7.6/7.7/7.8) after the `r7.5-hermes-prerelease` tag tested worker-quality interventions; all HOLD. See `variants/hermes/CEILING-FINDING-r7.8.md` for the substrate-ceiling finding, `variants/hermes/campaign-handoff/HANDOFF-post-r7.8.md` for r7.9 options, and `variants/hermes/PROBE-RESULTS-r7.md` §19+ for the full campaign-arc record. No canonical changes to framework; updates scoped under `variants/hermes/`.

@@ -1,8 +1,8 @@
 # AgentFW — Design Specification
 
-**Version:** r7
+**Version:** r8
 **Author:** Brian Taylor
-**Last updated:** 2026-04-17
+**Last updated:** 2026-05-29
 
 ---
 
@@ -12,7 +12,9 @@ AI agent capabilities appear "jagged" — the same model that writes a flawless 
 
 Human teams solved this long ago. Engineers don't write, review, and merge their own code. Project managers decompose work before assigning it. QA evaluates against requirements, not the developer's stated intentions. These patterns — decomposition, parallel execution, independent verification, iterative refinement — are not bureaucracy. They are error-correction mechanisms.
 
-AgentFW applies these patterns to AI agents. It is a set of structured Markdown documents that install as standing instructions (CLAUDE.md, system prompts, or custom instructions). There is no runtime, no SDK, no library. The "firmware" is the prompt — and the prompt is the product.
+AgentFW applies these patterns to AI agents. As of v8, it does so in a specific division of labor: **Claude Code 2.1 supplies the mechanisms** (the Workflow tool, Agent subagents, Plan mode, Skills, MEMORY, the Task system, permission modes + hooks + worktrees, context compaction), and **AgentFW supplies the governance**. The firmware decides *whether, when, and how well* to orchestrate; the runtime executes *how* (Rule 6: PREFER NATIVE PRIMITIVES). AgentFW is no longer the orchestration machinery — it is the policy layer over it.
+
+It remains a set of structured Markdown documents that install as standing instructions (CLAUDE.md). There is no runtime, no SDK, no library inside AgentFW itself. The "firmware" is the prompt — and the prompt is the product. v8 is **Claude-Code-only**; cross-model content has been dropped (Microsoft 365 Copilot is a footnote-level candidate future target, not built or validated).
 
 ---
 
@@ -20,7 +22,11 @@ AgentFW applies these patterns to AI agents. It is a set of structured Markdown 
 
 ### 2.1 The firmware is the product
 
-AgentFW is not scaffolding around a model. It IS the behavioral layer. The quality of agent output is directly proportional to the quality of these instructions. Every line must earn its place: high signal density, no aspirational padding, no content that exists "for completeness."
+AgentFW is not scaffolding around a model. It IS the behavioral/governance layer. The quality of agent output is directly proportional to the quality of these instructions. Every line must earn its place: high signal density, no aspirational padding, no content that exists "for completeness." In v8 this is sharper than ever — the runtime now provides the mechanics, so the firmware's only job is the judgment, and judgment that isn't load-bearing is dead weight.
+
+### 2.1a Prefer native primitives (v8)
+
+The firmware decides *whether/when/how-well*; the runtime executes *how*. Where Claude Code 2.1 provides a primitive — Workflow orchestration, subagent dispatch, Plan mode, Skills, MEMORY, permission modes + hooks — the firmware drives it rather than re-implementing it in prose. Hand-rolling what the runtime does natively, or double-bookkeeping state the platform already tracks (the Workflow journal, the Task system, MEMORY), is a defect. `references/native-primitives.md` is the canonical delegation map: each primitive paired with the firmware concept it executes and the division of labor between them.
 
 ### 2.2 Fresh context is a feature, not a bug
 
@@ -40,11 +46,13 @@ The context that plans should not implement. The context that implements should 
 
 ### 2.6 Complexity is the enemy
 
-Adding coordination machinery when things aren't working is an anti-pattern. The fix is usually cleaner isolation, clearer roles, less coupling — not more process. The right amount of harness is the minimum that still decomposes and verifies.
+Adding coordination machinery when things aren't working is an anti-pattern. The fix is usually cleaner isolation, clearer roles, less coupling — not more process. The right amount of harness is the minimum that still decomposes and verifies. v8 makes this principle load-bearing: native tooling is biased toward MORE machinery (a feature never tells you to stop using it), and the runtime makes another Workflow, judge-panel, or subagent nearly free. Over-orchestration is the new default failure, and the anti-pattern judgment layer (especially Complexity Accumulation) is the deliberate counterweight.
 
 ---
 
 ## 3. Architecture Overview
+
+AgentFW v8 is a governance policy expressed as layered Markdown that sits over Claude Code 2.1's runtime. The runtime supplies the mechanism layer (Workflow, subagents, Plan mode, Skills, MEMORY, hooks); the documents below supply the judgment layer.
 
 ### 3.1 Layered Document Architecture
 
@@ -76,22 +84,28 @@ AgentFW manages context budget through layered loading:
 
 **Design rationale:** A 500-line monolithic instruction set would exhaust context budget before the agent does any work. The layered approach keeps the always-load footprint small (~175 lines) while making deeper guidance available on demand. The core tells the agent *what* to do; the references tell it *how*; the playbooks tell it *when* and *in what order*.
 
-### 3.2 Variant System
+### 3.2 The Native-Primitives Layer (v8)
 
-AgentFW ships pre-built instruction sets for three deployment targets:
+v8's defining architectural element is the delegation map between the firmware's concepts and Claude Code 2.1's runtime primitives. It lives in `references/native-primitives.md` and answers, for each firmware concept, "which primitive executes this, and what is the division of labor?"
 
-| Variant | File | Installation |
-|---------|------|-------------|
-| Claude Code | `variants/claude-code/CLAUDE.md` | Copy to `~/.claude/CLAUDE.md` or project root |
-| Claude Projects | `variants/claude-projects/custom-instructions.md` | Paste into project custom instructions |
-| Generic | `variants/generic/system-prompt.md` | Use as system prompt in any client |
-| Hermes | `variants/hermes/HERMES.md` | Uses `delegate_task()` API dispatch |
+| Claude Code 2.1 primitive | Firmware concept it executes | Division of labor |
+|---|---|---|
+| Workflow tool (`agent()`, `parallel()`, `pipeline()`, judge-panel, resume/journal) | Planner-Worker-Judge architecture + the Decompose→Parallelize→Verify→Iterate runtime | firmware decides whether/when to orchestrate; runtime executes the orchestration |
+| Agent subagents (typed; final message returns to caller) | Worker/judge dispatch + structural OUTPUT-isolation | firmware decides who to dispatch and curates inputs; runtime isolates outputs |
+| Plan mode + Plan agent | The plan-first gate | firmware decides when a plan is required; runtime drafts/holds it |
+| Skills (code-review, verify, security-review, deep-research) | Verification execution | firmware sets the recorded-artifact standard; runtime runs the check |
+| MEMORY | Durable cross-session state | firmware decides what's worth persisting; runtime stores/retrieves it |
+| Task system + Cron/schedule/loop | Long-horizon autonomy | firmware decides cadence + stop conditions; runtime executes the schedule |
+| Permission modes + allow/deny/ask + hooks + worktrees | Enforcement of the permission taxonomy | firmware supplies the taxonomy + novel-op judgment; runtime enforces deterministically |
+| Context compaction | Window management | firmware triggers the health gate against drift; runtime compacts |
 
-Variants adapt the core to client-specific capabilities (file system access, sub-agent dispatch mechanisms, custom instruction fields) while preserving the same behavioral rules. The canonical source is `core/harness-core.md`; variants must track it. Drift between core and variants is a regression (see r6 planning — the Claude Code variant drifted from r5 core). Model-family handling (reasoning-effort tiers, adaptive thinking, token budgets) is kept out of the core and variants; see the non-binding subsection at the end of `references/prompt-design.md`.
+The throughline: the firmware governs *whether/when/how-well*; the runtime executes *how*. What survives as pure firmware is the judgment with no native expression — the Classification Gate, judge input-curation, the two Enforcement Gates, the Plan-Critique Gate, and the anti-pattern judgment layer.
+
+The canonical source is `core/harness-core.md`; it installs as the CLAUDE.md core. v8 has no client variants — it targets Claude Code exclusively.
 
 ### 3.3 Bootstrap Installer
 
-`bootstrap.md` is a self-install prompt. Run `cat bootstrap.md | claude` to auto-detect the client type, locate AgentFW files, and install the appropriate variant. It handles fresh installs, upgrades from r3, and post-install verification.
+`bootstrap.md` is a self-install prompt. Run `cat bootstrap.md | claude` to locate AgentFW files and install `core/harness-core.md` as the CLAUDE.md core. It handles fresh installs, upgrades from r6/r7 (which overwrite the installed CLAUDE.md), and post-install verification.
 
 ---
 
@@ -520,7 +534,7 @@ Seven regression tests that test AgentFW's behavioral correctness:
 - **Exact prompts** — Enter the golden task prompt as written. No priming.
 - **Partial passes allowed** — Record what was missed; consistent partials on the same task indicate framework weakness.
 - **Fix the framework, not the golden task** — If a task fails after a change, the change is suspect.
-- **Multi-model probe (r7)** — Phase 0 multi-model probe for r7 was run at reduced scope on 2026-04-17 (Opus 4.7 and Sonnet 4.6 across GT-1/3/5 only — 6 of 28 cells); full-scope coverage requires a multi-turn runner for GT-2/4/6/7 and access to Opus 4.6 and GPT-5.4-Pro.
+- **Claude Code only** — v8 targets a single runtime; golden tasks are scored on Claude Code 2.1. GT-8 verifies the Plan-Critique Gate (it fires on a ≥4-task plan, skips a trivial one, escalates on a capped-with-open-blocker run).
 
 ### 17.3 Result Tracking
 
@@ -582,9 +596,9 @@ As conversations grow long, early instructions lose attention weight. The agent 
 
 Golden tasks can produce different results across runs because model behavior is non-deterministic. A task that passes on one run may partially fail on another. The evaluation protocol accounts for this (partial passes, trend tracking) but cannot eliminate it.
 
-### 19.4 Variant drift
+### 19.4 Runtime coupling
 
-Maintaining multiple variants that track the canonical core is manual and error-prone. The Claude Code variant drifted from r5 core (missing the classification gate entirely). There is no automated sync mechanism. The mitigation is eval-driven: if a variant drifts, golden tasks will catch the behavioral regression.
+v8 couples the firmware to Claude Code 2.1's native primitives. If the runtime renames a primitive, changes the Workflow API shape, or alters subagent output-routing, the delegation map in `references/native-primitives.md` and the prose in the core can drift out of sync with the platform. The recipe sketches in `references/native-primitives.md` are explicitly marked ILLUSTRATIVE for this reason — they must be adapted to the live API, not pasted verbatim. The mitigation is eval-driven: if the coupling drifts, the golden tasks (especially GT-8) will catch the behavioral regression.
 
 ### 19.5 Overhead for simple tasks
 
@@ -603,3 +617,5 @@ The harness adds overhead that simple tasks don't need. The classification gate 
 | r5 | 2026-04-06 | Structural enforcement hardening — classification gate, verification gates, Tier 1 enforcement |
 | r6 | 2026-04-10 | Context degradation resistance — Critical Rules preamble, state-driven health gate, delegation self-check |
 | r7 | 2026-04-17 | Cross-model tuning pass — model-agnostic edits for Opus 4.7 without non-target regression, bounded model-family knobs subsection, reduced-scope Phase 0 multi-model probe |
+| r7.1–r7.11 | 2026-04-18 → 2026-04-30 | Hermes-variant probe + campaign arc (extracted to `agentfw-hermes`, removed from this repo) |
+| r8 | 2026-05-29 | v8 governance refactor — firmware reframed as a governance layer over Claude Code 2.1 native primitives (Rule 6), Plan-Critique Gate + Acceptance-Contract spine, `references/native-primitives.md`, GT-8; cross-model content dropped (Claude-Code-only); Hermes variant extracted |
