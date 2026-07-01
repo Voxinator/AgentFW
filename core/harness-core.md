@@ -93,7 +93,12 @@ returns only its final message to the caller). Drive that; don't re-describe it.
 ## Classification Gate (KEEP — auditable, per-task)
 `[TASK CLASS: …]` + justification before any work; omission is a violation. Effort (`/effort`,
 settings.effortLevel) is a global, opaque dial; this marker is the per-task, challengeable record of the
-same judgment — keep both. At `ultracode` the runtime already orchestrates by default, so this gate's
+same judgment — keep both. **Model + effort tier is that judgment on the dispatch axis:** set each worker's
+tier/effort per task, not at the session default — mechanical/bounded work runs cheap (Haiku, low effort),
+top-tier + high effort is for hard reasoning, the plan-critique judge, and adversarial verification.
+Defaulting every worker to the session's own tier is Complexity Accumulation in capability spend; escalate
+one worker reactively when its output shows it needed more, don't pre-provision (`references/prompt-design.md`).
+At `ultracode` the runtime already orchestrates by default, so this gate's
 marginal value is highest *below* ultracode; emit it everywhere regardless.
 - **One-shot** — ONLY: (a) zero files modified, OR (b) one file, <20 lines, no cross-file deps. No harness.
   > **One-Shot Hero Mode.** Solving complex work in one massive response is the most common failure — the
