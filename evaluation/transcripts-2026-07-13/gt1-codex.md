@@ -1,3 +1,4 @@
+<!-- sanitized 2026-07-13: removed 5 MCP-connection error lines (disclosed connected services), redacted home path -->
 Reading additional input from stdin...
 OpenAI Codex v0.144.1
 --------
@@ -12,11 +13,6 @@ session id: 019f5c8e-4ffa-78b2-a09e-330fc3615cca
 --------
 user
 What's the difference between a list and a tuple in Python?
-2026-07-13T17:37:39.159032Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.figma.com/.well-known/oauth-protected-resource\",scope=\"mcp:connect\",authorization_uri=\"https://api.figma.com/.well-known/oauth-authorization-server\"" })
-2026-07-13T17:37:39.184502Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access token was provided in this request\", resource_metadata=\"https://api.githubcopilot.com/.well-known/oauth-protected-resource/mcp/\"" })
-2026-07-13T17:37:39.186604Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
-2026-07-13T17:37:39.202197Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.atlassian.com/.well-known/oauth-protected-resource/v1/mcp/authv2\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
-2026-07-13T17:37:39.274641Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://circleback.ai/.well-known/oauth-protected-resource\", scope=\"user\"" })
 warning: Skill descriptions were shortened to fit the 2% skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest.
 hook: SessionStart
 hook: SessionStart

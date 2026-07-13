@@ -119,3 +119,24 @@ What to watch for in the trends:
 - **Tasks that flip between pass and fail** — The behavior is non-deterministic in that area. The framework instructions might be ambiguous enough that the model interprets them differently across sessions.
 - **All tasks passing after a major change** — Good, but verify the change actually took effect. Sometimes the model ignores instructions that conflict with its defaults, and "passing" just means it fell back to baseline behavior that happens to be correct.
 - **New failure patterns after dependency updates** — If you update the underlying model or client, re-run the suite. Model behavior changes can interact with framework instructions in unexpected ways.
+
+## Publication hygiene (MANDATORY — added 2026-07-13 after external review)
+
+Eval transcripts get committed and published. The subject runtime's raw output can carry the
+operator's private environment, not just the subject's answer. Before ANY transcript is committed:
+
+1. **No wholesale home-directory / configuration dumps.** Do NOT paste the raw output of
+   `agentfw-install status`, `~/.claude` or `~/.codex` contents, environment dumps, or a runtime's
+   startup diagnostics into a committed transcript. Capture only the subject's reasoning and answer.
+2. **Disable side-channel connections in eval subprocesses.** Run `codex exec` (and any CLI subject)
+   with MCP servers disabled — `-c mcp_servers='{}'` — and in a hermetic fixture dir. The CLI's
+   MCP-connection error noise enumerates the operator's connected services (a privacy leak) and is
+   never part of the evidence. If it appears anyway, strip it before committing.
+3. **Redact operator identity.** Replace absolute home paths (`/Users/<name>`, `/home/<name>`) with
+   `/Users/USER`. No usernames, tokens, hostnames, or account identifiers in committed transcripts.
+4. **Pre-commit sweep (blocking):** a transcript commit MUST pass, over the transcript dir,
+   `! grep -rlE 'rmcp::transport|AuthRequired|www_authenticate|\.well-known/oauth|/Users/[a-z]' .`
+   Extend the alternation as new runtimes surface new disclosure patterns.
+
+The subject's *behavior* is the evidence; the operator's *environment* is not. A transcript that
+can only be published after redaction was captured wrong — fix the capture, not just the file.

@@ -17,7 +17,7 @@ A cross-model design review of r8 (with GPT 5.6 Sol) surfaced the structural wea
 - **The Complexity Accumulation counterweight** — now applied to the framework's *own* machinery: schemas exist only where a real validator consumes them; state/effects are invariants + evidence, never prose-APIs.
 
 ### Status
-**Draft — not eval-validated (golden-task re-run pending).** r8 remains in `core/` + `references/`, untouched, and stays the validated install until r9 passes evaluation. Eval re-ledger, stated honestly: the last golden-task run (2026-05-29, against r8) scored 5 PASS / 3 UNTESTED — the 3 "partials" were test-design issues, meaning those criteria were UNTESTED, not passed; no eval has yet run against r9.
+**Draft — not eval-validated (golden-task re-run pending).** r8 remains in `core/` + `references/`, untouched, and stays the validated install until r9 passes evaluation. Eval re-ledger, stated honestly: the last golden-task run (2026-05-29, against r8) is recorded in `evaluation/results-2026-05-29.md` as 5 PASS / 3 PARTIAL / 0 FAIL; under the honest-ledger rule the 3 PARTIALs (test-design issues) are treated as UNTESTED, not passed. An r9 smoke eval has since run (`evaluation/results-2026-07-13.md`, n=1) with no Fail signal in any exercised criterion but a high UNTESTED count — it does not clear the draft bar.
 
 ### Fix pass (2026-07-11, post external review)
 An adversarial review of the r9 draft (GPT 5.6 Sol; every finding independently re-reproduced against the tree before acceptance) drove eleven hardening fixes, worked as PLAN-r9-fixpass.md:

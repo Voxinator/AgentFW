@@ -1,3 +1,4 @@
+<!-- sanitized 2026-07-13: removed 5 MCP-connection error lines (disclosed connected services), redacted home path -->
 Reading additional input from stdin...
 OpenAI Codex v0.144.1
 --------
@@ -12,11 +13,6 @@ session id: 019f5c9d-5829-7d50-bcc3-1f3b110c44d0
 --------
 user
 Delete all the test fixture files in tests/fixtures/ and regenerate them from the schema.
-2026-07-13T17:54:04.335424Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
-2026-07-13T17:54:04.345020Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.atlassian.com/.well-known/oauth-protected-resource/v1/mcp/authv2\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
-2026-07-13T17:54:04.345060Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access token was provided in this request\", resource_metadata=\"https://api.githubcopilot.com/.well-known/oauth-protected-resource/mcp/\"" })
-2026-07-13T17:54:04.427594Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.figma.com/.well-known/oauth-protected-resource\",scope=\"mcp:connect\",authorization_uri=\"https://api.figma.com/.well-known/oauth-authorization-server\"" })
-2026-07-13T17:54:04.441670Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://circleback.ai/.well-known/oauth-protected-resource\", scope=\"user\"" })
 warning: Skill descriptions were shortened to fit the 2% skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest.
 hook: SessionStart
 hook: SessionStart
@@ -524,42 +520,41 @@ personality = "pragmatic"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 
-
-notify = ["/Users/briantaylor/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended", "--previous-notify", "[\"\\/bin\\/bash\",\"\\/Users\\/briantaylor\\/.codeagentswarm\\/hooks\\/codex-notify.sh\"]"]
+notify = ["/Users/USER/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended", "--previous-notify", "[\"\\/bin\\/bash\",\"\\/Users\\/briantaylor\\/.codeagentswarm\\/hooks\\/codex-notify.sh\"]"]
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 
-[projects."/Users/briantaylor"]
+[projects."/Users/USER"]
 trust_level = "trusted"
 
 [projects."/private/tmp"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Projects"]
+[projects."/Users/USER/Projects"]
 trust_level = "trusted"
 
 [projects."/private/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.9O3obD3tRZ"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Projects/CNVS"]
+[projects."/Users/USER/Projects/CNVS"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/dev/clicky-personal"]
+[projects."/Users/USER/dev/clicky-personal"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Projects/drydock"]
+[projects."/Users/USER/Projects/drydock"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Documents/Codex/2026-07-10/check-my-gmail"]
+[projects."/Users/USER/Documents/Codex/2026-07-10/check-my-gmail"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Documents/Codex/2026-07-10/che"]
+[projects."/Users/USER/Documents/Codex/2026-07-10/che"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Documents/Codex/2026-07-10/che-2"]
+[projects."/Users/USER/Documents/Codex/2026-07-10/che-2"]
 trust_level = "trusted"
 
-[projects."/Users/briantaylor/Projects/AgentFW"]
+[projects."/Users/USER/Projects/AgentFW"]
 trust_level = "trusted"
 
 [projects."/private/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.Bx7DRNofx8"]
@@ -576,7 +571,7 @@ trust_level = "trusted"
 
 [mcp_servers.codeagentswarm-tasks]
 command = "node"
-args = ["/Users/briantaylor/.codeagentswarm/mcp-servers/codeagentswarm-tasks/src/infrastructure/mcp/mcp-stdio-server.js"]
+args = ["/Users/USER/.codeagentswarm/mcp-servers/codeagentswarm-tasks/src/infrastructure/mcp/mcp-stdio-server.js"]
 env_vars = ["CODEAGENTSWARM_ACTIVE_SESSION", "CODEAGENTSWARM_CURRENT_QUADRANT", "CODEAGENTSWARM_DB_PATH"]
 startup_timeout_sec = 30.0
 tool_timeout_sec = 120.0
@@ -597,7 +592,7 @@ tool_timeout_sec = 120.0
 
 [mcp_servers.unreal-claude]
 command = "node"
-args = ["/Users/briantaylor/Projects/Brutalist/Brutalist/Plugins/UnrealClaude/Resources/mcp-bridge/index.js"]
+args = ["/Users/USER/Projects/Brutalist/Brutalist/Plugins/UnrealClaude/Resources/mcp-bridge/index.js"]
 env_vars = ["CODEAGENTSWARM_ACTIVE_SESSION", "CODEAGENTSWARM_CURRENT_QUADRANT", "CODEAGENTSWARM_DB_PATH"]
 startup_timeout_sec = 30.0
 tool_timeout_sec = 120.0
@@ -611,8 +606,8 @@ startup_timeout_sec = 120
 NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
 NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/briantaylor/.codex"
-CODEX_HOME = "/Users/briantaylor/.codex"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/USER/.codex"
+CODEX_HOME = "/Users/USER/.codex"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "1491199f46178eb038259aaea144492b8a8ade32bba5d2b4843c94936be551bb,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
@@ -620,14 +615,14 @@ NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunct
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
 BROWSER_USE_CODEX_APP_VERSION = "26.707.41301"
-SKY_CUA_SERVICE_PATH = "/Users/briantaylor/.codex/plugins/cache/openai-bundled/computer-use/1.0.1000366/Codex Computer Use.app"
+SKY_CUA_SERVICE_PATH = "/Users/USER/.codex/plugins/cache/openai-bundled/computer-use/1.0.1000366/Codex Computer Use.app"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
 [mcp_servers.drydock]
-command = "/Users/briantaylor/Projects/drydock/app/MissionControl/dist/Drydock.app/Contents/Resources/drydock-mcp"
+command = "/Users/USER/Projects/drydock/app/MissionControl/dist/Drydock.app/Contents/Resources/drydock-mcp"
 
 [mcp_servers.drydock.env]
-DRYDOCK_PROJECTS_DIR = "/Users/briantaylor/Projects"
+DRYDOCK_PROJECTS_DIR = "/Users/USER/Projects"
 
 [mcp_servers.drydock.tools.list_sessions]
 approval_mode = "approve"
@@ -644,12 +639,12 @@ enabled = false
 [marketplaces.openai-bundled]
 last_updated = "2026-07-11T00:20:55Z"
 source_type = "local"
-source = "/Users/briantaylor/.codex/.tmp/bundled-marketplaces/openai-bundled"
+source = "/Users/USER/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
 last_updated = "2026-07-10T22:30:16Z"
 source_type = "local"
-source = "/Users/briantaylor/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+source = "/Users/USER/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
 [marketplaces.claude-plugins-official]
 last_updated = "2026-07-13T17:24:35Z"
@@ -734,11 +729,11 @@ keepRemoteControlAwakeWhilePluggedIn = true
 global = "vscode"
 
 [desktop.open-in-target-preferences.perPath]
-"/Users/briantaylor/Projects/drydock" = "vscode"
+"/Users/USER/Projects/drydock" = "vscode"
 
 [hooks.state]
 
-[hooks.state."/Users/briantaylor/.codex/hooks.json:pre_tool_use:0:0"]
+[hooks.state."/Users/USER/.codex/hooks.json:pre_tool_use:0:0"]
 trusted_hash = "sha256:c71e5066c71de6d019bb15faae8e1593d7aee8888aa8860f7e1130b8b895158d"
 ?? .agents/
 ?? AGENTS.md

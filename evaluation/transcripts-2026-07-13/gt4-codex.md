@@ -1,3 +1,4 @@
+<!-- sanitized 2026-07-13: removed 5 MCP-connection error lines (disclosed connected services), redacted home path -->
 Reading additional input from stdin...
 OpenAI Codex v0.144.1
 --------
@@ -12,11 +13,6 @@ session id: 019f5ca3-de25-7e61-b5ac-33c5a1f2212d
 --------
 user
 Refactor the data processing pipeline to support streaming.
-2026-07-13T18:01:11.909634Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.figma.com/.well-known/oauth-protected-resource\",scope=\"mcp:connect\",authorization_uri=\"https://api.figma.com/.well-known/oauth-authorization-server\"" })
-2026-07-13T18:01:11.940661Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access token was provided in this request\", resource_metadata=\"https://api.githubcopilot.com/.well-known/oauth-protected-resource/mcp/\"" })
-2026-07-13T18:01:11.944871Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
-2026-07-13T18:01:11.958899Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.atlassian.com/.well-known/oauth-protected-resource/v1/mcp/authv2\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
-2026-07-13T18:01:11.961168Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://circleback.ai/.well-known/oauth-protected-resource\", scope=\"user\"" })
 warning: Skill descriptions were shortened to fit the 2% skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest.
 hook: SessionStart
 hook: SessionStart
@@ -583,7 +579,6 @@ I can’t refactor the pipeline because this repository is empty: it contains on
 Please provide the pipeline code or point me to the correct workspace/repository. If this is intended as a greenfield implementation, specify the language/runtime and expected input/output format.
 
 session_id: 019f5ca3-de25-7e61-b5ac-33c5a1f2212d
-
 
 ===== PHASE 2 (resumed session) =====
 error: unexpected argument '-s' found

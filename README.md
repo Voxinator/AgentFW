@@ -15,7 +15,7 @@ AgentFW remains structured Markdown plus a few small stdlib-only validators — 
 **r9 status: draft — not eval-validated (golden-task re-run pending).** Released as draft pre-release tag `r9-draft`.
 
 - **Last validated release: r8** (tag `r8`) — still installed from `core/` + `references/`, and it remains the validated install until r9 passes evaluation.
-- **Eval ledger, stated honestly:** r8's last golden-task run (2026-05-29) scored **5 PASS / 3 UNTESTED** — the 3 "partials" were test-design issues, meaning those criteria were UNTESTED, not passed. **No outcome eval has run against r9.** The golden-task rewrite plus outcome evals are the gate for shedding draft status.
+- **Eval ledger, stated honestly:** r8's last golden-task run (2026-05-29) scored **5 PASS / 3 PARTIAL / 0 FAIL** as recorded in `evaluation/results-2026-05-29.md`; under the honest-ledger rule adopted since, those 3 PARTIALs are treated as **UNTESTED** criteria (test-design issues — not passed), not as partial credit. An r9 **smoke** outcome eval has now run (`evaluation/results-2026-07-13.md`, n=1 per task per adapter): no Fail signal in any exercised criterion, but a high UNTESTED count (no target repos for several tasks, n=1 not n≥5) — it does **not** clear the draft bar. Fixture repos plus repeated trials are the remaining gate for shedding draft status.
 
 What "draft" means here: r9 is structurally complete, its mechanical layers are suite-tested, and it has been externally reviewed across seven rounds with zero open findings (see [Verification & provenance](#verification--provenance)) — but none of that is evidence that r9 *improves agent outcomes*. Only the pending evals can show that.
 
@@ -121,7 +121,7 @@ agentfw/
 
 r8 (tag `r8`, 2026-05-29) reframed the firmware as a governance layer over Claude Code 2.1 native primitives: the runtime supplies the harness (Workflow tool, subagents, Plan mode, Skills, MEMORY, hooks, worktrees); the firmware supplies classification, role discipline, the verification standard, and restraint (Rule 6: PREFER NATIVE PRIMITIVES). It added the Plan-Critique Gate + Acceptance-Contract spine, `references/native-primitives.md`, and GT-8; dropped cross-model content (Claude-Code-only); and extracted the Hermes variant.
 
-r8 remains fully installable and is the release whose golden-task ledger stands (5 PASS / 3 UNTESTED):
+r8 remains fully installable and is the last validated release; its 2026-05-29 golden-task ledger reads 5 PASS / 3 PARTIAL / 0 FAIL (the 3 PARTIALs treated as UNTESTED under the honest-ledger rule):
 
 ```
 cat bootstrap.md | claude        # detects environment and installs r8

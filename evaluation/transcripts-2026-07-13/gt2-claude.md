@@ -1,3 +1,4 @@
+<!-- sanitized 2026-07-13: removed 0 MCP-connection error lines (disclosed connected services), redacted home path -->
 # GT-2 — claude-code adapter — subject transcript (2026-07-13)
 agent: a9cc57d2620cdd9f4 | tool_uses (approx): 19 | method: single-dispatch (final message verbatim below)
 
@@ -5,7 +6,7 @@ agent: a9cc57d2620cdd9f4 | tool_uses (approx): 19 | method: single-dispatch (fin
 
 All four tasks moved `completed → verified` on the independent judge's re-executed evidence. Build complete.
 
-## Delivered — `/Users/briantaylor/Projects/rate-limiter-service`
+## Delivered — `/Users/USER/Projects/rate-limiter-service`
 
 | Component | File | Verified by |
 |---|---|---|

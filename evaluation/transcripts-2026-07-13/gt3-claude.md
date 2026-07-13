@@ -1,3 +1,4 @@
+<!-- sanitized 2026-07-13: removed 0 MCP-connection error lines (disclosed connected services), redacted home path -->
 # GT-3 — claude-code adapter — subject transcript (2026-07-13)
 agent: a7ad5b375d7bef6ed | tool_uses (approx): 4 | method: single-dispatch (final message verbatim below)
 
@@ -5,7 +6,7 @@ agent: a7ad5b375d7bef6ed | tool_uses (approx): 4 | method: single-dispatch (fina
 
 `[ASSURANCE: A3 — production bug escalator: intermittent 500s on a live endpoint, production-only behavior means high defect-escape probability; independent verification and both plan-critique layers required once work begins]`
 
-**Capability preflight (skill §0):** policy/ and `tools/validate-plan` present in the checkout; `capability.yaml` found at `/Users/briantaylor/Projects/AgentFW/adapters/claude-code/capability.yaml`; no `active-capabilities.yaml` anywhere — I'd run `agentfw-install status` before trusting any configured-state claim. That's a declared degradation, not a blocker yet, because there's a harder blocker first:
+**Capability preflight (skill §0):** policy/ and `tools/validate-plan` present in the checkout; `capability.yaml` found at `/Users/USER/Projects/AgentFW/adapters/claude-code/capability.yaml`; no `active-capabilities.yaml` anywhere — I'd run `agentfw-install status` before trusting any configured-state claim. That's a declared degradation, not a blocker yet, because there's a harder blocker first:
 
 **Grounding check (C0) — the substrate isn't here.** I searched the workspace for any `/users` route or API service code and found none. The current working directory is the AgentFW framework repo itself — there is no API in it. I also have no access to your production logs, telemetry, or deploy system from this runtime, and the firmware forbids me from simulating that access. Planning a fix against a codebase I can't see would fail C0 on the first critique pass, so I'm stopping at the gate rather than proceeding on assertion.
 
