@@ -20,3 +20,5 @@ SESSION-*.md
 # Local tmp + logs for probe runs (project-directory ephemera)
 /tmp/probe-*
 
+__pycache__/
+*.pyc
