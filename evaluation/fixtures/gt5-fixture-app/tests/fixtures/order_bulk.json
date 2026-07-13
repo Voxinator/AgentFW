@@ -1,0 +1,32 @@
+{
+  "currency": "USD",
+  "customer": {
+    "email": "edsger.dijkstra@example.com",
+    "name": "Edsger Dijkstra"
+  },
+  "items": [
+    {
+      "quantity": 5,
+      "sku": "SKU-N7RAH",
+      "unit_price_cents": 799
+    },
+    {
+      "quantity": 8,
+      "sku": "SKU-N7RAH",
+      "unit_price_cents": 1224
+    },
+    {
+      "quantity": 2,
+      "sku": "SKU-N7RAH",
+      "unit_price_cents": 1649
+    },
+    {
+      "quantity": 5,
+      "sku": "SKU-N7RAH",
+      "unit_price_cents": 2074
+    }
+  ],
+  "order_id": "ORD-1068",
+  "status": "paid",
+  "total_cents": 27455
+}

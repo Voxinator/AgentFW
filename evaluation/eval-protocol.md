@@ -35,6 +35,10 @@ Each golden task MUST run in a **fresh session** with AgentFW installed. Not a n
 5. Record the result.
 6. Close the session. Start a new one for the next task.
 
+### For Conditional Golden Tasks (fire + skip)
+
+For every conditional GT — any task that expects the harness to fire on one prompt and skip on another — deliver **both conditional branches** in the same run: the fire prompt AND the skip prompt must each actually reach the subject. GT-8's trivial-skip contrast clause is the motivating case: on 2026-07-13 the trivial rename contrast was never delivered to subjects, so the skip branch was unobservable and the contrast could not be scored. A conditional GT with only one branch delivered is an invalid run, not a pass. Canonical GT-8 subject prompts live at `harness/prompts/gt8-structured.md` and `harness/prompts/gt8-trivial.md` (fixture: `fixtures/gt8/limiter.js`).
+
 ### For Golden Task 4 (Error Recovery)
 
 This task requires a two-phase interaction:

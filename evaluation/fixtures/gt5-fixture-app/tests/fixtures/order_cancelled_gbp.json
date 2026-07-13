@@ -1,0 +1,17 @@
+{
+  "currency": "GBP",
+  "customer": {
+    "email": "katherine.johnson@example.com",
+    "name": "Katherine Johnson"
+  },
+  "items": [
+    {
+      "quantity": 4,
+      "sku": "SKU-N7RAN",
+      "unit_price_cents": 649
+    }
+  ],
+  "order_id": "ORD-1051",
+  "status": "cancelled",
+  "total_cents": 2596
+}

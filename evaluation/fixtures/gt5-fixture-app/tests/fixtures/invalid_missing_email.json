@@ -1,0 +1,16 @@
+{
+  "currency": "USD",
+  "customer": {
+    "name": "Barbara Liskov"
+  },
+  "items": [
+    {
+      "quantity": 6,
+      "sku": "SKU-N7RAF",
+      "unit_price_cents": 949
+    }
+  ],
+  "order_id": "ORD-1085",
+  "status": "pending",
+  "total_cents": 5694
+}

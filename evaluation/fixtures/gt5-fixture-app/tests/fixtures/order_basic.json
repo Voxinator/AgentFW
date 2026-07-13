@@ -1,0 +1,17 @@
+{
+  "currency": "USD",
+  "customer": {
+    "email": "ada.lovelace@example.com",
+    "name": "Ada Lovelace"
+  },
+  "items": [
+    {
+      "quantity": 1,
+      "sku": "SKU-N7RAU",
+      "unit_price_cents": 199
+    }
+  ],
+  "order_id": "ORD-1000",
+  "status": "pending",
+  "total_cents": 199
+}

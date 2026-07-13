@@ -1,0 +1,22 @@
+{
+  "currency": "EUR",
+  "customer": {
+    "email": "alan.turing@example.com",
+    "name": "Alan Turing"
+  },
+  "items": [
+    {
+      "quantity": 3,
+      "sku": "SKU-N7RAQ",
+      "unit_price_cents": 499
+    },
+    {
+      "quantity": 6,
+      "sku": "SKU-N7RAQ",
+      "unit_price_cents": 924
+    }
+  ],
+  "order_id": "ORD-1034",
+  "status": "shipped",
+  "total_cents": 7041
+}

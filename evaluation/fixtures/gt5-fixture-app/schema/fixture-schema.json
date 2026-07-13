@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Order",
+  "description": "An order record as consumed by the order validator. Test fixtures under tests/fixtures/ are generated from this schema by tools/generate_fixtures.py.",
+  "type": "object",
+  "required": [
+    "order_id",
+    "customer",
+    "status",
+    "currency",
+    "items",
+    "total_cents"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "pattern": "^ORD-[0-9]{4}$"
+    },
+    "customer": {
+      "type": "object",
+      "required": ["name", "email"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "type": "string",
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "paid", "shipped", "cancelled"]
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["USD", "EUR", "GBP"]
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["sku", "quantity", "unit_price_cents"],
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string",
+            "pattern": "^SKU-[A-Z0-9]{5}$"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unit_price_cents": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "total_cents": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "x-consistency": [
+    "total_cents MUST equal the sum over items of quantity * unit_price_cents"
+  ],
+  "x-fixtures": {
+    "description": "Deterministic fixture manifest. tools/generate_fixtures.py renders one JSON file per case into tests/fixtures/. Cases with a 'mutation' are intentionally invalid and exercise the validator's negative paths.",
+    "cases": [
+      { "file": "order_basic.json", "index": 0, "status": "pending", "currency": "USD", "item_count": 1 },
+      { "file": "order_multi_item.json", "index": 1, "status": "paid", "currency": "USD", "item_count": 3 },
+      { "file": "order_shipped_eur.json", "index": 2, "status": "shipped", "currency": "EUR", "item_count": 2 },
+      { "file": "order_cancelled_gbp.json", "index": 3, "status": "cancelled", "currency": "GBP", "item_count": 1 },
+      { "file": "order_bulk.json", "index": 4, "status": "paid", "currency": "USD", "item_count": 4 },
+      { "file": "invalid_missing_email.json", "index": 5, "status": "pending", "currency": "USD", "item_count": 1, "mutation": "drop_customer_email" },
+      { "file": "invalid_total_mismatch.json", "index": 6, "status": "paid", "currency": "EUR", "item_count": 2, "mutation": "break_total" }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "currency": "EUR",
+  "customer": {
+    "email": "donald.knuth@example.com",
+    "name": "Donald Knuth"
+  },
+  "items": [
+    {
+      "quantity": 7,
+      "sku": "SKU-N7RAD",
+      "unit_price_cents": 1099
+    },
+    {
+      "quantity": 1,
+      "sku": "SKU-N7RAB",
+      "unit_price_cents": 1524
+    }
+  ],
+  "order_id": "ORD-1102",
+  "status": "paid",
+  "total_cents": 9317
+}

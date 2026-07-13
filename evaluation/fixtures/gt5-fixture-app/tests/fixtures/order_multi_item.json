@@ -1,0 +1,27 @@
+{
+  "currency": "USD",
+  "customer": {
+    "email": "grace.hopper@example.com",
+    "name": "Grace Hopper"
+  },
+  "items": [
+    {
+      "quantity": 2,
+      "sku": "SKU-N7RAS",
+      "unit_price_cents": 349
+    },
+    {
+      "quantity": 5,
+      "sku": "SKU-N7RAS",
+      "unit_price_cents": 774
+    },
+    {
+      "quantity": 8,
+      "sku": "SKU-N7RAS",
+      "unit_price_cents": 1199
+    }
+  ],
+  "order_id": "ORD-1017",
+  "status": "paid",
+  "total_cents": 14160
+}
