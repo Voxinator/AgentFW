@@ -1,6 +1,11 @@
 # AgentFW — Design Specification
 
-**Version:** r8
+> **Versioning note (r9 draft):** This document is the **r8 design spec**, retained as-is. r9 (draft
+> pre-release, tag `r9-draft`) restructures the framework into a platform-neutral semantic policy plus
+> native adapters — see `policy/core.md`, `policy/assurance-model.md`, and the README's r9 sections.
+> A full r9 design revision lands with the validated r9 release.
+
+**Version:** r8 (see r9 draft banner above)
 **Author:** Brian Taylor
 **Last updated:** 2026-05-29
 

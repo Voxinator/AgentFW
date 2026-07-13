@@ -44,6 +44,14 @@ A third adversarial review (GPT 5.6 Sol; all six findings re-reproduced locally 
 - **Capability schema reconciled + machine-validated (HR7)** — `configured` enum widened to `true | false | partial | unknown | n/a` with one-line definitions; new stdlib `tools/validate-capability` asserts the ten keys, the enums, and per-key `verified:` annotations — passes both live instances, rejects bad fixtures naming the defect.
 - **Roundtrip suite extended + scope honesty (HR8)** — Sol's exact repros now roundtrip or refuse correctly (tilde fence, four-backtick fence with inner triple-backtick lines, 3-space-indented fence, unclosed backtick/tilde, BEGINNING lookalike, capability packaging); README states the deliberate r9.1 scope boundary (two native adapters + two guided profiles; ChatGPT Work deferred — not full ChatGPT parity).
 
+### Closure passes + draft pre-release (2026-07-11, external reviews #4–#7)
+Four further external review rounds (GPT 5.6 Sol) drove the closing residual fixes; each finding was re-reproduced locally before acceptance:
+- **Validator residuals closed.** `agentfw-install status` permission probes now JSON-parse `settings.json` and check each rule individually with canonical-form containment (no substring false positives), first-command truncation for compound commands, and a `settings_schema_valid` diagnostic when the file doesn't parse. `tools/validate-plan` makes the **v1.1 schema mandatory** — version-"1" blocks are accepted only under an explicit `--legacy` provenance mode; **structured tier derivation** computes the required verification tier from `integration_seam`/`risk_class` rather than trusting the declared value alone; a **task-id precheck** rejects plans whose contracts reference undeclared task ids before deeper validation runs. The repo's own plans were migrated to v1.1 and pass the mandatory validator.
+- **Skill example sync, permanently mechanical.** The example plan blocks embedded in both adapters' SKILL.md files are validated with `tools/validate-plan` as part of the test suite, so skill/policy drift on the contract schema is caught mechanically, not by review.
+- **Final suite state:** install roundtrip **25/25** (the case counter is derived from the executed cases, not hand-maintained); 17 hostile plan fixtures + 3 capability fixtures rejected with the defect named; both capability parser paths exercised; 54 links resolvable.
+- **Review #7 verdict: approved for commit sequence — zero open findings.**
+- **Released as draft pre-release, tag `r9-draft`.** Outcome evals (golden-task rewrite for the assurance framing + a run against r9) remain the gate to a full r9 release; nothing in these passes constitutes eval validation.
+
 ---
 
 ## r8 (2026-05-29) — v8 governance refactor + Hermes extraction
