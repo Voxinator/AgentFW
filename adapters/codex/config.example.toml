@@ -1,0 +1,46 @@
+# AgentFW r9 — Codex config example (conservative effects encoding)
+#
+# MERGE these keys into ~/.codex/config.toml (or a project-scoped .codex/config.toml) —
+# do NOT replace your existing file. If a key already exists, keep the stricter value.
+#
+# Every key below was verified against the official Codex configuration reference
+# (https://learn.chatgpt.com/docs/config-file/config-reference — the canonical target of
+# developers.openai.com/codex/config-reference, fetched 2026-07-11). No unverified keys appear.
+# Comments map each setting to the AgentFW policy control it implements
+# (effects taxonomy: policy/core.md; capability instance: capability.yaml in this adapter).
+
+# ---------------------------------------------------------------------------
+# Ask-tier enforcement (deterministic_permissions).
+# Pauses for approval before commands outside the trusted set — the platform-enforced
+# analog of AgentFW's ask tier. "untrusted" is stricter; "never" removes the human gate
+# and is only defensible below A2 with a sandbox that cannot reach anything irreversible.
+approval_policy = "on-request"
+
+# ---------------------------------------------------------------------------
+# Filesystem effects (filesystem write/delete scope).
+# workspace-write confines writes to the workspace: the platform-enforced side-effect
+# budget for filesystem effects. Use "read-only" for review/judge-only sessions.
+# NEVER default to "danger-full-access" — that abandons the enforcement floor the
+# AgentFW effects taxonomy routes through this key.
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+# Network-egress effects: platform-enforced OFF. Turning this on moves every network
+# side effect from "impossible" to "prompt-governed" — an assurance decision, not a
+# convenience toggle. Leave false unless the task's contract names why egress is needed.
+network_access = false
+
+# Additional writable roots (filesystem scope extension). Empty on purpose: every added
+# root widens the enforced side-effect budget. Add paths deliberately, per task.
+writable_roots = []
+
+# ---------------------------------------------------------------------------
+# NOT included here, on purpose:
+# - [hooks] / notify — hooks can deny tool calls (PreToolUse, exit 2), but official docs
+#   call them "a guardrail rather than a complete enforcement boundary"; AgentFW routes
+#   primary enforcement to sandbox_mode + approval_policy above. Add hooks as
+#   defense-in-depth if you wish: https://learn.chatgpt.com/docs/hooks
+# - agents.max_threads / agents.max_depth — platform defaults (6 / 1) are sane caps for
+#   parallel subagent fan-out; override only with a named reason.
+# - project_doc_max_bytes — only relevant if your combined AGENTS.md stack exceeds the
+#   32 KiB default; the AgentFW bootloader block is ~2.4 KB and needs no change.

@@ -1,5 +1,26 @@
 # AgentFW Changelog
 
+## r9 (2026-07-11) — semantic policy + native adapters (DRAFT)
+
+### Context
+A cross-model design review of r8 (with GPT 5.6 Sol) surfaced the structural weakness r8 papered over: the governance layer was written *in* Claude Code's vocabulary, so its portability was aspiration, not architecture. r9 splits the framework into a **platform-neutral semantic policy** (`policy/` — names capabilities and invariants, never vendor runtime primitives) and **native adapters** (`adapters/` — compile the policy into each runtime's real controls), and shifts the framing from task classification to **assurance engineering**: how much independent evidence does this change need before it is believed?
+
+### Added
+- **`policy/` suite** — the semantic policy core: **assurance model A0–A4** with the 3-question derivation (blast radius/reversibility, defect-escape probability, autonomy/irreversibility); **Acceptance Contract v2** (requirement ids, environment, negative cases, evidence freshness, non-shell evidence path); **two-layer Plan-Critique Gate** — Layer 1 is a real, runnable deterministic validator (`tools/validate-plan`, with positive AND negative fixtures under `tools/fixtures/`), Layer 2 the C0–C5 semantic judge; **capability contracts** (`policy/capability-contract.md` + per-adapter `capability.yaml`, every claim carrying a `verified:` annotation — an unverified true gates as false); **recovery decision model** (failure scope, contamination analysis, retry budget, evidence invalidation, lesson-not-state carry-forward); **anti-patterns** carried forward plus new **Prose-API** (specifying behavior as function signatures no runtime implements) and **Adapter Sprawl** (shipping platform bindings no eval has executed).
+- **Adapters.** `adapters/claude-code/` — thin bootloader + skill + agent definitions, with a marker-block installer (`tools/agentfw-install`) whose clean upgrade (including from marker-less r6/r7/r8 installs) and clean uninstall are roundtrip-tested (`tools/tests/install-roundtrip.sh`) to preserve user content byte-for-byte. `adapters/codex/` — doc-grounded: platform capability claims verified against official documentation, annotated per source.
+- **Guided profiles.** `profiles/chatgpt.md` and `profiles/claude-projects.md` — honest lower-autonomy profiles for runtimes with no enforcement surface; explicitly not adapters.
+
+### Kept deliberately
+- **Visible `[ASSURANCE]` / `[CONTEXT HEALTH]` markers as forcing functions** — adapters may hide them from end-user display, but the model must emit them.
+- **The input-curation bright line** — a judge of record receives requirements, current state, and acceptance criteria; never the producer's plan, reasoning, or self-assessment.
+- **The C0–C5 rubrics** — inherited intact into Layer 2 of the Plan-Critique Gate.
+- **The Complexity Accumulation counterweight** — now applied to the framework's *own* machinery: schemas exist only where a real validator consumes them; state/effects are invariants + evidence, never prose-APIs.
+
+### Status
+**Draft — not eval-validated (golden-task re-run pending).** r8 remains in `core/` + `references/`, untouched, and stays the validated install until r9 passes evaluation. Eval re-ledger, stated honestly: the last golden-task run (2026-05-29, against r8) scored 5 PASS / 3 UNTESTED — the 3 "partials" were test-design issues, meaning those criteria were UNTESTED, not passed; no eval has yet run against r9.
+
+---
+
 ## r8 (2026-05-29) — v8 governance refactor + Hermes extraction
 
 ### Context

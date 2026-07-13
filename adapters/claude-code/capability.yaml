@@ -1,0 +1,100 @@
+# AgentFW r9 — capability instance: Claude Code
+# Spec: ../../policy/capability-contract.md — exactly 10 keys, true|false|partial, each with a
+# verification annotation.
+#
+# Grounding note (2026-07-11): verification annotations point at re-checkable evidence only — a
+# runnable repo artifact or an official documentation URL (docs.anthropic.com / code.claude.com).
+# Per the spec, any `unverified` annotation means the claim could not be pointed at citable
+# evidence at build time; an unverified `true` counts as false for gating decisions until
+# re-verified.
+
+filesystem:
+  value: true
+  verified: tools/tests/install-roundtrip.sh
+  notes: >
+    Runnable repo artifact: the T3 roundtrip test creates, edits, and removes files in sandbox
+    directories through the platform's file tools and shell, with recorded PASS output. Read/
+    Write/Edit/Glob/Grep are first-class tools; permission rules scope them (see
+    deterministic_permissions).
+
+shell:
+  value: true
+  verified: tools/tests/install-roundtrip.sh
+  notes: >
+    Runnable repo artifact: this bash test suite (and tools/agentfw-install under it) executes
+    via the platform's Bash tool with persistent working directory and recorded exit codes —
+    machine-check evidence is producible and recordable.
+
+isolated_agents:
+  value: true
+  verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  notes: >
+    Subagents run in their own context windows; a subagent's final message returns to the
+    caller, not the user — structural output isolation. Input-curation of a judge's prompt
+    remains the caller's obligation: the platform isolates output, not input.
+
+parallel_agents:
+  value: true
+  verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  notes: >
+    Multiple subagent invocations issued in a single message run concurrently (background by
+    default in current runtimes). The r9 build itself fanned T1-T5 out as parallel workers.
+
+persistent_state:
+  value: true
+  verified: https://docs.anthropic.com/en/docs/claude-code/memory
+  notes: >
+    CLAUDE.md memory files load every session (user/project/local scopes); auto-memory
+    (MEMORY.md) persists across conversations; session transcripts resume. Plan/task files in
+    the repo remain a useful convention on top, not a replacement.
+
+deterministic_permissions:
+  value: true
+  verified: https://code.claude.com/docs/en/settings
+  notes: >
+    settings.json permissions.allow/ask/deny rules plus Pre/PostToolUse hooks are enforced by
+    the harness independent of model compliance — this is the enforcement floor the effects
+    taxonomy compiles into (see settings.example.json in this adapter).
+
+worktree_isolation:
+  value: partial
+  verified: unverified
+  notes: >
+    The live Agent tool schema exposes isolation: "worktree" (temporary git worktree per
+    subagent, auto-cleaned if unchanged), and EnterWorktree/ExitWorktree exist — but no
+    official documentation URL could be confirmed at build time (no network in this task's
+    budget). Marked partial per the spec's honesty rule (an unverified true is not honest):
+    until re-verified against official docs, plan colliding parallel edits as if platform
+    worktree isolation were absent (serialize, or create worktrees manually per
+    https://docs.anthropic.com/en/docs/claude-code/common-workflows). Upgrade to true when a
+    citable official doc is confirmed.
+
+scheduled_resume:
+  value: partial
+  verified: unverified
+  notes: >
+    Cron/scheduled-task tooling and the schedule/loop skills are exposed in the live runtime
+    (scheduled cloud agents on cron schedules; recurring local loops) — but no official
+    documentation URL could be confirmed at build time (no network in this task's budget).
+    Marked partial per the spec's honesty rule (an unverified true is not honest); gates as
+    absent for autonomy decisions until re-checked against official docs. Do not promise
+    unattended scheduled resumption; an external scheduler driving the CLI is the user-managed
+    fallback. Upgrade to true when a citable official doc is confirmed.
+
+independent_review:
+  value: true
+  verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  notes: >
+    A subagent that did not produce the artifact can serve as judge of record, with tool
+    restrictions (read-only + shell) declared in its agent definition — this adapter installs
+    agentfw-verifier and agentfw-plan-critic exactly so. Input curation is the caller's job:
+    requirements + state + contracts, never the producer's reasoning.
+
+structured_output:
+  value: partial
+  verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  notes: >
+    A subagent's result is its free-form final message — there is no general JSON-schema-forced
+    output across agent boundaries. Typed output exists only on specific surfaces (e.g. a code
+    review findings tool); the agentfw-plan-critic VERDICT format is a prompt convention, not
+    schema-enforced. Partial: parseable-by-convention, not validated-by-platform.

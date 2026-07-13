@@ -1,15 +1,17 @@
 {
   "name": "agentfw",
   "display_name": "AgentFW",
-  "version": "8.0.0",
-  "revision": "r8",
-  "description": "Firmware for agent behavior — a governance/policy layer over Claude Code 2.1's native runtime primitives (Workflow tool, Agent subagents, Plan mode, Skills, MEMORY, hooks, permission modes). The firmware decides whether/when/how-well to orchestrate; the runtime executes how (Rule 6: PREFER NATIVE PRIMITIVES). v8 keeps the surviving policy layer: the Classification Gate, role-separation policy + judge input-curation, the two Enforcement Gates (Tier-1 verification + Context Health), the new Plan-Critique Gate (critique the plan before the first worker dispatch), and the anti-pattern judgment layer (esp. Complexity Accumulation).",
+  "version": "9.0.0-dev",
+  "revision": "r9-draft",
+  "description": "Firmware for agent behavior, split into a platform-neutral semantic policy (policy/ — assurance model A0-A4, acceptance contracts, two-layer Plan-Critique Gate, capability contracts, recovery, anti-patterns) and native adapters (adapters/ — compile the policy into each runtime's real controls) plus guided degradation profiles (profiles/).",
   "author": "Brian Taylor",
   "created": "2025-03-01",
-  "updated": "2026-05-29",
-  "compatibility": ["claude-code"],
-  "core_file": "core/harness-core.md",
+  "updated": "2026-07-11",
+  "compatibility": ["claude-code", "codex"],
+  "core_file": "policy/core.md",
+  "adapters": ["claude-code", "codex"],
+  "profiles": ["chatgpt", "claude-projects"],
   "bootstrap": "bootstrap.md",
   "license": "MIT",
-  "tags": ["agentfw", "firmware", "workflow", "agent-architecture", "planner-worker-judge", "verification", "role-separation", "native-primitive-delegation", "plan-critique-gate"]
+  "tags": ["agentfw", "firmware", "workflow", "agent-architecture", "planner-worker-judge", "verification", "role-separation", "native-primitive-delegation", "plan-critique-gate", "assurance-model", "capability-contract"]
 }

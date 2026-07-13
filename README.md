@@ -10,6 +10,30 @@ AgentFW is still a set of structured Markdown documents that install as standing
 
 > **Hermes variant moved.** The Hermes variant (Gemma-4 running AgentFW as a local orchestrator on Hermes Agent) has been extracted to its own project, **`agentfw-hermes`**, and removed from this repo. It is no longer part of AgentFW core. Historical commits in this repo's git history and `archive/` are unaffected.
 
+## r9 (draft)
+
+**Status: draft — not eval-validated (golden-task re-run pending).**
+
+r9 thesis: *"r9 governs work through portable assurance contracts compiled into native runtime behavior where a runtime exists to compile into, and into explicit, evidence-bearing model commitments where it doesn't — with the honesty to say which is which per adapter."*
+
+**Eval honesty note:** the last golden-task run (2026-05-29, against r8) scored 5 PASS / 3 UNTESTED — the 3 partials were test-design issues, which means those criteria were UNTESTED, not passed; r9 has not yet been evaluated.
+
+### r9 layout
+
+- **`policy/`** — the platform-neutral semantic policy (assurance model, verification tiers, acceptance contracts, Plan-Critique Gate, capability contracts, recovery, anti-patterns). Names no vendor runtime primitive.
+- **`adapters/claude-code/`** and **`adapters/codex/`** — native adapters that compile the policy into each runtime's real controls, each with INSTALL/UPGRADE/UNINSTALL docs and a `capability.yaml`.
+- **`profiles/`** — guided degradation profiles (ChatGPT, Claude.ai Projects) for runtimes with no enforcement surface. Explicitly *not* adapters.
+- **`tools/`** — `validate-plan` (deterministic Layer-1 plan validation + fixtures), `agentfw-install` (marker-block installer), and `tests/`.
+
+### Install / upgrade / uninstall per platform
+
+| Platform | Install | Upgrade | Uninstall |
+|---|---|---|---|
+| Claude Code | `adapters/claude-code/INSTALL.md` | `adapters/claude-code/UPGRADE.md` | `adapters/claude-code/UNINSTALL.md` |
+| Codex | `adapters/codex/INSTALL.md` | `adapters/codex/UPGRADE.md` | `adapters/codex/UNINSTALL.md` |
+
+> **Note:** `variants/` (r6-era) is superseded by `adapters/` and retained for history. The r8 sections below still describe `core/` + `references/`, which remain valid until r9 is validated.
+
 ## Quick Install
 
 AgentFW v8 targets **Claude Code** exclusively.
