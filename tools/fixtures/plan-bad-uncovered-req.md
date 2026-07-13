@@ -5,7 +5,7 @@ ONLY defect. Layer 1 must exit non-zero naming R2 as uncovered.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A1",
   "requirements": [
     {"id": "R1", "text": "Endpoint returns the user list"},

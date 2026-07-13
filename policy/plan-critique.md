@@ -19,11 +19,20 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 ```` ``` ````. The validator (stdlib-only, exit-code honest) mechanically checks:
 
 1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
-   keys are rejected as silently-accepted ambiguity), and `version` is present.
+   keys are rejected as silently-accepted ambiguity), and `version` is present and — in default
+   mode — exactly `"1.1"`: **schema 1.1 is mandatory**. A `"version": "1"` block is rejected as a
+   legacy schema version; unknown version strings are rejected naming the version. The `--legacy`
+   flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules (rules 2–10 below; none of
+   rule 11's 1.1 fields are required — the task-id precheck still applies in every mode, being a
+   validator correctness fix rather than a schema rule) — a provenance boundary for re-checking
+   plans authored before the 1.1 schema, never a license to author new v1 plans.
 2. `assurance` is present and one of A0–A4.
 3. **Substance:** A2+ plans ⇒ `requirements` and `tasks` lists are non-empty (an assured plan
    cannot be empty of either).
 4. **Record shape:** every requirement record carries a non-empty `id` and `text`.
+4b. **Task-id precheck:** EVERY task carries a non-empty string `id`, checked BEFORE the
+   coverage, dependency, and cycle validations below — a missing/empty task id is its own
+   defect (keyword `empty`) naming the task index, never a downstream error or a silent skip.
 5. **Identity:** requirement ids are unique; task ids are unique.
 6. **Coverage:** every requirement id is covered by ≥1 task's `requirement_ids`, and every
    `requirement_ids` entry names a DECLARED requirement (no phantom references).
@@ -32,14 +41,31 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 8. **Dependencies:** `deps` reference existing task ids and are acyclic (real cycle detection).
 9. **Risk discipline:** `risk` present ⇒ `negative_cases` non-empty.
 10. **Assurance discipline:** A3/A4 plans ⇒ EVERY contract has non-empty `negative_cases`.
+11. **Schema 1.1 structured tier derivation:** per contract at A2+ — `integration_seam` (a JSON
+    boolean) and `risk_class` (∈ `none` | `standard` | `security` | `destructive`) are REQUIRED
+    structured derivation inputs; `required_verification_tier` present, ∈ `producer` |
+    `independent` | `adversarial`, and ≥ the MECHANICALLY DERIVED minimum tier
+    (`producer` < `independent` < `adversarial`): base floor by assurance — A2 ⇒ `producer`,
+    A3 ⇒ `independent`, A4 ⇒ `adversarial`; `integration_seam: true` AND assurance A2 ⇒ floor
+    `independent`; `risk_class` `security`/`destructive` ⇒ floor `adversarial` at EVERY
+    assurance level (enforced even below A2 whenever the field is present). Free-form `risk`
+    prose NEVER enters the derivation. Also per contract at A2+ — non-empty `environment`
+    string; `rerunnable` is a JSON boolean (a quoted `"true"` is a type defect). Per contract
+    at A3+ — non-empty `evidence` (string or object). `constraints` is explicitly optional,
+    type-checked only when present. Field semantics, the mandatory-by-tier table, and the
+    derivation table: `policy/acceptance-contract.md`.
 
 Exit 0 + `PASS` on success; on any failure, non-zero exit with messages naming the offending
 task/requirement id and defect class. All defects are reported, not just the first.
 
 **Defect-keyword contract (stable, grep-able):** every failure message carries exactly one of the
-defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`, `empty`, `duplicate`.
-Harness code and fixtures key on these words; changing them is a breaking schema change to this
-file, the schema of record.
+defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`, `empty`, `duplicate`,
+`tier`, `version` (`tier` covers every tier-derivation defect — a missing/invalid
+`required_verification_tier`, a missing/invalid `integration_seam` or `risk_class` derivation
+input, or a declared tier below the mechanically derived floor; `empty` includes the task-id
+precheck; `version` covers legacy-`"1"` and unknown-version rejections, the legacy message also
+naming `--legacy`). Harness code and fixtures key on these words; changing them is a breaking
+schema change to this file, the schema of record.
 
 **Honest limit (Layer 1):** the validator verifies **structure and coverage** — that a discriminating
 command EXISTS for every requirement and the plan graph is sound. It **cannot judge command STRENGTH**:

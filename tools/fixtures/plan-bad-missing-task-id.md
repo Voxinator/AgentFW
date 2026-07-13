@@ -1,7 +1,10 @@
-# Fixture: incomplete contract (expected: FAIL, defect class "contract")
+# Fixture: task without an id (expected: FAIL, defect class "empty")
 
-Otherwise valid A1 plan. T2's contract has an empty acceptance_command — the
-ONLY defect. Layer 1 must exit non-zero naming T2 and the contract defect.
+Otherwise valid A1 plan on the 1.1 schema. The second task record carries a
+complete contract but NO `id` field — the ONLY defect. The task-id precheck
+runs BEFORE coverage/dependency/cycle validation, so Layer 1 must exit
+non-zero with a defect naming task index #1 and the missing/empty id — not
+a downstream KeyError, not a silent skip.
 
 ```json agentfw-plan
 {
@@ -18,11 +21,11 @@ ONLY defect. Layer 1 must exit non-zero naming T2 and the contract defect.
       "acceptance_command": "python3 -m pytest tests/test_parse_ok.py -q",
       "expected_signal": "exit 0, no 'failed' in summary",
       "rerunnable": true}},
-    {"id": "T2", "title": "Rejection path", "deps": ["T1"],
+    {"title": "Rejection path", "deps": [],
      "contract": {"requirement_ids": ["R2"],
       "criteria": "invalid input exits non-zero with a diagnostic",
-      "acceptance_command": "",
-      "expected_signal": "exit 1 with 'parse error' on stderr",
+      "acceptance_command": "python3 -m pytest tests/test_parse_reject.py -q",
+      "expected_signal": "exit 0, no 'failed' in summary",
       "rerunnable": true}}
   ]
 }

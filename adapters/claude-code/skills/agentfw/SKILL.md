@@ -12,6 +12,28 @@ validator under `./tools/validate-plan` (the installer copies the repo's `policy
 `tools/validate-plan` into `skills/agentfw/`, so these references resolve without the repo
 checkout).
 
+## 0. Capability preflight (run before any A2+ work)
+
+Assurance gating consults the ACTIVE install, not the platform brochure. Before engaging the A2+
+workflow below, read the two capability files installed next to this SKILL.md:
+
+1. `capability.yaml` — the packaged capability contract (the installer copies the adapter's
+   instance alongside this skill): what the platform makes *available* vs what this install has
+   *configured*.
+2. `active-capabilities.yaml` when present — generated/refreshed by `agentfw-install status`,
+   recording per-probe results (each settings deny rule individually yes/no, plus
+   validator-present, agents-present, manifest-present). If it is missing or stale, run
+   `agentfw-install status` to (re)generate it before trusting any configured-state claim.
+
+```sh
+cat ./capability.yaml            # packaged capability contract
+cat ./active-capabilities.yaml   # per-probe active state, written by: agentfw-install status
+```
+
+A capability that the derived assurance tier requires but that is unavailable or unconfigured
+means you degrade per the policy's degradation rules (`./policy/capability-contract.md`) —
+reduced autonomy or human participation, DECLARED in the plan, never silent.
+
 ## 1. Assurance derivation (full table)
 
 Three questions — Q1 blast radius & reversibility; Q2 defect-escape probability; Q3 autonomy &
@@ -22,11 +44,14 @@ irreversibility — map to a level. Full model: `./policy/assurance-model.md`.
 | A0 | lookup / explanation / tiny reversible edit | direct execution; producer check |
 | A1 | bounded single-seam implementation | lightweight plan; producer tests (machine-checked) |
 | A2 | multi-component / integration seams | decompose; independent verification at seams; Layer-1 plan validation; Layer-2 critique if ambiguity/shared values |
-| A3 | production bug, security, infra, multi-file autonomous | independent workers + independent verifier; full acceptance contracts; both plan-critique layers; checkpoints |
+| A3 | production bug, security, infra; autonomy compounded by risk (see escalators) | independent workers + independent verifier; full acceptance contracts; both plan-critique layers; checkpoints |
 | A4 | irreversible / destructive / critical autonomous | A3 + adversarial verification + explicit human authorization + rollback proof (restorability, not just backup integrity) |
 
 Escalators (any one bumps to at least A3): production/live infra; security-sensitive;
-destructive/history-rewriting; autonomous multi-file. Verification tiers: **producer** always;
+destructive/history-rewriting; autonomy PLUS at least one of {material side effects beyond the
+working tree, unclear integration seams, elevated defect-escape probability, no rapid human
+review}. Autonomy alone does not escalate: a routine, reversible multi-file refactor with strong
+tests is A2 even when run autonomously. Verification tiers: **producer** always;
 **independent** at A2 seams and all A3+; **adversarial** at A4 and for security/destructive work
 regardless of level.
 
@@ -54,21 +79,40 @@ self-assessment. On judge failure: findings → planner → a *new* worker, not 
 Every A2+ task carries a contract (full spec: `./policy/acceptance-contract.md`):
 `requirement_ids[]`, `criteria`, `acceptance_command`, `environment`, `expected_signal` (anchored —
 must not also match a fail line), `negative_cases[]` (REQUIRED whenever `risk` is present), `risk`,
-`evidence` (freshness: produced_after_change), `rerunnable`, `constraints`. Tier-1 lever = at least
+`evidence` (freshness: produced_after_change), `integration_seam` (JSON boolean),
+`risk_class` (none | standard | security | destructive), `required_verification_tier`
+(producer | independent | adversarial), `rerunnable` (JSON boolean), `constraints` (optional).
+Tier-1 lever = at least
 one negative/regression assertion the command actually RUNS — a bare smoke import is not Tier-1.
 Non-shell work (docs/research/design): a named mechanical check (grep/link-check/renderer) plus a
 designated independent reviewer; prose-only acceptance is never Tier-1.
 
-Plans embed one machine-readable block, fenced as ` ```json agentfw-plan ` :
+Plans embed one machine-readable block, fenced as ` ```json agentfw-plan ` (the example below
+uses that exact fence, so this SKILL.md itself validates as a single-block input to
+`./tools/validate-plan` — the roundtrip suite runs exactly that check):
 
-```
-{ "version": "1", "assurance": "A0|A1|A2|A3|A4",
+```json agentfw-plan
+{ "version": "1.1", "assurance": "A3",
   "requirements": [{"id": "R1", "text": "..."}],
   "tasks": [{ "id": "T1", "title": "...", "deps": [],
               "contract": { "requirement_ids": ["R1"], "criteria": "...",
                             "acceptance_command": "...", "expected_signal": "...",
+                            "environment": "...", "evidence": "...",
+                            "integration_seam": false, "risk_class": "standard",
+                            "required_verification_tier": "independent",
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
+
+Schema versioning: `"version": "1.1"` is MANDATORY. A `"version": "1"` block is rejected by
+default and accepted only via `validate-plan --legacy` — historical provenance only (re-checking
+plans authored before the 1.1 schema); never author a new plan against v1. `"1.1"` requires, per
+contract at A2+: `integration_seam` (JSON boolean) and `risk_class` (the structured
+tier-derivation inputs — free-form `risk` prose never substitutes), `required_verification_tier`
+∈ {producer, independent, adversarial} and ≥ the floor mechanically derived from assurance +
+`integration_seam` + `risk_class` (A3 ⇒ independent; A4 ⇒ adversarial; `integration_seam: true`
+at A2 ⇒ independent; risk_class security/destructive ⇒ adversarial at EVERY level), a non-empty
+`environment`, and `rerunnable` as a JSON boolean; at A3+ also a non-empty `evidence`.
+`constraints` stays optional.
 
 **Layer 1 (deterministic — run it, always):** run the validator BEFORE the first worker dispatch.
 Resolve it skill-relative first: `python3 ./tools/validate-plan <plan.md>` — the installer copies
@@ -97,7 +141,7 @@ merge, don't replace):
 |---|---|
 | filesystem read | `permissions.allow` (Read/Grep/Glob) |
 | filesystem write/delete | `permissions.ask` (Write/Edit); deny secrets paths |
-| process (tests, linters) | `permissions.allow` for read-only checks |
+| process (tests, linters) | `permissions.ask` — test runners and linters execute repository-controlled code with your permissions (arbitrary read + egress), so each run is a per-invocation trust decision, not a standing grant (matches `settings.example.json`) |
 | network egress | `permissions.ask` (curl/wget/installs) |
 | version-control commit/push | `permissions.ask`; **deny + PreToolUse hook** for force-push to protected branches |
 | external systems (deploy/send) | `permissions.ask` at minimum; A4 requires explicit human authorization |

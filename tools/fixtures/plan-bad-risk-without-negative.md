@@ -7,7 +7,7 @@ naming T1 and the missing negative_cases.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A1",
   "requirements": [
     {"id": "R1", "text": "Session token refresh works across clock skew"}

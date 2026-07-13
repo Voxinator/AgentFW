@@ -1,0 +1,55 @@
+# Fixture: capability instance using a YAML-1.1 bool spelling (expected: FAIL under BOTH parsers)
+# All ten spec keys present; `shell` declares `configured: no` — a YAML-1.1 boolean
+# spelling that a permissive YAML loader resolves to false but the spec's strict
+# reading treats as an out-of-enum token. The validator must exit non-zero with
+# 'invalid configured value' naming the key, IDENTICALLY with and without PyYAML.
+
+filesystem:
+  available: true
+  configured: true
+  verified: tools/tests/install-roundtrip.sh
+
+shell:
+  available: true
+  configured: no  # YAML-1.1 spelling — invalid; only literal true/false plus partial|unknown|n/a
+  verified: tools/tests/install-roundtrip.sh
+
+isolated_agents:
+  available: true
+  configured: true
+  verified: https://example.invalid/docs/subagents
+
+parallel_agents:
+  available: true
+  configured: true
+  verified: https://example.invalid/docs/subagents
+
+persistent_state:
+  available: partial
+  configured: unknown
+  verified: https://example.invalid/docs/memory
+
+deterministic_permissions:
+  available: true
+  configured: unknown
+  verified: https://example.invalid/docs/settings
+
+worktree_isolation:
+  available: partial
+  configured: unknown
+  verified: unverified
+
+scheduled_resume:
+  available: partial
+  configured: unknown
+  verified: unverified
+
+independent_review:
+  available: true
+  configured: unknown
+  verified: https://example.invalid/docs/subagents
+
+structured_output:
+  available: partial
+  configured: n/a
+  verified: https://example.invalid/docs/output

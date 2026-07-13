@@ -10,7 +10,7 @@ pages actually fetched; per-capability citations live in `capability.yaml`).
 | # | Artifact | Destination |
 |---|---|---|
 | 1 | Bootloader block (`AGENTS.md` in this adapter) | inside `~/.codex/AGENTS.md`, marker-wrapped |
-| 2 | Skill (`skills/agentfw/SKILL.md`) + policy copy + validator (`tools/validate-plan`) | `~/.agents/skills/agentfw/` |
+| 2 | Skill (`skills/agentfw/SKILL.md`) + policy copy + validator (`tools/validate-plan`) + capability contract (`capability.yaml`) | `~/.agents/skills/agentfw/` |
 | 3 | Config keys (`config.example.toml`) | merged into `~/.codex/config.toml` |
 
 ## Step 1 — Bootloader block into AGENTS.md
@@ -52,13 +52,16 @@ cp adapters/codex/skills/agentfw/SKILL.md ~/.agents/skills/agentfw/SKILL.md
 cp -R policy ~/.agents/skills/agentfw/policy         # from the AgentFW repo root
 cp tools/validate-plan ~/.agents/skills/agentfw/tools/validate-plan   # Layer-1 validator
 chmod +x ~/.agents/skills/agentfw/tools/validate-plan
+cp adapters/codex/capability.yaml ~/.agents/skills/agentfw/capability.yaml   # capability contract (skill preflight reads ./capability.yaml)
 ```
 
 The policy copy is what lets the skill's `policy/…` references resolve without the repo
 checkout, and the validator copy is what lets the installed skill RUN Layer-1 plan validation
 without one — the skill resolves `./tools/validate-plan` next to its SKILL.md first, repo
-checkout second. The single source of truth stays `tools/validate-plan` in the AgentFW repo;
-the installed file is a copy, refreshed on upgrade, never edited in place.
+checkout second. The capability.yaml copy is what the skill's §0 capability preflight reads
+(packaged beside the SKILL.md; the repo checkout is only a secondary path). The single source
+of truth for all of these stays in the AgentFW repo; the installed files are copies, refreshed
+on upgrade, never edited in place.
 
 **Post-install smoke run (proves the copied validator executes):**
 

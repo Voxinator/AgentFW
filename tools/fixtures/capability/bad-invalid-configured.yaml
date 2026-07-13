@@ -1,0 +1,54 @@
+# Fixture: capability instance with an out-of-enum `configured` value (expected: FAIL)
+# All ten spec keys present; `shell` declares `configured: bogus`, which is outside
+# true|false|partial|unknown|n/a. The validator must exit non-zero with
+# 'invalid configured value' naming the key.
+
+filesystem:
+  available: true
+  configured: true
+  verified: tools/tests/install-roundtrip.sh
+
+shell:
+  available: true
+  configured: bogus  # invalid — not in the configured enum
+  verified: tools/tests/install-roundtrip.sh
+
+isolated_agents:
+  available: true
+  configured: true
+  verified: https://example.invalid/docs/subagents
+
+parallel_agents:
+  available: true
+  configured: true
+  verified: https://example.invalid/docs/subagents
+
+persistent_state:
+  available: partial
+  configured: unknown
+  verified: https://example.invalid/docs/memory
+
+deterministic_permissions:
+  available: true
+  configured: unknown
+  verified: https://example.invalid/docs/settings
+
+worktree_isolation:
+  available: partial
+  configured: unknown
+  verified: unverified
+
+scheduled_resume:
+  available: partial
+  configured: unknown
+  verified: unverified
+
+independent_review:
+  available: true
+  configured: unknown
+  verified: https://example.invalid/docs/subagents
+
+structured_output:
+  available: partial
+  configured: n/a
+  verified: https://example.invalid/docs/output

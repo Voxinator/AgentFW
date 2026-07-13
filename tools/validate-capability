@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+"""AgentFW capability-instance validator.
+
+Usage: validate-capability <capability.yaml>
+
+Machine-checks a capability instance against policy/capability-contract.md:
+
+  - EXACTLY the 10 spec keys are present (no missing, no extras):
+    filesystem shell isolated_agents parallel_agents persistent_state
+    deterministic_permissions worktree_isolation scheduled_resume
+    independent_review structured_output
+  - each key's `available:` is one of true | false | partial
+  - each key's `configured:` is one of true | false | partial | unknown | n/a
+  - each key carries a non-empty `verified:` annotation
+
+Parsing: PyYAML when importable; otherwise a line-based fallback that
+handles the instances' regular 2-space-indented mapping style (top-level
+`key:` lines, 2-space `field: value` lines, inline comments stripped,
+folded-block bodies ignored beyond the field's presence).
+
+Both parsers agree on the STRICT reading of boolean tokens: only the
+literal lowercase tokens `true`/`false` are booleans. The PyYAML path uses
+a SafeLoader whose bool implicit resolver is limited to true/false, so
+YAML-1.1 spellings (`no`, `yes`, `on`, `off`, `True`, ...) stay plain
+strings and are rejected as invalid enum values — the SAME verdict the
+line-based fallback produces on the raw token.
+
+Exit 0 + PASS on success. On any failure: exit 1, reporting ALL defects,
+each naming the offending key and defect ('missing key ...',
+'invalid configured value ...'). stdlib only; PyYAML optional.
+
+Honest limit: this validates SHAPE and enum membership; whether a
+`verified:` annotation points at real evidence is a human/judge question.
+"""
+import re
+import sys
+
+SPEC_KEYS = (
+    "filesystem", "shell", "isolated_agents", "parallel_agents",
+    "persistent_state", "deterministic_permissions", "worktree_isolation",
+    "scheduled_resume", "independent_review", "structured_output",
+)
+AVAILABLE_VALUES = ("true", "false", "partial")
+CONFIGURED_VALUES = ("true", "false", "partial", "unknown", "n/a")
+
+TOP_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$")
+FIELD_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$")
+
+
+def strip_inline_comment(value):
+    """Drop a trailing ' # ...' comment (values themselves contain no '#')."""
+    return re.split(r"\s+#", value, maxsplit=1)[0].strip()
+
+
+def normalize(value):
+    """Render a parsed scalar as the spec's lowercase token string."""
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def parse_with_pyyaml(text):
+    import yaml  # noqa: deferred import — optional dependency
+
+    class StrictBoolLoader(yaml.SafeLoader):
+        """SafeLoader whose bool resolver matches ONLY literal true/false.
+
+        YAML-1.1 bool spellings (no/yes/on/off/True/...) would otherwise
+        resolve to booleans under PyYAML while the line-based fallback sees
+        the raw token — same file, opposite verdicts. Limiting the implicit
+        resolver keeps those spellings plain strings so both parsers reject
+        them identically.
+        """
+
+    StrictBoolLoader.yaml_implicit_resolvers = {
+        ch: [(tag, regexp) for tag, regexp in resolvers
+             if tag != "tag:yaml.org,2002:bool"]
+        for ch, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()
+    }
+    StrictBoolLoader.add_implicit_resolver(
+        "tag:yaml.org,2002:bool",
+        re.compile(r"^(?:true|false)$"),
+        list("tf"))
+
+    data = yaml.load(text, Loader=StrictBoolLoader)
+    return data if isinstance(data, dict) else {}
+
+
+def parse_line_based(text):
+    """Fallback for the instances' regular 2-space-indented mapping style."""
+    data = {}
+    current = None
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if not line.startswith(" "):
+            m = TOP_RE.match(line)
+            if m:
+                current = m.group(1)
+                data[current] = {}
+            continue
+        if line.startswith("   "):
+            continue  # folded-block body / deeper nesting — not a field line
+        m = FIELD_RE.match(line)
+        if m and current is not None:
+            data[current][m.group(1)] = strip_inline_comment(m.group(2))
+    return data
+
+
+def main():
+    if len(sys.argv) != 2:
+        print("usage: validate-capability <capability.yaml>", file=sys.stderr)
+        return 2
+    path = sys.argv[1]
+    try:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as e:
+        print("ERROR: cannot read %s: %s" % (path, e), file=sys.stderr)
+        return 2
+
+    try:
+        data = parse_with_pyyaml(text)
+        parser = "PyYAML"
+    except ImportError:
+        data = parse_line_based(text)
+        parser = "line-based fallback"
+    except Exception as e:
+        print("FAIL: %s — instance does not parse as YAML: %s" % (path, e))
+        return 1
+
+    errors = []
+
+    for k in SPEC_KEYS:
+        if k not in data:
+            errors.append("missing key '%s' — the contract requires exactly "
+                          "the 10 capability keys" % k)
+    for k in data:
+        if k not in SPEC_KEYS:
+            errors.append("unexpected key '%s' — not one of the 10 spec keys"
+                          % k)
+
+    for k in SPEC_KEYS:
+        entry = data.get(k)
+        if entry is None:
+            continue  # already reported as missing
+        if not isinstance(entry, dict):
+            errors.append("key '%s': not a mapping — available/configured/"
+                          "verified fields unreadable" % k)
+            continue
+        if "available" not in entry:
+            errors.append("key '%s': missing 'available' field" % k)
+        else:
+            av = normalize(entry["available"])
+            if av not in AVAILABLE_VALUES:
+                errors.append("invalid available value '%s' for key '%s' — "
+                              "must be one of %s"
+                              % (av, k, "|".join(AVAILABLE_VALUES)))
+        if "configured" not in entry:
+            errors.append("key '%s': missing 'configured' field" % k)
+        else:
+            cf = normalize(entry["configured"])
+            if cf not in CONFIGURED_VALUES:
+                errors.append("invalid configured value '%s' for key '%s' — "
+                              "must be one of %s"
+                              % (cf, k, "|".join(CONFIGURED_VALUES)))
+        if normalize(entry.get("verified")) == "":
+            errors.append("key '%s': missing 'verified:' annotation — every "
+                          "key must name its evidence (URL, repo path, or "
+                          "the literal 'unverified')" % k)
+
+    if errors:
+        print("FAIL: %s — %d defect(s) [parser: %s]:" % (path, len(errors), parser))
+        for e in errors:
+            print("  - " + e)
+        return 1
+
+    print("PASS: %s — all 10 capability keys present with valid available/"
+          "configured values and verified annotations [parser: %s]"
+          % (path, parser))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

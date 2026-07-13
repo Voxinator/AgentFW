@@ -7,7 +7,7 @@ Layer 1 must exit non-zero naming T1's incomplete contract.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A2",
   "requirements": [
     {"id": "R1", "text": "Exporter writes a CSV with a stable header"}
@@ -17,7 +17,11 @@ Layer 1 must exit non-zero naming T1's incomplete contract.
      "contract": {"requirement_ids": ["R1"],
       "criteria": "export of the sample dataset produces the expected header and row count",
       "acceptance_command": "python3 -m pytest tests/test_export.py -q",
-      "expected_signal": "exit 0, no 'failed' in summary"}}
+      "environment": "repo checkout, python3 + pytest, no network",
+      "expected_signal": "exit 0, no 'failed' in summary",
+      "required_verification_tier": "producer",
+      "integration_seam": false,
+      "risk_class": "standard"}}
   ]
 }
 ```

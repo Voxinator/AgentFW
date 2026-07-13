@@ -8,7 +8,7 @@ PASSed against the first build of this validator.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A2",
   "requirements": [],
   "tasks": []

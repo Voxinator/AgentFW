@@ -68,7 +68,7 @@ its criteria gain a substance-review line.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A3",
   "requirements": [
     {"id": "FR1", "text": "Validator ships with the installed skill on both platforms; skill-relative resolution"},
@@ -91,6 +91,11 @@ its criteria gain a substance-review line.
       "expected_signal": "roundtrip output contains the new PASS lines (agentfw-custom survival; sandbox validator executed against a fixture); manifest written and consumed; SETTINGS OK; escalator negative grep clean; all exits 0",
       "risk": "uninstall still reachable for user-owned files, or validator packaging only asserted by inventory rather than executed in the sandbox",
       "negative_cases": ["roundtrip seeds agentfw-custom.md before uninstall and fails unless it survives", "roundtrip executes the sandbox-installed validator against a fixture and fails on non-zero exit", "settings assertion fails if any file-dumper or test-runner string returns to the allow list"],
+      "environment": "repo working tree, python3 + bash, CLAUDE_DIR mktemp sandboxes for install probes; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "FB", "title": "Validator hardening + hostile fixtures", "deps": [],
      "contract": {"requirement_ids": ["FR2","FR11"],
@@ -99,6 +104,11 @@ its criteria gain a substance-review line.
       "expected_signal": "three positives PASS; all nine bad fixtures rejected under neutral filenames with matching defect-class keywords",
       "risk": "hardening breaks existing positives (PLAN-r9.md regression) or new checks live in prose but not code",
       "negative_cases": ["each of the three new hostile fixtures is rejected with its keyword", "an A2 plan with zero tasks can no longer PASS (plan-bad-empty.md proves it)", "unknown requirement_ids can no longer PASS (plan-bad-unknown-ref.md proves it)"],
+      "environment": "repo working tree, python3 + bash, mktemp scratch dirs for neutral-filename fixture copies; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "FC", "title": "Policy revisions", "deps": [],
      "contract": {"requirement_ids": ["FR6","FR7","FR9","FR10","FR11"],
@@ -107,6 +117,11 @@ its criteria gain a substance-review line.
       "expected_signal": "exit 0 — including the pinned-sentence negative grep (old universal-judge clause gone) and order-robust escalator negatives at the sites where the escalator lives",
       "risk": "the contradiction is reworded but survives (independent re-execution still stated as universal for reaching any verified state), or vendor tokens leak in during the edit",
       "negative_cases": ["acceptance-contract.md no longer contains an unscoped universal independent-judge requirement (the A0/A1 producer path is explicit)", "vendor-token sweep stays empty"],
+      "environment": "repo working tree, python3 + bash; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "FD", "title": "Profiles, instances, codex install, repo metadata", "deps": [],
      "contract": {"requirement_ids": ["FR1","FR5","FR8","FR9","FR10"],
@@ -115,6 +130,11 @@ its criteria gain a substance-review line.
       "expected_signal": "exit 0 with check-links PASS (no dangling refs after the rename); per-key available/configured conformance on BOTH capability instances; bootstrap.md numstat-bounded",
       "risk": "rename leaves dangling references, or capability migration loses keys/annotations",
       "negative_cases": ["check-links fails on any reference still pointing at profiles/chatgpt.md", "10-key and verified-annotation greps re-run on both migrated capability files"],
+      "environment": "repo working tree, python3 + bash; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "FV", "title": "Adversarial verification", "deps": ["FA","FB","FC","FD"],
      "contract": {"requirement_ids": ["FR1","FR2","FR3","FR4","FR5","FR6","FR7","FR8","FR9","FR10","FR11"],
@@ -123,6 +143,11 @@ its criteria gain a substance-review line.
       "expected_signal": "verifier report with recorded outputs: all four Sol probes now fail-safe; all FA-FD contracts re-executed green; T1-T6 regressions green (T4 path-substituted); off-contract probes and substance review reported",
       "risk": "fixes verified only against the fix contracts, repeating the contract-bounded-verification ceiling this pass exists to correct",
       "negative_cases": ["Sol probe replay: empty A2 plan must be REJECTED", "Sol probe replay: seeded agentfw-custom.md must SURVIVE uninstall", "Sol probe replay: sandbox install must CONTAIN a runnable validator", "Sol probe replay: settings allow list must not permit a cat/find secrets bypass"],
+      "environment": "repo working tree, python3 + bash, CLAUDE_DIR mktemp sandboxes for install probes; no network",
+      "evidence": "verifier report with re-executed acceptance_command outputs and exit codes, produced_after_change",
+      "required_verification_tier": "adversarial",
+      "integration_seam": true,
+      "risk_class": "standard",
       "rerunnable": true}}
   ]
 }

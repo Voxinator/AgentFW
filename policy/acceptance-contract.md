@@ -20,7 +20,9 @@ whose discriminating lever lives only in prose verifies nothing — a wrong impl
 | `evidence` | Artifact types the check records (test log, build output, diff, rendered page) + **freshness: `produced_after_change`** — evidence older than the change it claims to verify is void. |
 | `rerunnable` | Boolean — the check can be executed again, from the tree, by a context that did not produce the work. Non-rerunnable evidence is testimony. |
 | `constraints` | Runtime/network/side-effect bounds the check must respect (e.g. no network, sandbox only, read-only on the live store). |
-| `required_verification_tier` | The terminal verified state this item must reach — `verified_producer` \| `verified_independent` \| `verified_adversarial` — derived from assurance + risk (derivation table below). |
+| `integration_seam` | JSON **boolean** — does this task sit on an integration seam (its correctness is only observable where two components meet)? A structured tier-derivation input; the free-form `risk` prose never substitutes for it. |
+| `risk_class` | One of `none` \| `standard` \| `security` \| `destructive` — the structured classification of the work's blast radius. `security`/`destructive` mechanically floors the tier at `adversarial` regardless of assurance. |
+| `required_verification_tier` | Who must re-execute the check before the terminal verified state is reached — field value `producer` \| `independent` \| `adversarial`, selecting the terminal state `verified_producer` / `verified_independent` / `verified_adversarial`. Must be ≥ the floor MECHANICALLY DERIVED from assurance + `integration_seam` + `risk_class` (derivation table below). |
 
 ## Tier-1 definition
 
@@ -53,16 +55,62 @@ terminal state is reached**: at `verified_producer` the producer's own recorded 
 of record; at the higher tiers it is input handed to a judge who runs the command again — evidence to
 re-execute, not proof to accept.
 
-### `required_verification_tier` — derivation from assurance + risk
+### `required_verification_tier` — mechanical floor derivation
 
-| Assurance + risk surface | `required_verification_tier` |
+The minimum tier is DERIVED from structured fields only — the plan-level `assurance` plus the
+per-contract `integration_seam` and `risk_class`. Free-form `risk` prose never enters the
+derivation. `tools/validate-plan` enforces the floor mechanically: with the tier order
+`producer` < `independent` < `adversarial`, the declared `required_verification_tier` must be
+≥ the derived floor.
+
+| Derivation input | Effect on the minimum tier |
 |---|---|
-| A0, A1 | `verified_producer` |
-| A2, item touches no integration seam | `verified_producer` |
-| A2, item sits on an integration seam | `verified_independent` |
-| A3 | `verified_independent` |
-| A4 | `verified_adversarial` |
-| security-sensitive or destructive work, at ANY assurance level | `verified_adversarial` |
+| assurance A0 / A1 | base floor `producer` (tier fields optional below A2) |
+| assurance A2 | base floor `producer` |
+| assurance A3 | base floor `independent` |
+| assurance A4 | base floor `adversarial` |
+| `integration_seam: true` AND assurance A2 | floor raised to `independent` |
+| `risk_class: "security"` or `"destructive"` | floor raised to `adversarial` — at EVERY assurance level |
+
+Selecting a floor tier's terminal state: `producer` → `verified_producer`, `independent` →
+`verified_independent`, `adversarial` → `verified_adversarial`.
+
+**Spelling reconciliation (field values vs terminal-state names).** In the plan block, the
+`required_verification_tier` FIELD takes the short values `producer` | `independent` | `adversarial`;
+each selects the corresponding terminal STATE `verified_producer` / `verified_independent` /
+`verified_adversarial`. The `verified_*` spellings name states an item *reaches* — they are **not**
+valid field values, and the validator rejects them; write `independent`, never `verified_independent`,
+in the field.
+
+## Block versioning — `"version": "1.1"` is MANDATORY; `"version": "1"` is legacy-only
+
+The plan's embedded machine-readable block declares a schema `version`. Schema `"1.1"` is
+**mandatory**: default validation REQUIRES `"version": "1.1"` and rejects a `"version": "1"`
+block as a legacy schema version. Version `"1"` exists for HISTORICAL PROVENANCE ONLY —
+re-checking plans authored before the 1.1 schema — and is accepted solely under
+`tools/validate-plan --legacy`, which applies the original v1 rules. Never author a new plan
+against v1. Unknown version strings are rejected naming the version.
+
+Blocks declaring `"version": "1.1"` are additionally held, per contract, to the
+mandatory-by-tier field table below (machine-enforced by `tools/validate-plan`):
+
+| Field (1.1) | Mandatory at | Rule |
+|---|---|---|
+| `integration_seam` | A2+ | a JSON **boolean** — structured tier-derivation input |
+| `risk_class` | A2+ | ∈ `none` \| `standard` \| `security` \| `destructive` — structured tier-derivation input |
+| `required_verification_tier` | A2+ | present; ∈ `producer` \| `independent` \| `adversarial`; ≥ the floor mechanically derived from assurance + `integration_seam` + `risk_class` (derivation table above) |
+| `environment` | A2+ | non-empty string |
+| `rerunnable` | A2+ | a JSON **boolean** — the quoted string `"true"` is a type defect, not a value |
+| `evidence` | A3+ | non-empty (string or object) |
+| `constraints` | never — **explicitly optional** | type-checked only when present (string, list, or object) |
+
+Below A2 the tier fields are optional, with one exception that binds at EVERY assurance level:
+a contract declaring `risk_class` `security` or `destructive` must declare
+`required_verification_tier: "adversarial"` — the floor derivation does not relax below A2.
+
+Fields not listed keep their version-1 rules (`criteria` / `acceptance_command` / `expected_signal`
+non-empty; `rerunnable` present at A2+; `risk` ⇒ `negative_cases`; A3/A4 ⇒ `negative_cases` in every
+contract).
 
 ## Evidence classes — non-code and mixed work
 

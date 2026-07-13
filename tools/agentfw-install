@@ -24,27 +24,67 @@ AGENTS_DEST="$CLAUDE_DIR/agents"
 
 BEGIN_MARK='<!-- AGENTFW:BEGIN r9 -->'
 END_MARK='<!-- AGENTFW:END r9 -->'
-# Block detection is anchored to the exact HTML-comment marker at line start. A bare
-# substring match (the old 'AGENTFW:BEGIN') fires on PROSE mentions of the marker names in
-# user content — which made install/upgrade/uninstall destroy user lines. Never loosen these.
-# Additionally, EVERY marker scanner is code-fence-aware: a column-0 ``` line toggles an
-# in-fence flag, and marker lines inside a fence are ignored — so a well-paired verbatim
-# marker example inside a user's ``` fence is invisible to detection, the integrity check,
-# upgrade replacement, and uninstall stripping alike. UNCLOSED-fence semantics (odd number of
-# column-0 ``` lines): everything after the unclosed fence is treated as fenced, i.e.
-# invisible. That is the conservative reading — prose after an unclosed fence is ambiguous,
-# and we must never risk deleting user content on ambiguity. All scanners share the
-# FENCE_GATE prelude below so the integrity check and the mutation paths can never disagree
-# about what counts as the real block.
-MARKER_RE='^<!-- AGENTFW:BEGIN'
-END_RE='^<!-- AGENTFW:END'
+# Block detection is anchored to the exact HTML-comment marker at line start, WORD-BOUNDED by
+# the mandatory space after BEGIN/END (real markers are always '<!-- AGENTFW:BEGIN <tag> -->').
+# A bare substring match (the old 'AGENTFW:BEGIN') fires on PROSE mentions of the marker names
+# in user content — which made install/upgrade/uninstall destroy user lines — and an
+# un-word-bounded prefix match (the old '^<!-- AGENTFW:BEGIN') fires on lookalike comments such
+# as '<!-- AGENTFW:BEGINNING of notes -->', causing false refusals. Never loosen these.
+#
+# Additionally, EVERY marker scanner is code-fence-aware via the shared CommonMark-aware
+# FENCE_TRACKER prelude below, so the integrity check and the mutation paths can never disagree
+# about what counts as the real block. Tracker semantics:
+#   - An OPENING fence is a run of >=3 backticks OR >=3 tildes (one character, one run), with
+#     up to 3 leading spaces, optionally followed by an info string. For backtick fences the
+#     info string must not contain a backtick (so a line like ```foo``` is NOT a fence opener);
+#     for tilde fences the info string may contain anything.
+#   - The fence CHARACTER and OPENING RUN LENGTH are recorded. While inside a fence, a line
+#     closes it ONLY if it is the SAME character repeated >= the opening length, with up to 3
+#     leading spaces and nothing else but trailing whitespace (spaces/tabs/CR — a CRLF file's
+#     '```\r' closes its fence; no false 'unclosed' refusal on well-formed CRLF files).
+#     Anything else — including SHORTER runs and runs of the OTHER character — is fence
+#     content (a ````-opened fence containing ``` lines stays open).
+#   - Marker lines inside any open fence are invisible to every scanner: detection, the
+#     integrity check, upgrade replacement, uninstall stripping, and status counting alike.
+# UNCLOSED fence at EOF: install/upgrade/uninstall REFUSE (die, file byte-untouched, before any
+# backup/copy side effects) — prose after an unclosed fence is ambiguous and we must never risk
+# deleting user content on ambiguity; status warns but exits 0. (The old silent
+# "everything-after-is-fenced" semantics are gone.)
+MARKER_RE='^<!-- AGENTFW:BEGIN '
+END_RE='^<!-- AGENTFW:END '
 
-# Shared fence-gate prelude, prepended to EVERY awk marker scanner. Toggles `infence` on each
-# column-0 ``` line; every marker match below is qualified with `!infence`.
-FENCE_GATE='/^```/ { infence = !infence }
+# Shared CommonMark-aware fence tracker, prepended VERBATIM to EVERY awk marker scanner (and
+# mirrored in tools/tests/install-roundtrip.sh). Maintains `infence` (plus `fchar`/`flen`, the
+# open fence's character and run length); every marker match below is qualified with
+# `!infence`, and END blocks may test `infence` for unclosed-at-EOF detection.
+FENCE_TRACKER='{
+  ftl = $0
+  sub(/^ ? ? ?/, "", ftl)
+  ftc = substr(ftl, 1, 1)
+  if (infence) {
+    if (ftc == fchar) {
+      ftn = 1
+      while (substr(ftl, ftn + 1, 1) == fchar) ftn++
+      if (ftn >= flen && substr(ftl, ftn + 1) ~ /^[ \t\r]*$/) infence = 0
+    }
+  } else if (ftc == "`" || ftc == "~") {
+    ftn = 1
+    while (substr(ftl, ftn + 1, 1) == ftc) ftn++
+    if (ftn >= 3 && (ftc == "~" || substr(ftl, ftn + 1) !~ /`/)) {
+      infence = 1; fchar = ftc; flen = ftn
+    }
+  }
+}
 '
 
 VERSION_TAG='r9'
+
+# Set to 1 when the ORIGINAL pre-install CLAUDE.md ended WITHOUT a final newline. The append/
+# rewrite paths necessarily terminate that last line, so the fact is recorded as a manifest
+# directive ('#agentfw:no-final-newline', written by copy_assets, preserved across upgrades)
+# and consumed by uninstall to restore the file byte-identically.
+NO_FINAL_NEWLINE=0
+NO_FINAL_NEWLINE_DIRECTIVE='#agentfw:no-final-newline'
 
 log() { printf '%s\n' "$*"; }
 die() { printf 'agentfw-install: ERROR: %s\n' "$*" >&2; exit 1; }
@@ -54,6 +94,7 @@ require_sources() {
   [ -d "$ADAPTER_DIR/skills/agentfw" ] || die "adapter skill dir not found: $ADAPTER_DIR/skills/agentfw"
   [ -d "$ADAPTER_DIR/agents" ] || die "adapter agents dir not found: $ADAPTER_DIR/agents"
   [ -d "$POLICY_SRC" ] || die "repo policy/ dir not found at $POLICY_SRC — the skill's ./policy/ references cannot resolve without it"
+  [ -f "$ADAPTER_DIR/capability.yaml" ] || die "adapter capability instance not found: $ADAPTER_DIR/capability.yaml — the installed skill packages it; refusing to install without it"
   [ -f "$VALIDATOR_SRC" ] || die "plan validator not found at $VALIDATOR_SRC — the installed skill packages tools/validate-plan (single source, repo tools/); refusing to install without it"
 }
 
@@ -79,7 +120,7 @@ emit_block() {
 # Fence-aware BEGIN detection (a plain grep cannot track fence state).
 has_marker_block() {
   [ -f "$TARGET" ] || return 1
-  awk -v bre="$MARKER_RE" "$FENCE_GATE"'
+  awk -v bre="$MARKER_RE" "$FENCE_TRACKER"'
     !infence && $0 ~ bre { found = 1; exit }
     END { exit !found }
   ' "$TARGET"
@@ -87,12 +128,12 @@ has_marker_block() {
 
 # Marker lines must be properly paired and ordered (BEGIN then END, no nesting, no
 # unterminated BEGIN, no stray END). An unterminated block would otherwise be deleted
-# "to EOF" by the strip/replace awks. Fenced marker lines are ignored (see FENCE_GATE).
+# "to EOF" by the strip/replace awks. Fenced marker lines are ignored (see FENCE_TRACKER).
 block_integrity_ok() {
   [ -f "$TARGET" ] || return 0
-  awk "$FENCE_GATE"'
-    !infence && /^<!-- AGENTFW:BEGIN/ { if (inb) { bad = 1; exit } inb = 1; next }
-    !infence && /^<!-- AGENTFW:END/   { if (!inb) { bad = 1; exit } inb = 0; next }
+  awk "$FENCE_TRACKER"'
+    !infence && /^<!-- AGENTFW:BEGIN / { if (inb) { bad = 1; exit } inb = 1; next }
+    !infence && /^<!-- AGENTFW:END /   { if (!inb) { bad = 1; exit } inb = 0; next }
     END { if (inb) bad = 1; exit bad }
   ' "$TARGET"
 }
@@ -103,6 +144,21 @@ require_block_integrity() {
   block_integrity_ok || die "malformed AGENTFW marker structure in $TARGET (unterminated BEGIN, stray END, or nested markers) — refusing to modify anything; the file is untouched. Repair manually: each '<!-- AGENTFW:BEGIN … -->' line needs exactly one matching '<!-- AGENTFW:END … -->' line after it, then re-run."
 }
 
+# Unclosed-fence detection: true (0) when every fence opened in $TARGET is closed by EOF.
+fence_closed_ok() {
+  [ -f "$TARGET" ] || return 0
+  awk "$FENCE_TRACKER"'
+    END { exit infence ? 1 : 0 }
+  ' "$TARGET"
+}
+
+# Refuse-on-ambiguity guard for every mutating subcommand: with an unclosed fence, everything
+# after the opener is ambiguous (fenced or prose?), so we die and change NOTHING — before any
+# backup/copy side effects. status merely warns (see do_status).
+require_no_unclosed_fence() {
+  fence_closed_ok || die "unclosed code fence in $TARGET (a \`\`\`/~~~ fence is opened but never closed before EOF) — refusing to modify anything; the file is untouched. Close the fence (a line of the same character, at least as long as the opening run), then re-run."
+}
+
 # Marker-less legacy detection: r6/r7/r8 heading heuristics.
 detect_legacy() {
   [ -f "$TARGET" ] || return 1
@@ -110,6 +166,13 @@ detect_legacy() {
 }
 
 copy_assets() {
+  # Preserve the no-final-newline record across manifest rewrites (upgrade / re-install): the
+  # fact describes the ORIGINAL pre-install CLAUDE.md and must survive until uninstall. Read
+  # the old manifest BEFORE the wholesale skill-dir refresh below deletes it.
+  if [ "$NO_FINAL_NEWLINE" != 1 ] && [ -f "$SKILL_DEST/.install-manifest" ] \
+     && grep -qF "$NO_FINAL_NEWLINE_DIRECTIVE" "$SKILL_DEST/.install-manifest" 2>/dev/null; then
+    NO_FINAL_NEWLINE=1
+  fi
   mkdir -p "$SKILL_DEST" "$AGENTS_DEST"
   # Skill (our namespace — safe to refresh wholesale).
   rm -rf "$SKILL_DEST"
@@ -124,6 +187,10 @@ copy_assets() {
   mkdir -p "$SKILL_DEST/tools"
   cp -p "$VALIDATOR_SRC" "$SKILL_DEST/tools/validate-plan"
   chmod +x "$SKILL_DEST/tools/validate-plan"
+  # Adapter capability instance, packaged so the skill's ./capability.yaml reference resolves
+  # without a repo checkout. Lives inside skills/agentfw — covered by the wholesale
+  # 'skills/agentfw' manifest entry (same semantics as policy/ and tools/ above).
+  cp -p "$ADAPTER_DIR/capability.yaml" "$SKILL_DEST/capability.yaml"
   # Agent definitions + install manifest. The manifest records EXACTLY what this run
   # installed; uninstall removes only manifest entries (never a glob), so user-created
   # files — including your own agentfw-*.md agents — are never touched.
@@ -132,13 +199,18 @@ copy_assets() {
     printf '# AgentFW %s install manifest — written by agentfw-install; consumed by uninstall.\n' "$VERSION_TAG"
     printf '# One CLAUDE_DIR-relative installed path per line. Uninstall removes EXACTLY these\n'
     printf '# paths plus the AGENTFW marker block inside CLAUDE.md — nothing else.\n'
+    if [ "$NO_FINAL_NEWLINE" = 1 ]; then
+      # Directive (comment-shaped, so path parsing skips it): the original CLAUDE.md ended
+      # without a final newline; uninstall strips the one the installer had to add.
+      printf '%s\n' "$NO_FINAL_NEWLINE_DIRECTIVE"
+    fi
     printf 'skills/agentfw\n'
   } > "$manifest"
   for f in "$ADAPTER_DIR"/agents/agentfw-*.md; do
     cp -p "$f" "$AGENTS_DEST/"
     printf 'agents/%s\n' "$(basename "$f")" >> "$manifest"
   done
-  log "Installed skill    -> $SKILL_DEST (policy/ + tools/validate-plan included)"
+  log "Installed skill    -> $SKILL_DEST (policy/ + tools/validate-plan + capability.yaml included)"
   log "Installed agents   -> $AGENTS_DEST/$(cd "$ADAPTER_DIR/agents" && ls agentfw-*.md | tr '\n' ' ')"
   log "Wrote manifest     -> $manifest"
 }
@@ -148,13 +220,13 @@ replace_block_in_place() {
   local tmp block
   tmp="$(mktemp)"; block="$(mktemp)"
   emit_block > "$block"
-  awk -v blockfile="$block" "$FENCE_GATE"'
-    !infence && /^<!-- AGENTFW:BEGIN/ {
+  awk -v blockfile="$block" "$FENCE_TRACKER"'
+    !infence && /^<!-- AGENTFW:BEGIN / {
       inblock = 1
       if (!emitted) { while ((getline line < blockfile) > 0) print line; close(blockfile); emitted = 1 }
       next
     }
-    !infence && /^<!-- AGENTFW:END/ { if (inblock) { inblock = 0; next } }
+    !infence && /^<!-- AGENTFW:END / { if (inblock) { inblock = 0; next } }
     inblock { next }
     { print }
   ' "$TARGET" > "$tmp"
@@ -164,8 +236,13 @@ replace_block_in_place() {
 
 append_block() {
   if [ -s "$TARGET" ]; then
-    # Ensure exactly one separating blank line; never modify existing bytes.
-    [ -n "$(tail -c 1 "$TARGET")" ] && printf '\n' >> "$TARGET"
+    # Ensure exactly one separating blank line; never ALTER existing bytes. Terminating an
+    # unterminated last line adds a byte the user never wrote — record that (manifest
+    # directive, via copy_assets) so uninstall can remove it again for a byte-exact restore.
+    if [ -n "$(tail -c 1 "$TARGET")" ]; then
+      NO_FINAL_NEWLINE=1
+      printf '\n' >> "$TARGET"
+    fi
     printf '\n' >> "$TARGET"
   fi
   emit_block >> "$TARGET"
@@ -230,12 +307,12 @@ do_status() {
   if [ -f "$TARGET" ]; then
     local n version
     # Fence-aware count/extract (a plain grep would count fenced marker examples).
-    n=$(awk -v bre="$MARKER_RE" "$FENCE_GATE"'
+    n=$(awk -v bre="$MARKER_RE" "$FENCE_TRACKER"'
       !infence && $0 ~ bre { n++ }
       END { print n + 0 }
     ' "$TARGET")
     if [ "$n" -gt 0 ]; then
-      version=$(awk -v bre="$MARKER_RE" "$FENCE_GATE"'
+      version=$(awk -v bre="$MARKER_RE" "$FENCE_TRACKER"'
         !infence && $0 ~ bre { print; exit }
       ' "$TARGET" | sed -E 's/.*AGENTFW:BEGIN[[:space:]]*([^ >-]*).*/\1/')
       log "CLAUDE.md:       present — AgentFW block installed (version tag: ${version:-unknown}; blocks: $n)"
@@ -245,6 +322,7 @@ do_status() {
     else
       log "CLAUDE.md:       present — no AgentFW block"
     fi
+    fence_closed_ok || log "CLAUDE.md:       WARNING — unclosed code fence (a \`\`\`/~~~ fence is opened but never closed before EOF); install/upgrade/uninstall will refuse until it is closed"
   else
     log "CLAUDE.md:       absent"
   fi
@@ -258,41 +336,178 @@ do_status() {
   if [ -n "${agents:-}" ]; then log "Agents:          $agents"; else log "Agents:          absent"; fi
 
   # --- configured-state probes ----------------------------------------------------------------
-  # These map to the capability file's activation_probe entries (adapters/claude-code/
-  # capability.yaml): deterministic_permissions and independent_review. Read-only — this tool
-  # never modifies settings.json.
+  # These map to the capability file's activation_probe entries (packaged as
+  # $SKILL_DEST/capability.yaml; source adapters/claude-code/capability.yaml):
+  # deterministic_permissions and independent_review. settings.json is NEVER modified by this
+  # tool; the only thing status writes is $SKILL_DEST/active-capabilities.yaml (below).
   log ""
   log "Configured-state probes (capability activation_probe map):"
 
-  # deterministic_permissions: settings.json presence + example deny rules (yes/no/unknown).
-  local settings="$CLAUDE_DIR/settings.json" deny_state
+  # deterministic_permissions: settings.json presence + PER-RULE deny entries (yes/no, or
+  # unknown when the file exists but cannot be read/parsed). The file is PARSED as JSON and
+  # only COMPLETE rule entries inside permissions.deny count — signature substrings living in
+  # comments, metadata keys, or permissions.allow/ask are NOT active deny rules and must not
+  # be reported as such (a plain grep over the whole file does exactly that).
+  # Containment is decided by canonical-form matching, never substring presence; unrecognized
+  # forms report no — conservative. A rule reports yes ONLY when a deny entry provably covers
+  # the canonical protection (exact match, after whitespace normalization):
+  #   deny .ssh              <=> Read(~/.ssh/**) or Read(**/.ssh/**)
+  #   deny .env              <=> Read(**/.env) — the broadest of the canonical trio
+  #                              Read(./.env)/Read(./.env.*)/Read(**/.env); the narrower two
+  #                              alone do not cover .env files outside the project root
+  #   deny .aws              <=> Read(~/.aws/**) or Read(**/.aws/**)
+  #   deny secrets           <=> Read(**/secrets/**)
+  #   deny git push --force  <=> a Bash deny whose pattern, after stripping the trailing ':*'
+  #                              argument matcher, BEGINS with 'git push' and carries
+  #                              --force / -f / --force-with-lease as a flag token WITHIN THE
+  #                              FIRST shell command (tokens at/after one containing ; | & are
+  #                              ignored — a flag after '&&' does not belong to git push)
+  # Narrower rules (Read(~/.ssh/known_hosts)), unrelated commands (Bash(echo git push --force
+  # is bad:*)), and broader-but-noncanonical rules (Read(**)) all report NO — a false negative
+  # is safe; a false 'yes' claims a protection that does not exist.
+  # settings_schema_valid is a NON-GATING diagnostic: false when the JSON parsed but
+  # permissions/deny had unexpected types; it never feeds the configured aggregate.
+  # Missing file => all no. Present but unreadable, unparseable JSON, or no python3 => all
+  # unknown (never yes, never a crash — python3 is already a dependency of the installed skill).
+  local settings="$CLAUDE_DIR/settings.json" settings_present
+  local deny_ssh deny_env deny_aws deny_secrets deny_git_push_force settings_schema_valid
   if [ ! -e "$settings" ]; then
-    log "  deterministic_permissions: settings.json absent — example deny rules: no (merge settings.example.json manually)"
+    settings_present="no"
+    deny_ssh=no; deny_env=no; deny_aws=no; deny_secrets=no; deny_git_push_force=no
+    settings_schema_valid=true
+    log "  deterministic_permissions: settings.json absent — all deny rules: no (merge settings.example.json manually)"
   elif [ ! -r "$settings" ]; then
-    log "  deterministic_permissions: settings.json present but unreadable — example deny rules: unknown"
+    settings_present="unreadable"
+    deny_ssh=unknown; deny_env=unknown; deny_aws=unknown; deny_secrets=unknown; deny_git_push_force=unknown
+    settings_schema_valid=unknown
+    log "  deterministic_permissions: settings.json present but unreadable — deny rules: unknown"
+  elif ! command -v python3 >/dev/null 2>&1; then
+    settings_present="yes"
+    deny_ssh=unknown; deny_env=unknown; deny_aws=unknown; deny_secrets=unknown; deny_git_push_force=unknown
+    settings_schema_valid=unknown
+    log "  deterministic_permissions: settings.json present but python3 unavailable to parse it — deny rules: unknown"
   else
-    if grep -Eq '\.ssh|\.env|\.aws|secrets|git push --force' "$settings" 2>/dev/null; then
-      deny_state="yes"
+    settings_present="yes"
+    local probe_out
+    if probe_out=$(python3 - "$settings" <<'AGENTFW_PROBE_PY'
+import json, sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as fh:
+    data = json.load(fh)  # any parse/read error -> non-zero exit -> unknown
+
+# Schema diagnostic (non-gating): false when the JSON parsed but the
+# permissions / permissions.deny shape has unexpected types.
+schema_valid = True
+deny = []
+if not isinstance(data, dict):
+    schema_valid = False
+else:
+    perms = data.get("permissions")
+    if perms is not None and not isinstance(perms, dict):
+        schema_valid = False
+    elif isinstance(perms, dict):
+        raw = perms.get("deny")
+        if raw is not None and not isinstance(raw, list):
+            schema_valid = False
+        elif isinstance(raw, list):
+            if any(not isinstance(e, str) for e in raw):
+                schema_valid = False
+            deny = [e for e in raw if isinstance(e, str)]
+
+# Containment is decided by canonical-form matching, never substring presence;
+# unrecognized forms report no — conservative.
+def norm(entry):
+    return " ".join(entry.split())
+
+entries = {norm(e) for e in deny}
+
+SSH_FORMS     = {"Read(~/.ssh/**)", "Read(**/.ssh/**)"}
+AWS_FORMS     = {"Read(~/.aws/**)", "Read(**/.aws/**)"}
+SECRETS_FORMS = {"Read(**/secrets/**)"}
+# env: yes ONLY when the deny includes Read(**/.env) — the broadest of the
+# canonical trio Read(./.env) / Read(./.env.*) / Read(**/.env). The narrower
+# two alone do not cover .env files outside the project root.
+ENV_FORMS     = {"Read(**/.env)"}
+
+ssh     = bool(entries & SSH_FORMS)
+aws     = bool(entries & AWS_FORMS)
+secrets = bool(entries & SECRETS_FORMS)
+env     = bool(entries & ENV_FORMS)
+
+def is_force_push_deny(entry):
+    e = norm(entry)
+    if not (e.startswith("Bash(") and e.endswith(")")):
+        return False
+    pat = e[len("Bash("):-1]
+    if pat.endswith(":*"):
+        pat = pat[:-2]  # strip the trailing argument matcher
+    toks = pat.split()
+    # Evaluate ONLY the first shell command: a flag appearing after a shell operator
+    # (&&, ||, ;, |, &) belongs to a different command, not to git push —
+    # 'Bash(git push origin main && echo --force:*)' must NOT count. Truncation happens
+    # at the first token CONTAINING an operator character, so glued forms
+    # ('main;echo') cannot smuggle a flag past the cut either.
+    cut = len(toks)
+    for i, t in enumerate(toks):
+        if any(ch in t for ch in ";|&"):
+            cut = i
+            break
+    toks = toks[:cut]
+    if toks[:2] != ["git", "push"]:
+        return False  # 'Bash(echo git push --force ...:*)' must NOT count
+    return any(t in ("--force", "-f", "--force-with-lease") for t in toks[2:])
+
+gpf = any(is_force_push_deny(e) for e in deny)
+
+print(" ".join(["yes" if v else "no" for v in (ssh, env, aws, secrets, gpf)]
+               + ["true" if schema_valid else "false"]))
+AGENTFW_PROBE_PY
+    ); then
+      read -r deny_ssh deny_env deny_aws deny_secrets deny_git_push_force settings_schema_valid <<< "$probe_out"
+      log "  deterministic_permissions: settings.json parsed — per-rule entries in permissions.deny (file is never modified by this tool):"
     else
-      deny_state="no"
+      settings_present="unparseable"
+      deny_ssh=unknown; deny_env=unknown; deny_aws=unknown; deny_secrets=unknown; deny_git_push_force=unknown
+      settings_schema_valid=false
+      log "  deterministic_permissions: settings.json present but not parseable as JSON — deny rules: unknown"
     fi
-    log "  deterministic_permissions: settings.json present — example deny rules detected: $deny_state (file is never modified by this tool)"
   fi
+  log "    deny .ssh:               $deny_ssh"
+  log "    deny .env:               $deny_env"
+  log "    deny .aws:               $deny_aws"
+  log "    deny secrets:            $deny_secrets"
+  log "    deny git push --force:   $deny_git_push_force"
+  log "    settings_schema_valid:   $settings_schema_valid (diagnostic, non-gating)"
 
-  # independent_review: the shipped judge agents must be present.
-  local a missing=""
-  for a in agentfw-implementer.md agentfw-verifier.md agentfw-plan-critic.md; do
-    [ -s "$AGENTS_DEST/$a" ] || missing="$missing $a"
+  # Aggregate: true (all five yes) | partial (some yes) | false (none yes) | unknown (unreadable/unparseable).
+  local dp_configured yes_count=0 unknown_count=0 v
+  for v in "$deny_ssh" "$deny_env" "$deny_aws" "$deny_secrets" "$deny_git_push_force"; do
+    case "$v" in
+      yes) yes_count=$((yes_count + 1)) ;;
+      unknown) unknown_count=$((unknown_count + 1)) ;;
+    esac
   done
-  if [ -z "$missing" ]; then
-    log "  independent_review:        all three shipped agents present in $AGENTS_DEST: yes"
-  else
-    log "  independent_review:        shipped agents MISSING:$missing — configured: no"
+  if [ "$unknown_count" -gt 0 ]; then dp_configured=unknown
+  elif [ "$yes_count" -eq 5 ]; then dp_configured=true
+  elif [ "$yes_count" -gt 0 ]; then dp_configured=partial
+  else dp_configured=false
   fi
+  log "  deterministic_permissions_configured: $dp_configured"
 
-  # Installed validator (skill-relative Layer-1 plan check).
-  local validator="$SKILL_DEST/tools/validate-plan"
+  # independent_review: each shipped judge agent, by name.
+  local agent_implementer=no agent_verifier=no agent_plan_critic=no
+  [ -s "$AGENTS_DEST/agentfw-implementer.md" ] && agent_implementer=yes
+  [ -s "$AGENTS_DEST/agentfw-verifier.md" ]    && agent_verifier=yes
+  [ -s "$AGENTS_DEST/agentfw-plan-critic.md" ] && agent_plan_critic=yes
+  log "  independent_review:        shipped agents in $AGENTS_DEST:"
+  log "    agentfw-implementer.md:  $agent_implementer"
+  log "    agentfw-verifier.md:     $agent_verifier"
+  log "    agentfw-plan-critic.md:  $agent_plan_critic"
+
+  # Installed validator (skill-relative Layer-1 plan check). Present means executable.
+  local validator="$SKILL_DEST/tools/validate-plan" validator_present=no
   if [ -x "$validator" ]; then
+    validator_present=yes
     log "  validator:                 $validator present + executable: yes"
   elif [ -f "$validator" ]; then
     log "  validator:                 $validator present but NOT executable — configured: no"
@@ -301,16 +516,51 @@ do_status() {
   fi
 
   # Install manifest (uninstall precision).
+  local manifest_present=no
   if [ -f "$SKILL_DEST/.install-manifest" ]; then
+    manifest_present=yes
     log "  manifest:                  $SKILL_DEST/.install-manifest present: yes"
   else
     log "  manifest:                  absent — pre-manifest install; uninstall falls back to the three known shipped agent filenames"
+  fi
+
+  # --- active-capabilities.yaml ----------------------------------------------------------------
+  # Persist the per-probe results next to the packaged capability.yaml so agents can read the
+  # ACTIVE (probed) state without re-running the probes. Written only when the skill dir exists
+  # (nothing installed => nowhere to record state); regenerated on every status run.
+  if [ -d "$SKILL_DEST" ]; then
+    local active="$SKILL_DEST/active-capabilities.yaml" ts
+    ts="$(timestamp)"
+    {
+      printf '# active-capabilities.yaml — generated by agentfw-install status %s\n' "$ts"
+      printf '# Per-probe configured-state snapshot for the packaged capability.yaml.\n'
+      printf '# Regenerate any time: agentfw-install status\n'
+      printf 'generated: "%s"\n' "$ts"
+      printf 'deterministic_permissions:\n'
+      printf '  settings_present: %s\n' "$settings_present"
+      printf '  deny_ssh: %s\n' "$deny_ssh"
+      printf '  deny_env: %s\n' "$deny_env"
+      printf '  deny_aws: %s\n' "$deny_aws"
+      printf '  deny_secrets: %s\n' "$deny_secrets"
+      printf '  deny_git_push_force: %s\n' "$deny_git_push_force"
+      printf '  settings_schema_valid: %s\n' "$settings_schema_valid"
+      printf 'deterministic_permissions_configured: %s\n' "$dp_configured"
+      printf 'independent_review:\n'
+      printf '  agentfw_implementer: %s\n' "$agent_implementer"
+      printf '  agentfw_verifier: %s\n' "$agent_verifier"
+      printf '  agentfw_plan_critic: %s\n' "$agent_plan_critic"
+      printf 'validator_present: %s\n' "$validator_present"
+      printf 'manifest_present: %s\n' "$manifest_present"
+    } > "$active"
+    log ""
+    log "Wrote probe snapshot -> $active (regenerated on every status run)"
   fi
 }
 
 do_install() {
   require_sources
   mkdir -p "$CLAUDE_DIR"
+  require_no_unclosed_fence
   require_block_integrity
   if has_marker_block; then
     log "Existing AGENTFW block found — install behaves as upgrade (single block, replaced in place)."
@@ -338,6 +588,7 @@ do_install() {
 do_upgrade() {
   require_sources
   mkdir -p "$CLAUDE_DIR"
+  require_no_unclosed_fence
   require_block_integrity
   if [ ! -f "$TARGET" ]; then
     log "No existing CLAUDE.md — performing fresh install."
@@ -364,6 +615,9 @@ do_upgrade() {
       die "legacy content detected but excision is ambiguous — refusing to guess. Merge manually: remove the old AgentFW sections from $TARGET yourself, then re-run 'agentfw-install install'. See adapters/claude-code/UPGRADE.md."
     fi
     start=${range% *}; end=${range#* }
+    # The line-based rewrite below re-terminates every line; record an unterminated final
+    # line FIRST so uninstall can restore the missing final newline byte-exactly.
+    [ -n "$(tail -c 1 "$TARGET")" ] && NO_FINAL_NEWLINE=1
     bak=$(backup_target)
     log "Backed up CLAUDE.md (full original, including the excised AgentFW content) -> $bak"
     log "Excising legacy AgentFW content: lines $start-$end of $TARGET (everything else preserved)."
@@ -391,6 +645,7 @@ do_upgrade() {
 
 do_uninstall() {
   local removed=0
+  require_no_unclosed_fence
   require_block_integrity
   # Snapshot the install manifest BEFORE removing the skill dir it lives in.
   local manifest="$SKILL_DEST/.install-manifest" mtmp=""
@@ -408,10 +663,10 @@ do_uninstall() {
     # installer added before it, restoring the user's file byte-for-byte. Fence state is
     # tracked in streaming order; marker lines are classified into T[] as they are read, so
     # the END-phase deletion pass sees only REAL (unfenced) markers.
-    awk "$FENCE_GATE"'
+    awk "$FENCE_TRACKER"'
       { L[NR] = $0
-        if (!infence && $0 ~ /^<!-- AGENTFW:BEGIN/) T[NR] = 1
-        else if (!infence && $0 ~ /^<!-- AGENTFW:END/) T[NR] = 2
+        if (!infence && $0 ~ /^<!-- AGENTFW:BEGIN /) T[NR] = 1
+        else if (!infence && $0 ~ /^<!-- AGENTFW:END /) T[NR] = 2
       }
       END {
         inb = 0
@@ -428,6 +683,17 @@ do_uninstall() {
     ' "$TARGET" > "$tmp"
     if grep -q '[^[:space:]]' "$tmp"; then
       mv "$tmp" "$TARGET"
+      # Manifest directive says the ORIGINAL pre-install file ended without a final newline
+      # (append_block had to add one) — strip it again for a byte-exact restore.
+      if [ -n "$mtmp" ] && grep -qF "$NO_FINAL_NEWLINE_DIRECTIVE" "$mtmp" 2>/dev/null \
+         && [ -s "$TARGET" ] && [ -z "$(tail -c 1 "$TARGET")" ]; then
+        local nfsz nftmp
+        nfsz=$(wc -c < "$TARGET")
+        nftmp="$(mktemp)"
+        head -c $((nfsz - 1)) "$TARGET" > "$nftmp"
+        mv "$nftmp" "$TARGET"
+        log "  - Restored the original MISSING final newline in $TARGET (recorded at install time)"
+      fi
       log "  - Removed AGENTFW marker block(s) from $TARGET (all other content preserved)"
     else
       rm -f "$tmp" "$TARGET"
@@ -503,8 +769,14 @@ Target: \${CLAUDE_DIR:-\$HOME/.claude}  (currently: $CLAUDE_DIR)
              agentfw-*.md files are never touched); preserve everything else byte-for-byte;
              remove CLAUDE.md if it becomes empty; print an inventory.
   status     Report block presence/version, skill dir, agent files, plus configured-state
-             probes (settings deny rules yes/no/unknown, installed validator, manifest,
-             shipped agents) mapped to capability.yaml activation_probe entries.
+             probes (settings.json parsed as JSON: per-rule permissions.deny entries
+             yes/no/unknown + a deterministic_permissions_configured aggregate
+             true/partial/false/unknown, installed validator,
+             manifest, each shipped agent) mapped to the packaged capability.yaml
+             activation_probe entries; write the probe snapshot to
+             skills/agentfw/active-capabilities.yaml when the skill dir exists. Warns (exit 0)
+             on malformed markers or an unclosed code fence; the mutating subcommands above
+             REFUSE byte-untouched on either condition.
 EOF
 }
 

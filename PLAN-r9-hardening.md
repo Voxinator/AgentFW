@@ -95,7 +95,7 @@ BOTH capability instances.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A3",
   "requirements": [
     {"id": "HR1", "text": "CommonMark-aware shared fence tracker: backtick+tilde, delimiter char+length, 3-space indent, inner shorter runs ignored"},
@@ -115,6 +115,11 @@ BOTH capability instances.
       "expected_signal": "roundtrip ALL CHECKS PASSED with the six named case words; tilde, four-backtick-with-inner-triple, and 3-space-indented fenced examples all roundtrip cmp-identical with sentinels intact; unclosed backtick AND tilde fences refused byte-identically with an error mentioning the unclosed fence while status still exits 0; lookalike installs with user lines intact; capability.yaml packaged; active-capabilities.yaml written by status with per-rule (ssh et al) entries",
       "risk": "fence tracker diverges between integrity check and mutation paths, or new semantics regress the 10 existing roundtrip cases",
       "negative_cases": ["the formerly destructive tilde repro must now restore cmp-identical", "unclosed-fence install must exit non-zero with the file byte-identical", "a lookalike marker line must neither be stripped nor cause refusal"],
+      "environment": "repo working tree, python3 + bash, CLAUDE_DIR mktemp sandboxes for install probes; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "W2", "title": "v1.1 contract schema + capability validator + policy docs", "deps": [],
      "contract": {"requirement_ids": ["HR6","HR7"],
@@ -123,6 +128,11 @@ BOTH capability instances.
       "expected_signal": "all three v1 plans and the 1.1 plan-good PASS; all 13 bad fixtures rejected under neutral filenames with keywords; both live capability instances validate; both bad capability fixtures rejected",
       "risk": "1.1 enforcement breaks v1 historical plans, or the capability checker false-passes the drifted enum it exists to catch",
       "negative_cases": ["an A3 v1.1 contract with required_verification_tier producer is rejected with keyword tier", "a capability file with configured: bogus is rejected", "all ten pre-existing bad fixtures still rejected"],
+      "environment": "repo working tree, python3 + bash, mktemp scratch dirs for neutral-filename fixture copies; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "W3", "title": "Skill sync + preflight + repo docs", "deps": [],
      "contract": {"requirement_ids": ["HR4","HR5","HR8"],
@@ -131,6 +141,11 @@ BOTH capability instances.
       "expected_signal": "exit 0 with check-links PASS; escalator negatives AND the positive conjunctive phrasing present in both skills; test-runner row present and mapped to ask; both skill example blocks upgraded to the 1.1 schema with required_verification_tier; README r9.1 scope discriminator and dated CHANGELOG hardening title present",
       "risk": "skill drift persists in a phrasing the greps miss (the exact failure this pass fixes), or a row deletion satisfies absence-only checks, or new references dangle",
       "negative_cases": ["order-robust escalator negatives PLUS positive conjunctive-phrasing greps on BOTH skill files (deletion does not pass)", "the test-runner awk fails if the row is deleted (found required) or still maps to allow", "the dangling ../../capability.yaml reference is gone", "check-links passes after all reference changes"],
+      "environment": "repo working tree, python3 + bash; no network",
+      "evidence": "acceptance_command output and exit codes recorded in the worker report, produced_after_change",
+      "required_verification_tier": "independent",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}},
     {"id": "WV", "title": "Adversarial verification", "deps": ["W1","W2","W3"],
      "contract": {"requirement_ids": ["HR1","HR2","HR3","HR4","HR5","HR6","HR7","HR8"],
@@ -139,6 +154,11 @@ BOTH capability instances.
       "expected_signal": "verifier report: six findings closed with recorded evidence; regressions green; off-contract probes reported",
       "risk": "fixes verified only against these contracts — the ceiling this framework now names; off-contract probing is the mitigation",
       "negative_cases": ["Sol replay: tilde destructive repro restores cmp-identical", "Sol replay: unclosed-fence double-install is impossible (first install refuses)", "Sol replay: skill escalator greps clean", "Sol replay: validate-capability rejects an invalid configured value"],
+      "environment": "repo working tree, python3 + bash, CLAUDE_DIR mktemp sandboxes for install probes; no network",
+      "evidence": "verifier report with re-executed acceptance_command outputs and exit codes, produced_after_change",
+      "required_verification_tier": "adversarial",
+      "integration_seam": true,
+      "risk_class": "standard",
       "rerunnable": true}}
   ]
 }

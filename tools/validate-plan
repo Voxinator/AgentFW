@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """AgentFW Layer-1 plan validator.
 
-Usage: validate-plan <plan.md>
+Usage: validate-plan [--legacy] <plan.md>
 
 Extracts the single fenced block opening with ```json agentfw-plan and runs
 every deterministic (Layer-1) check from policy/plan-critique.md:
 
   - block parses as valid JSON with NO duplicate object keys at any level
     (a last-wins duplicated key is silently-accepted ambiguity); `version`
-    present
+    present and, in DEFAULT mode, exactly "1.1" — schema 1.1 is MANDATORY.
+    A "version": "1" block is rejected as a legacy schema version; unknown
+    version strings are rejected naming the version
+  - `--legacy` accepts "version": "1" blocks under the ORIGINAL v1 rules —
+    for HISTORICAL PROVENANCE ONLY (re-checking plans authored before the
+    1.1 schema). Never author a new plan against v1
   - `assurance` present and one of A0..A4
   - assurance A2+ => `requirements` and `tasks` lists are non-empty
   - every requirement record carries a non-empty `id` and `text`
+  - EVERY TASK carries a non-empty string `id` — checked BEFORE coverage,
+    dependency, and cycle validation, so a missing id is its own defect
+    (keyword: empty) naming the task index, never a downstream failure
   - requirement ids are unique (as are task ids)
   - every requirement id covered by >=1 task's contract.requirement_ids
   - every contract requirement_ids entry names a DECLARED requirement
@@ -22,10 +30,31 @@ every deterministic (Layer-1) check from policy/plan-critique.md:
   - risk present  => negative_cases non-empty
   - assurance A3/A4 => EVERY contract has non-empty negative_cases
 
+Version "1.1" blocks ADDITIONALLY enforce, per contract:
+
+  - assurance A2+ => `integration_seam` (JSON boolean) and `risk_class`
+    (one of none/standard/security/destructive) — the STRUCTURED inputs to
+    tier derivation; free-form `risk` prose is never used   [keyword: tier]
+  - assurance A2+ => `required_verification_tier` present, one of
+    producer / independent / adversarial, and >= the MECHANICALLY DERIVED
+    minimum tier (producer < independent < adversarial):
+      base floor by assurance: A2 => producer, A3 => independent,
+      A4 => adversarial;
+      integration_seam true AND assurance A2 => floor independent;
+      risk_class security or destructive => floor adversarial at EVERY
+      assurance level (including A0/A1 when the field is present)
+                                                            [keyword: tier]
+  - assurance A2+ => non-empty `environment` string          [keyword: contract]
+  - assurance A2+ => `rerunnable` is a JSON boolean, not the
+    string "true"/"false"                                    [keyword: contract]
+  - assurance A3+ => non-empty `evidence` (string or object) [keyword: contract]
+  - `constraints` is EXPLICITLY OPTIONAL — validated only for type when
+    present (string, list, or object)                        [keyword: contract]
+
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
 defect class keyword (contract / cover / cycl / negative / assurance /
-empty / duplicate).
+empty / duplicate / tier / version).
 
 stdlib only (json, re, sys). Honest limit: this validates STRUCTURE and
 COVERAGE; it cannot judge command STRENGTH — that is the Layer-2 judge's job.
@@ -38,6 +67,12 @@ BLOCK_RE = re.compile(r"^```json agentfw-plan[ \t]*\r?\n(.*?)^```[ \t]*\r?$",
                       re.MULTILINE | re.DOTALL)
 VALID_ASSURANCE = ("A0", "A1", "A2", "A3", "A4")
 A2_PLUS = ("A2", "A3", "A4")
+VALID_TIERS = ("producer", "independent", "adversarial")
+TIER_RANK = {"producer": 0, "independent": 1, "adversarial": 2}
+VALID_RISK_CLASSES = ("none", "standard", "security", "destructive")
+# v1.1 mechanical tier derivation: base floor by assurance level
+BASE_FLOOR = {"A0": "producer", "A1": "producer", "A2": "producer",
+              "A3": "independent", "A4": "adversarial"}
 
 
 def reject_duplicate_keys(pairs):
@@ -58,6 +93,24 @@ def nonempty_str(v):
 
 def nonempty_list(v):
     return isinstance(v, list) and any(nonempty_str(x) for x in v)
+
+
+def derive_floor(assurance, seam, risk_class):
+    """Mechanically derive the minimum required_verification_tier.
+
+    Returns (floor, reason) — reason names the binding derivation input.
+    Uses ONLY the structured fields; free-form `risk` prose never enters.
+    """
+    floor = BASE_FLOOR.get(assurance, "producer")
+    reason = "assurance %s" % assurance
+    if seam is True and assurance == "A2" \
+            and TIER_RANK[floor] < TIER_RANK["independent"]:
+        floor = "independent"
+        reason = "integration_seam=true at assurance A2"
+    if risk_class in ("security", "destructive"):
+        floor = "adversarial"
+        reason = "risk_class=%s" % risk_class
+    return floor, reason
 
 
 def find_cycles(task_ids, graph):
@@ -91,10 +144,20 @@ def find_cycles(task_ids, graph):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("usage: validate-plan <plan.md>", file=sys.stderr)
+    argv = sys.argv[1:]
+    if "-h" in argv or "--help" in argv:
+        print(__doc__)
+        return 0
+    legacy = "--legacy" in argv
+    paths = [a for a in argv if a != "--legacy"]
+    if len(paths) != 1 or any(p.startswith("-") for p in paths):
+        print("usage: validate-plan [--legacy] <plan.md>\n"
+              "  --legacy  accept \"version\": \"1\" blocks under the "
+              "original v1 rules\n"
+              "            (historical provenance only — never author new "
+              "plans against v1)", file=sys.stderr)
         return 2
-    path = sys.argv[1]
+    path = paths[0]
     try:
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
@@ -122,9 +185,22 @@ def main():
 
     errors = []
 
-    # version
-    if not nonempty_str(str(plan.get("version") or "")) or "version" not in plan:
+    # version — present, and in default mode MANDATORILY "1.1"
+    version = plan.get("version")
+    if "version" not in plan or not nonempty_str(str(version or "")):
         errors.append("plan: missing 'version' field")
+        version = None
+    elif version == "1":
+        if not legacy:
+            errors.append("plan: legacy schema version \"1\" — migrate to "
+                          "\"1.1\" or run with --legacy (version \"1\" is "
+                          "accepted for historical provenance only)")
+    elif version != "1.1":
+        errors.append("plan: unknown schema version %r — known versions are "
+                      "\"1\" (legacy, --legacy only) and \"1.1\"; assurance "
+                      "rules for an unknown schema version cannot be applied"
+                      % (version,))
+    v11 = version == "1.1"
 
     # assurance
     assurance = plan.get("assurance")
@@ -167,6 +243,18 @@ def main():
                               "empty (malformed requirement record)"
                               % (idx, field))
 
+    # TASK-ID PRECHECK — runs BEFORE coverage/dependency/cycle validation so
+    # a missing id is its own named defect, never a downstream error or a
+    # silent skip. Every task must be an object with a non-empty string id.
+    for idx, t in enumerate(tasks):
+        if not isinstance(t, dict):
+            errors.append("task #%d: not an object — id and contract are "
+                          "missing or empty (malformed task record)" % idx)
+        elif not nonempty_str(t.get("id")):
+            errors.append("task #%d: field 'id' missing or empty (malformed "
+                          "task record) — coverage/dependency/cycle checks "
+                          "cannot bind an anonymous task" % idx)
+
     req_ids = [r.get("id") for r in reqs
                if isinstance(r, dict) and nonempty_str(r.get("id"))]
     task_ids = [t.get("id") for t in tasks
@@ -177,8 +265,7 @@ def main():
     covered = set()
     for idx, t in enumerate(tasks):
         if not isinstance(t, dict):
-            errors.append("task #%d: not an object (contract unreadable)" % idx)
-            continue
+            continue  # already reported by the task-id precheck
         tid = t.get("id") if nonempty_str(t.get("id")) else "#%d" % idx
         c = t.get("contract")
         if not isinstance(c, dict):
@@ -204,6 +291,105 @@ def main():
             errors.append("task %s: assurance %s requires the 'rerunnable' "
                           "field in every contract (incomplete contract)"
                           % (tid, assurance))
+        # ---- version 1.1 additional per-contract rules ----
+        if v11 and isinstance(c, dict) and c:
+            seam = None
+            risk_class = None
+            if assurance in A2_PLUS:
+                # integration_seam: REQUIRED structured derivation input
+                if "integration_seam" not in c \
+                        or not isinstance(c["integration_seam"], bool):
+                    errors.append("task %s: schema 1.1 at assurance %s "
+                                  "requires 'integration_seam' as a JSON "
+                                  "boolean in every contract — the minimum "
+                                  "tier cannot be derived without it"
+                                  % (tid, assurance))
+                else:
+                    seam = c["integration_seam"]
+                # risk_class: REQUIRED structured derivation input
+                rc = c.get("risk_class")
+                if not nonempty_str(rc):
+                    errors.append("task %s: schema 1.1 at assurance %s "
+                                  "requires 'risk_class' (one of %s) in "
+                                  "every contract — the minimum tier cannot "
+                                  "be derived without it"
+                                  % (tid, assurance,
+                                     "/".join(VALID_RISK_CLASSES)))
+                elif rc not in VALID_RISK_CLASSES:
+                    errors.append("task %s: invalid risk_class %r — must be "
+                                  "one of %s (tier derivation input)"
+                                  % (tid, rc, "/".join(VALID_RISK_CLASSES)))
+                else:
+                    risk_class = rc
+                # required_verification_tier: present, valid, >= derived floor
+                tier = c.get("required_verification_tier")
+                if not nonempty_str(tier):
+                    errors.append("task %s: schema 1.1 at assurance %s "
+                                  "requires 'required_verification_tier' in "
+                                  "every contract — the tier field is missing "
+                                  "or empty" % (tid, assurance))
+                elif tier not in VALID_TIERS:
+                    errors.append("task %s: invalid "
+                                  "required_verification_tier %r — the tier "
+                                  "must be one of %s"
+                                  % (tid, tier, "/".join(VALID_TIERS)))
+                elif seam is not None and risk_class is not None:
+                    floor, reason = derive_floor(assurance, seam, risk_class)
+                    if TIER_RANK[tier] < TIER_RANK[floor]:
+                        errors.append("task %s: derived minimum tier is %s "
+                                      "(%s); contract declares %r — "
+                                      "required_verification_tier is below "
+                                      "the mechanical floor (misclassified "
+                                      "tier)" % (tid, floor, reason, tier))
+                # environment: non-empty string
+                if not nonempty_str(c.get("environment")):
+                    errors.append("task %s: schema 1.1 at assurance %s "
+                                  "requires a non-empty 'environment' string "
+                                  "in every contract (incomplete contract)"
+                                  % (tid, assurance))
+                # rerunnable: must be a JSON boolean, not a string
+                if "rerunnable" in c and not isinstance(c["rerunnable"], bool):
+                    errors.append("task %s: contract field 'rerunnable' must "
+                                  "be a JSON boolean (true/false), got %r — "
+                                  "a quoted string is not a boolean (invalid "
+                                  "contract)" % (tid, c["rerunnable"]))
+            else:
+                # below A2: structured fields are optional, but the
+                # security/destructive floor applies at EVERY assurance level
+                if "integration_seam" in c \
+                        and not isinstance(c["integration_seam"], bool):
+                    errors.append("task %s: 'integration_seam' must be a "
+                                  "JSON boolean when present (tier "
+                                  "derivation input)" % tid)
+                rc = c.get("risk_class")
+                if rc is not None and rc not in VALID_RISK_CLASSES:
+                    errors.append("task %s: invalid risk_class %r — must be "
+                                  "one of %s (tier derivation input)"
+                                  % (tid, rc, "/".join(VALID_RISK_CLASSES)))
+                elif rc in ("security", "destructive"):
+                    tier = c.get("required_verification_tier")
+                    if tier != "adversarial":
+                        errors.append("task %s: derived minimum tier is "
+                                      "adversarial (risk_class=%s — applies "
+                                      "at EVERY assurance level); contract "
+                                      "declares %r — "
+                                      "required_verification_tier is below "
+                                      "the mechanical floor (misclassified "
+                                      "tier)" % (tid, rc, tier))
+            if assurance in ("A3", "A4"):
+                # evidence: non-empty string or non-empty object
+                ev = c.get("evidence")
+                if not (nonempty_str(ev) or (isinstance(ev, dict) and ev)):
+                    errors.append("task %s: schema 1.1 at assurance %s "
+                                  "requires non-empty 'evidence' (string or "
+                                  "object) in every contract (incomplete "
+                                  "contract)" % (tid, assurance))
+            # constraints: EXPLICITLY OPTIONAL — type-checked only if present
+            if "constraints" in c and not isinstance(
+                    c["constraints"], (str, list, dict)):
+                errors.append("task %s: contract field 'constraints' must be "
+                              "a string, list, or object when present "
+                              "(invalid contract)" % tid)
         if nonempty_str(c.get("risk")) and not nonempty_list(c.get("negative_cases")):
             errors.append("task %s: risk is present but negative_cases is "
                           "missing or empty" % tid)
@@ -266,9 +452,12 @@ def main():
             print("  - " + e)
         return 1
 
-    print("PASS: %s — %d requirements, %d tasks, assurance %s; all Layer-1 "
+    mode = " [--legacy: v1 rules, historical provenance only]" \
+        if legacy and version == "1" else ""
+    print("PASS: %s — %d requirements, %d tasks, assurance %s%s; all Layer-1 "
           "checks passed (structure/coverage only — command strength is a "
-          "Layer-2 judge question)" % (path, len(req_ids), len(tasks), assurance))
+          "Layer-2 judge question)" % (path, len(req_ids), len(tasks),
+                                       assurance, mode))
     return 0
 
 

@@ -8,7 +8,7 @@ probe that PASSed against the first build of this validator.
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A2",
   "requirements": [
     {"id": "R1", "text": "Exporter writes a CSV with a stable header"}
@@ -18,7 +18,11 @@ probe that PASSed against the first build of this validator.
      "contract": {"requirement_ids": ["R1", "R99"],
       "criteria": "export of the sample dataset produces the expected header and row count",
       "acceptance_command": "python3 -m pytest tests/test_export.py -q",
+      "environment": "repo checkout, python3 + pytest, no network",
       "expected_signal": "exit 0, no 'failed' in summary",
+      "required_verification_tier": "producer",
+      "integration_seam": false,
+      "risk_class": "standard",
       "rerunnable": true}}
   ]
 }

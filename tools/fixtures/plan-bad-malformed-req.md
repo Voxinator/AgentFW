@@ -7,7 +7,7 @@ stays silent. Layer 1 must exit non-zero naming record #1 and the empty
 
 ```json agentfw-plan
 {
-  "version": "1",
+  "version": "1.1",
   "assurance": "A1",
   "requirements": [
     {"id": "R1", "text": "Parser handles valid input"},

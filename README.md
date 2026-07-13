@@ -25,6 +25,8 @@ r9 thesis: *"r9 governs work through portable assurance contracts compiled into 
 - **`profiles/`** — guided degradation profiles (`profiles/chatgpt-projects.md` for standard ChatGPT/Projects, `profiles/claude-projects.md` for Claude.ai Projects) for runtimes with no enforcement surface. Explicitly *not* adapters. (ChatGPT Work is a different surface with hosted subagents — the designated r9.1 adapter candidate, deferred until the two shipped adapters pass evals.)
 - **`tools/`** — `validate-plan` (deterministic Layer-1 plan validation + fixtures), `agentfw-install` (marker-block installer), and `tests/`.
 
+**Scope boundary (deliberate):** r9 ships exactly two native adapters (Claude Code, Codex) and two guided profiles (standard ChatGPT/Projects, Claude.ai Projects). ChatGPT Work — a different surface with hosted subagents/skills — is acknowledged but deferred to **r9.1** as the designated adapter candidate, per the Adapter Sprawl rule (no platform binding ships before the existing adapters pass evals). This is a deliberate boundary, not full ChatGPT parity.
+
 ### Install / upgrade / uninstall per platform
 
 | Platform | Install | Upgrade | Uninstall |

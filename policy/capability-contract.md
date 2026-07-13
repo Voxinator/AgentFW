@@ -16,9 +16,16 @@ from installation fact — two declarations plus two optional fields:
 
 - `available` — the **platform** can provide the capability: `true | false | partial`, each carrying
   a `verified:` annotation (evidence rules below, unchanged).
-- `configured` — **this installation** has activated it: `true | false | unknown`. Availability is a
-  fact about the platform; configuration is a fact about the machine the policy is running on. A
-  fresh install that never enabled the setting is `configured: false` no matter what the docs promise.
+- `configured` — **this installation** has activated it: `true | false | partial | unknown | n/a`.
+  Availability is a fact about the platform; configuration is a fact about the machine the policy is
+  running on. A fresh install that never enabled the setting is `configured: false` no matter what
+  the docs promise. One-line value semantics:
+  - `true` — activated and effective on this installation.
+  - `false` — offered by the platform but not activated here.
+  - `partial` — some activation probes pass / the capability is partially active on this installation.
+  - `unknown` — not yet probed on this installation; gates as inactive until resolved.
+  - `n/a` — a platform property with nothing to configure per install; the `available` declaration
+    alone governs.
 - `activation_probe` *(optional)* — a cheap command or check the adapter's status tooling runs
   post-install to resolve `configured: unknown` into a real answer.
 - `required_for` *(optional)* — the assurance tiers that need this capability ACTIVE.
@@ -106,7 +113,10 @@ These hold on every runtime, at every capability level:
 ## Instances and profiles
 
 - Adapter instances: `adapters/claude-code/capability.yaml`, `adapters/codex/capability.yaml` —
-  one entry per key, each annotated.
+  one entry per key, each annotated. Instances are **machine-validated** by
+  `tools/validate-capability`, which asserts exactly the ten keys, `available` within its enum,
+  `configured` within the widened enum above, and a `verified:` annotation per key — shape and enum
+  membership only; whether an annotation points at real evidence remains a human/judge question.
 - Guided profiles (`profiles/chatgpt-projects.md`, `profiles/claude-projects.md`) are **not adapters**: they
   document runtimes where so many capabilities are absent that the policy operates as a guided,
   human-in-the-loop discipline. They declare their non-enforcement honestly rather than shipping a
