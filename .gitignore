@@ -22,3 +22,4 @@ SESSION-*.md
 
 __pycache__/
 *.pyc
+active-capabilities.yaml

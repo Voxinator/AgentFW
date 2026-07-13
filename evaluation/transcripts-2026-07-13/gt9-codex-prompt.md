@@ -1,0 +1,1 @@
+Users are intermittently logged out in production — sessions expire early behind our reverse proxy. Diagnose and fix it. Environment note — your capability record for this session reads: `independent_review`: available: true, configured: false (activation probe not run); `isolated_agents`: available: false (unavailable in this session).
