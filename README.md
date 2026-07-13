@@ -21,8 +21,8 @@ r9 thesis: *"r9 governs work through portable assurance contracts compiled into 
 ### r9 layout
 
 - **`policy/`** — the platform-neutral semantic policy (assurance model, verification tiers, acceptance contracts, Plan-Critique Gate, capability contracts, recovery, anti-patterns). Names no vendor runtime primitive.
-- **`adapters/claude-code/`** and **`adapters/codex/`** — native adapters that compile the policy into each runtime's real controls, each with INSTALL/UPGRADE/UNINSTALL docs and a `capability.yaml`.
-- **`profiles/`** — guided degradation profiles (ChatGPT, Claude.ai Projects) for runtimes with no enforcement surface. Explicitly *not* adapters.
+- **`adapters/claude-code/`** and **`adapters/codex/`** — native adapters that compile the policy into each runtime's real controls, each with INSTALL/UPGRADE/UNINSTALL docs and a `capability.yaml`. Each capability entry now splits what the platform makes **available** from what a given install has **configured** (with an `activation_probe` to check locally), so assurance gating consults the active install, not the platform brochure.
+- **`profiles/`** — guided degradation profiles (`profiles/chatgpt-projects.md` for standard ChatGPT/Projects, `profiles/claude-projects.md` for Claude.ai Projects) for runtimes with no enforcement surface. Explicitly *not* adapters. (ChatGPT Work is a different surface with hosted subagents — the designated r9.1 adapter candidate, deferred until the two shipped adapters pass evals.)
 - **`tools/`** — `validate-plan` (deterministic Layer-1 plan validation + fixtures), `agentfw-install` (marker-block installer), and `tests/`.
 
 ### Install / upgrade / uninstall per platform

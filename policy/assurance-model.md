@@ -16,7 +16,7 @@ other decision. Controls scale with the level; the level never scales with how m
 | A0 | lookup/explanation/tiny reversible edit | direct execution; producer check |
 | A1 | bounded single-seam implementation | lightweight plan; producer tests (machine-checked) |
 | A2 | multi-component / integration seams | decompose; independent verification at seams; Layer-1 plan validation; Layer-2 critique if ambiguity/shared values |
-| A3 | production bug, security, infra, multi-file autonomous | independent workers + independent verifier; full acceptance contracts; both Plan-Critique layers; checkpoints |
+| A3 | production bug, security, infra, autonomous work meeting an escalator below | independent workers + independent verifier; full acceptance contracts; both Plan-Critique layers; checkpoints |
 | A4 | irreversible/destructive/critical autonomous | A3 + adversarial verification + explicit human authorization + rollback proof (restorability, not just backup integrity) |
 
 **Worked examples:**
@@ -45,7 +45,15 @@ Any ONE bumps the level to ≥A3 regardless of the three answers:
 - production / live infrastructure
 - security-sensitive surface
 - destructive / history-rewriting operation
-- autonomous multi-file change
+- autonomous execution PLUS at least one of: material side effects beyond the working tree; unclear
+  integration seams; elevated defect-escape probability (the producer's checks plausibly cannot catch
+  the failure); absence of rapid human review
+
+Autonomy alone does not escalate. Neither does touching many files, nor the mere combination of the
+two. **Calibration:** a routine, reversible multi-file refactor with strong tests is **A2, not A3** —
+the working tree bounds the blast radius, the tests bound defect escape, and the diff reaches a human
+promptly. What earns A3 is autonomy paired with a way for a defect to escape or an effect to land
+outside the tree.
 
 ## Verification-tier binding
 **Producer** verification always, at every level. **Independent** at A2 integration seams and all A3+.

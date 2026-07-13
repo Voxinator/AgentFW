@@ -11,10 +11,21 @@ the policy to a new runtime silently turns enforcement into wishful prose.
 whenever it selects an assurance control — before dispatching isolated work, before trusting a
 review as independent, before treating a permission rule as enforced.
 
-**WHAT.** A capability instance declares exactly the ten keys below, each valued
-`true | false | partial`, each carrying a `verified:` annotation.
+**WHAT.** A capability instance declares exactly the ten keys below. Each key splits platform fact
+from installation fact — two declarations plus two optional fields:
+
+- `available` — the **platform** can provide the capability: `true | false | partial`, each carrying
+  a `verified:` annotation (evidence rules below, unchanged).
+- `configured` — **this installation** has activated it: `true | false | unknown`. Availability is a
+  fact about the platform; configuration is a fact about the machine the policy is running on. A
+  fresh install that never enabled the setting is `configured: false` no matter what the docs promise.
+- `activation_probe` *(optional)* — a cheap command or check the adapter's status tooling runs
+  post-install to resolve `configured: unknown` into a real answer.
+- `required_for` *(optional)* — the assurance tiers that need this capability ACTIVE.
 
 ## The ten capability keys
+
+The value semantics below apply to each key's `available` declaration:
 
 | Key | true means | false means | partial means |
 |---|---|---|---|
@@ -31,14 +42,26 @@ review as independent, before treating a permission rule as enforced.
 
 ## The `verified:` annotation
 
-Every key's value MUST carry a `verified:` annotation naming its evidence: a **source URL**
-(official platform documentation), a **repo path** (a runnable test or artifact in this repository
-that demonstrates the capability), or the literal **`unverified`**.
+Every key's `available` value MUST carry a `verified:` annotation naming its evidence: a **source
+URL** (official platform documentation), a **repo path** (a runnable test or artifact in this
+repository that demonstrates the capability), or the literal **`unverified`**.
 
-**An unverified `true` is treated as `false` for gating decisions.** Optimism about a runtime is
-exactly the failure this contract exists to prevent: if the claim cannot be pointed at evidence, the
-policy must plan as if the capability is absent. (`partial` with an annotation is honest;
-`true` with `unverified` is not.)
+**An unverified `available: true` is treated as `false` for gating decisions.** Optimism about a
+runtime is exactly the failure this contract exists to prevent: if the claim cannot be pointed at
+evidence, the policy must plan as if the capability is absent. (`partial` with an annotation is
+honest; `true` with `unverified` is not.)
+
+## Gating consults ACTIVE state
+
+Assurance gating consults a capability's ACTIVE state, not its potential. `available: true` with
+`configured: false` or `configured: unknown` is **unavailable for gating** until the
+`activation_probe` (or explicit configuration) proves otherwise. A platform that *could* enforce
+permissions deterministically, running on an installation that never activated the enforcement,
+enforces nothing — planning against the brochure instead of the machine is the same optimism the
+`verified:` rule exists to block, one layer down. When a control needs a capability that is available
+but not configured, the degradation is **declared to the user, never silent** — exactly as if the
+capability were absent — and any `required_for` tiers are unreachable until the capability is probed
+or configured ACTIVE.
 
 ## Binding strengths: requires / prefers / fallback
 
@@ -55,7 +78,8 @@ Policy statements bind to capabilities at one of three strengths:
 ### Worked example: `independent_review` missing
 
 A verification gate *requires* `independent_review` at higher assurance levels. On a runtime whose
-capability instance declares `independent_review: false`:
+capability instance declares `independent_review` as `available: false` — or `available: true` but
+not `configured` ACTIVE, which gates identically until probed:
 
 1. The gate does NOT pretend: no "acting as an independent reviewer now" voice-switch inside the
    same context — that is role-play, not review (hard rule 2 below).
@@ -83,7 +107,7 @@ These hold on every runtime, at every capability level:
 
 - Adapter instances: `adapters/claude-code/capability.yaml`, `adapters/codex/capability.yaml` —
   one entry per key, each annotated.
-- Guided profiles (`profiles/chatgpt.md`, `profiles/claude-projects.md`) are **not adapters**: they
+- Guided profiles (`profiles/chatgpt-projects.md`, `profiles/claude-projects.md`) are **not adapters**: they
   document runtimes where so many capabilities are absent that the policy operates as a guided,
   human-in-the-loop discipline. They declare their non-enforcement honestly rather than shipping a
   capability instance that would be mostly `false`.

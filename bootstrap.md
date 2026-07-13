@@ -1,3 +1,5 @@
+> **r9 note:** this file is the **r8** installer. The r9 draft installs via `adapters/<platform>/INSTALL.md` instead.
+
 # AgentFW r8 — Bootstrap Install
 
 You are about to install AgentFW r8. This restructures how you work — from single-turn chatbot to a governance layer over Claude Code 2.1's native runtime primitives (Workflow tool, Agent subagents, Plan mode, Skills, MEMORY, hooks, permission modes). The firmware decides whether/when/how-well to orchestrate; the runtime executes how. v8 is Claude-Code-only.

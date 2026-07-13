@@ -10,7 +10,7 @@ pages actually fetched; per-capability citations live in `capability.yaml`).
 | # | Artifact | Destination |
 |---|---|---|
 | 1 | Bootloader block (`AGENTS.md` in this adapter) | inside `~/.codex/AGENTS.md`, marker-wrapped |
-| 2 | Skill (`skills/agentfw/SKILL.md`) + policy copy | `~/.agents/skills/agentfw/` |
+| 2 | Skill (`skills/agentfw/SKILL.md`) + policy copy + validator (`tools/validate-plan`) | `~/.agents/skills/agentfw/` |
 | 3 | Config keys (`config.example.toml`) | merged into `~/.codex/config.toml` |
 
 ## Step 1 — Bootloader block into AGENTS.md
@@ -47,12 +47,25 @@ from cwd up to the repo root; each skill is a folder whose `SKILL.md` carries `n
 progressive disclosure). (Verified: https://learn.chatgpt.com/docs/build-skills)
 
 ```sh
-mkdir -p ~/.agents/skills/agentfw
+mkdir -p ~/.agents/skills/agentfw/tools
 cp adapters/codex/skills/agentfw/SKILL.md ~/.agents/skills/agentfw/SKILL.md
-cp -R policy ~/.agents/skills/agentfw/policy   # from the AgentFW repo root
+cp -R policy ~/.agents/skills/agentfw/policy         # from the AgentFW repo root
+cp tools/validate-plan ~/.agents/skills/agentfw/tools/validate-plan   # Layer-1 validator
+chmod +x ~/.agents/skills/agentfw/tools/validate-plan
 ```
 
-The policy copy is what lets the skill's `policy/…` references resolve without the repo checkout.
+The policy copy is what lets the skill's `policy/…` references resolve without the repo
+checkout, and the validator copy is what lets the installed skill RUN Layer-1 plan validation
+without one — the skill resolves `./tools/validate-plan` next to its SKILL.md first, repo
+checkout second. The single source of truth stays `tools/validate-plan` in the AgentFW repo;
+the installed file is a copy, refreshed on upgrade, never edited in place.
+
+**Post-install smoke run (proves the copied validator executes):**
+
+```sh
+python3 ~/.agents/skills/agentfw/tools/validate-plan tools/fixtures/plan-good.md
+# expected: PASS (exit 0), run from the AgentFW repo root for the fixture path
+```
 
 **Fallback — Codex version without skills support:** keep the files at exactly the same paths.
 The bootloader already points there (`~/.agents/skills/agentfw/SKILL.md` + `policy/`) and

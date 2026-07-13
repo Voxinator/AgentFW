@@ -6,18 +6,26 @@ Usage: validate-plan <plan.md>
 Extracts the single fenced block opening with ```json agentfw-plan and runs
 every deterministic (Layer-1) check from policy/plan-critique.md:
 
-  - block parses as valid JSON; `version` present
+  - block parses as valid JSON with NO duplicate object keys at any level
+    (a last-wins duplicated key is silently-accepted ambiguity); `version`
+    present
   - `assurance` present and one of A0..A4
+  - assurance A2+ => `requirements` and `tasks` lists are non-empty
+  - every requirement record carries a non-empty `id` and `text`
+  - requirement ids are unique (as are task ids)
   - every requirement id covered by >=1 task's contract.requirement_ids
+  - every contract requirement_ids entry names a DECLARED requirement
   - every task has a contract with non-empty criteria + acceptance_command
     + expected_signal
+  - assurance A2+ => every contract carries the `rerunnable` field
   - deps reference existing task ids and are acyclic
   - risk present  => negative_cases non-empty
   - assurance A3/A4 => EVERY contract has non-empty negative_cases
 
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
-defect class (contract / cover / cycl / negative / assurance).
+defect class keyword (contract / cover / cycl / negative / assurance /
+empty / duplicate).
 
 stdlib only (json, re, sys). Honest limit: this validates STRUCTURE and
 COVERAGE; it cannot judge command STRENGTH — that is the Layer-2 judge's job.
@@ -29,6 +37,19 @@ import sys
 BLOCK_RE = re.compile(r"^```json agentfw-plan[ \t]*\r?\n(.*?)^```[ \t]*\r?$",
                       re.MULTILINE | re.DOTALL)
 VALID_ASSURANCE = ("A0", "A1", "A2", "A3", "A4")
+A2_PLUS = ("A2", "A3", "A4")
+
+
+def reject_duplicate_keys(pairs):
+    """object_pairs_hook: refuse last-wins parsing of duplicated JSON keys."""
+    obj = {}
+    for k, v in pairs:
+        if k in obj:
+            raise ValueError(
+                "duplicate JSON object key %r — last-wins parsing would "
+                "silently discard the earlier value (ambiguous block)" % k)
+        obj[k] = v
+    return obj
 
 
 def nonempty_str(v):
@@ -88,9 +109,12 @@ def main():
         return 1
 
     try:
-        plan = json.loads(blocks[0])
+        plan = json.loads(blocks[0], object_pairs_hook=reject_duplicate_keys)
     except json.JSONDecodeError as e:
         print("FAIL: %s — agentfw-plan block is not valid JSON: %s" % (path, e))
+        return 1
+    except ValueError as e:
+        print("FAIL: %s — %s" % (path, e))
         return 1
     if not isinstance(plan, dict):
         print("FAIL: %s — agentfw-plan block is not a JSON object" % path)
@@ -120,6 +144,29 @@ def main():
         errors.append("plan: 'tasks' missing or not a list")
         tasks = []
 
+    # A2+ substance: an assured plan cannot be empty of requirements or tasks
+    if assurance in A2_PLUS:
+        if not reqs:
+            errors.append("plan: assurance %s requires a non-empty "
+                          "'requirements' list — the requirements list is "
+                          "empty" % assurance)
+        if not tasks:
+            errors.append("plan: assurance %s requires a non-empty 'tasks' "
+                          "list — the tasks list is empty" % assurance)
+
+    # requirement record shape: every record needs a non-empty id and text
+    for idx, r in enumerate(reqs):
+        if not isinstance(r, dict):
+            errors.append("requirement record #%d: not an object — id and "
+                          "text are missing or empty (malformed requirement "
+                          "record)" % idx)
+            continue
+        for field in ("id", "text"):
+            if not nonempty_str(r.get(field)):
+                errors.append("requirement record #%d: field '%s' missing or "
+                              "empty (malformed requirement record)"
+                              % (idx, field))
+
     req_ids = [r.get("id") for r in reqs
                if isinstance(r, dict) and nonempty_str(r.get("id"))]
     task_ids = [t.get("id") for t in tasks
@@ -144,7 +191,19 @@ def main():
                                   "empty (incomplete contract)" % (tid, field))
         rids = c.get("requirement_ids")
         if isinstance(rids, list):
-            covered.update(x for x in rids if nonempty_str(x))
+            for x in rids:
+                if not nonempty_str(x):
+                    continue
+                covered.add(x)
+                if x not in req_ids:
+                    errors.append("task %s references unknown requirement %s "
+                                  "— not covered by any declared requirement"
+                                  % (tid, x))
+        if assurance in A2_PLUS and isinstance(c, dict) and c \
+                and "rerunnable" not in c:
+            errors.append("task %s: assurance %s requires the 'rerunnable' "
+                          "field in every contract (incomplete contract)"
+                          % (tid, assurance))
         if nonempty_str(c.get("risk")) and not nonempty_list(c.get("negative_cases")):
             errors.append("task %s: risk is present but negative_cases is "
                           "missing or empty" % tid)
@@ -171,6 +230,13 @@ def main():
     for d in sorted(dupes):
         errors.append("task %s: duplicate task id (dependency graph "
                       "ambiguous — cycle/reference check unreliable)" % d)
+
+    # duplicate requirement ids make coverage claims ambiguous
+    rdupes = {x for x in req_ids if req_ids.count(x) > 1}
+    for d in sorted(rdupes):
+        errors.append("requirement %s: duplicate requirement id (coverage "
+                      "mapping ambiguous — a single covering task cannot "
+                      "prove both declarations)" % d)
 
     # coverage: every requirement covered by >=1 task
     for rid in req_ids:

@@ -14,6 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ADAPTER_DIR="$REPO_ROOT/adapters/claude-code"
 POLICY_SRC="$REPO_ROOT/policy"
+VALIDATOR_SRC="$REPO_ROOT/tools/validate-plan"
 PAYLOAD="$ADAPTER_DIR/CLAUDE-block.md"
 
 CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
@@ -23,7 +24,25 @@ AGENTS_DEST="$CLAUDE_DIR/agents"
 
 BEGIN_MARK='<!-- AGENTFW:BEGIN r9 -->'
 END_MARK='<!-- AGENTFW:END r9 -->'
-MARKER_RE='AGENTFW:BEGIN'
+# Block detection is anchored to the exact HTML-comment marker at line start. A bare
+# substring match (the old 'AGENTFW:BEGIN') fires on PROSE mentions of the marker names in
+# user content — which made install/upgrade/uninstall destroy user lines. Never loosen these.
+# Additionally, EVERY marker scanner is code-fence-aware: a column-0 ``` line toggles an
+# in-fence flag, and marker lines inside a fence are ignored — so a well-paired verbatim
+# marker example inside a user's ``` fence is invisible to detection, the integrity check,
+# upgrade replacement, and uninstall stripping alike. UNCLOSED-fence semantics (odd number of
+# column-0 ``` lines): everything after the unclosed fence is treated as fenced, i.e.
+# invisible. That is the conservative reading — prose after an unclosed fence is ambiguous,
+# and we must never risk deleting user content on ambiguity. All scanners share the
+# FENCE_GATE prelude below so the integrity check and the mutation paths can never disagree
+# about what counts as the real block.
+MARKER_RE='^<!-- AGENTFW:BEGIN'
+END_RE='^<!-- AGENTFW:END'
+
+# Shared fence-gate prelude, prepended to EVERY awk marker scanner. Toggles `infence` on each
+# column-0 ``` line; every marker match below is qualified with `!infence`.
+FENCE_GATE='/^```/ { infence = !infence }
+'
 
 VERSION_TAG='r9'
 
@@ -35,6 +54,7 @@ require_sources() {
   [ -d "$ADAPTER_DIR/skills/agentfw" ] || die "adapter skill dir not found: $ADAPTER_DIR/skills/agentfw"
   [ -d "$ADAPTER_DIR/agents" ] || die "adapter agents dir not found: $ADAPTER_DIR/agents"
   [ -d "$POLICY_SRC" ] || die "repo policy/ dir not found at $POLICY_SRC — the skill's ./policy/ references cannot resolve without it"
+  [ -f "$VALIDATOR_SRC" ] || die "plan validator not found at $VALIDATOR_SRC — the installed skill packages tools/validate-plan (single source, repo tools/); refusing to install without it"
 }
 
 timestamp() { date +%Y%m%d-%H%M%S; }
@@ -56,7 +76,32 @@ emit_block() {
   printf '%s\n' "$END_MARK"
 }
 
-has_marker_block() { [ -f "$TARGET" ] && grep -q "$MARKER_RE" "$TARGET"; }
+# Fence-aware BEGIN detection (a plain grep cannot track fence state).
+has_marker_block() {
+  [ -f "$TARGET" ] || return 1
+  awk -v bre="$MARKER_RE" "$FENCE_GATE"'
+    !infence && $0 ~ bre { found = 1; exit }
+    END { exit !found }
+  ' "$TARGET"
+}
+
+# Marker lines must be properly paired and ordered (BEGIN then END, no nesting, no
+# unterminated BEGIN, no stray END). An unterminated block would otherwise be deleted
+# "to EOF" by the strip/replace awks. Fenced marker lines are ignored (see FENCE_GATE).
+block_integrity_ok() {
+  [ -f "$TARGET" ] || return 0
+  awk "$FENCE_GATE"'
+    !infence && /^<!-- AGENTFW:BEGIN/ { if (inb) { bad = 1; exit } inb = 1; next }
+    !infence && /^<!-- AGENTFW:END/   { if (!inb) { bad = 1; exit } inb = 0; next }
+    END { if (inb) bad = 1; exit bad }
+  ' "$TARGET"
+}
+
+# Refuse-on-ambiguity guard for every mutating subcommand: on malformed markers, die and
+# change NOTHING, consistent with the legacy-excision refuse-on-ambiguity design.
+require_block_integrity() {
+  block_integrity_ok || die "malformed AGENTFW marker structure in $TARGET (unterminated BEGIN, stray END, or nested markers) — refusing to modify anything; the file is untouched. Repair manually: each '<!-- AGENTFW:BEGIN … -->' line needs exactly one matching '<!-- AGENTFW:END … -->' line after it, then re-run."
+}
 
 # Marker-less legacy detection: r6/r7/r8 heading heuristics.
 detect_legacy() {
@@ -74,12 +119,28 @@ copy_assets() {
   rm -rf "$SKILL_DEST/policy"
   mkdir -p "$SKILL_DEST/policy"
   cp -R "$POLICY_SRC/." "$SKILL_DEST/policy/"
-  # Agent definitions.
+  # Plan validator (single source: repo tools/validate-plan), copied so the skill's
+  # ./tools/validate-plan reference resolves without a repo checkout.
+  mkdir -p "$SKILL_DEST/tools"
+  cp -p "$VALIDATOR_SRC" "$SKILL_DEST/tools/validate-plan"
+  chmod +x "$SKILL_DEST/tools/validate-plan"
+  # Agent definitions + install manifest. The manifest records EXACTLY what this run
+  # installed; uninstall removes only manifest entries (never a glob), so user-created
+  # files — including your own agentfw-*.md agents — are never touched.
+  local manifest="$SKILL_DEST/.install-manifest" f
+  {
+    printf '# AgentFW %s install manifest — written by agentfw-install; consumed by uninstall.\n' "$VERSION_TAG"
+    printf '# One CLAUDE_DIR-relative installed path per line. Uninstall removes EXACTLY these\n'
+    printf '# paths plus the AGENTFW marker block inside CLAUDE.md — nothing else.\n'
+    printf 'skills/agentfw\n'
+  } > "$manifest"
   for f in "$ADAPTER_DIR"/agents/agentfw-*.md; do
     cp -p "$f" "$AGENTS_DEST/"
+    printf 'agents/%s\n' "$(basename "$f")" >> "$manifest"
   done
-  log "Installed skill    -> $SKILL_DEST (policy/ included)"
+  log "Installed skill    -> $SKILL_DEST (policy/ + tools/validate-plan included)"
   log "Installed agents   -> $AGENTS_DEST/$(cd "$ADAPTER_DIR/agents" && ls agentfw-*.md | tr '\n' ' ')"
+  log "Wrote manifest     -> $manifest"
 }
 
 # Replace the FIRST existing AGENTFW block in place with the new one; drop any extra blocks.
@@ -87,13 +148,13 @@ replace_block_in_place() {
   local tmp block
   tmp="$(mktemp)"; block="$(mktemp)"
   emit_block > "$block"
-  awk -v blockfile="$block" '
-    /AGENTFW:BEGIN/ {
+  awk -v blockfile="$block" "$FENCE_GATE"'
+    !infence && /^<!-- AGENTFW:BEGIN/ {
       inblock = 1
       if (!emitted) { while ((getline line < blockfile) > 0) print line; close(blockfile); emitted = 1 }
       next
     }
-    /AGENTFW:END/ { if (inblock) { inblock = 0; next } }
+    !infence && /^<!-- AGENTFW:END/ { if (inblock) { inblock = 0; next } }
     inblock { next }
     { print }
   ' "$TARGET" > "$tmp"
@@ -168,10 +229,17 @@ do_status() {
   log "CLAUDE_DIR:      $CLAUDE_DIR"
   if [ -f "$TARGET" ]; then
     local n version
-    n=$(grep -c "$MARKER_RE" "$TARGET" || true)
+    # Fence-aware count/extract (a plain grep would count fenced marker examples).
+    n=$(awk -v bre="$MARKER_RE" "$FENCE_GATE"'
+      !infence && $0 ~ bre { n++ }
+      END { print n + 0 }
+    ' "$TARGET")
     if [ "$n" -gt 0 ]; then
-      version=$(grep -m1 "$MARKER_RE" "$TARGET" | sed -E 's/.*AGENTFW:BEGIN[[:space:]]*([^ >-]*).*/\1/')
+      version=$(awk -v bre="$MARKER_RE" "$FENCE_GATE"'
+        !infence && $0 ~ bre { print; exit }
+      ' "$TARGET" | sed -E 's/.*AGENTFW:BEGIN[[:space:]]*([^ >-]*).*/\1/')
       log "CLAUDE.md:       present — AgentFW block installed (version tag: ${version:-unknown}; blocks: $n)"
+      block_integrity_ok || log "CLAUDE.md:       WARNING — malformed AGENTFW marker structure (unterminated BEGIN, stray END, or nested markers); install/upgrade/uninstall will refuse until repaired"
     elif detect_legacy; then
       log "CLAUDE.md:       present — marker-less legacy AgentFW content detected (r6/r7/r8). Run: agentfw-install upgrade"
     else
@@ -188,11 +256,62 @@ do_status() {
   local agents
   agents=$(ls "$AGENTS_DEST"/agentfw-*.md 2>/dev/null | tr '\n' ' ' || true)
   if [ -n "${agents:-}" ]; then log "Agents:          $agents"; else log "Agents:          absent"; fi
+
+  # --- configured-state probes ----------------------------------------------------------------
+  # These map to the capability file's activation_probe entries (adapters/claude-code/
+  # capability.yaml): deterministic_permissions and independent_review. Read-only — this tool
+  # never modifies settings.json.
+  log ""
+  log "Configured-state probes (capability activation_probe map):"
+
+  # deterministic_permissions: settings.json presence + example deny rules (yes/no/unknown).
+  local settings="$CLAUDE_DIR/settings.json" deny_state
+  if [ ! -e "$settings" ]; then
+    log "  deterministic_permissions: settings.json absent — example deny rules: no (merge settings.example.json manually)"
+  elif [ ! -r "$settings" ]; then
+    log "  deterministic_permissions: settings.json present but unreadable — example deny rules: unknown"
+  else
+    if grep -Eq '\.ssh|\.env|\.aws|secrets|git push --force' "$settings" 2>/dev/null; then
+      deny_state="yes"
+    else
+      deny_state="no"
+    fi
+    log "  deterministic_permissions: settings.json present — example deny rules detected: $deny_state (file is never modified by this tool)"
+  fi
+
+  # independent_review: the shipped judge agents must be present.
+  local a missing=""
+  for a in agentfw-implementer.md agentfw-verifier.md agentfw-plan-critic.md; do
+    [ -s "$AGENTS_DEST/$a" ] || missing="$missing $a"
+  done
+  if [ -z "$missing" ]; then
+    log "  independent_review:        all three shipped agents present in $AGENTS_DEST: yes"
+  else
+    log "  independent_review:        shipped agents MISSING:$missing — configured: no"
+  fi
+
+  # Installed validator (skill-relative Layer-1 plan check).
+  local validator="$SKILL_DEST/tools/validate-plan"
+  if [ -x "$validator" ]; then
+    log "  validator:                 $validator present + executable: yes"
+  elif [ -f "$validator" ]; then
+    log "  validator:                 $validator present but NOT executable — configured: no"
+  else
+    log "  validator:                 absent ($validator) — configured: no"
+  fi
+
+  # Install manifest (uninstall precision).
+  if [ -f "$SKILL_DEST/.install-manifest" ]; then
+    log "  manifest:                  $SKILL_DEST/.install-manifest present: yes"
+  else
+    log "  manifest:                  absent — pre-manifest install; uninstall falls back to the three known shipped agent filenames"
+  fi
 }
 
 do_install() {
   require_sources
   mkdir -p "$CLAUDE_DIR"
+  require_block_integrity
   if has_marker_block; then
     log "Existing AGENTFW block found — install behaves as upgrade (single block, replaced in place)."
     do_upgrade
@@ -219,6 +338,7 @@ do_install() {
 do_upgrade() {
   require_sources
   mkdir -p "$CLAUDE_DIR"
+  require_block_integrity
   if [ ! -f "$TARGET" ]; then
     log "No existing CLAUDE.md — performing fresh install."
     touch "$TARGET"
@@ -271,23 +391,35 @@ do_upgrade() {
 
 do_uninstall() {
   local removed=0
+  require_block_integrity
+  # Snapshot the install manifest BEFORE removing the skill dir it lives in.
+  local manifest="$SKILL_DEST/.install-manifest" mtmp=""
+  if [ -f "$manifest" ]; then
+    mtmp="$(mktemp)"
+    cp "$manifest" "$mtmp"
+  fi
   log "AgentFW $VERSION_TAG uninstall — inventory of removals:"
-  if [ -f "$TARGET" ] && grep -q "$MARKER_RE" "$TARGET"; then
+  if has_marker_block; then
     local bak tmp
     bak=$(backup_target)
     log "  - Backed up CLAUDE.md before edit -> $bak"
     tmp="$(mktemp)"
     # Strip every AGENTFW block (any version tag) plus the single separating blank line the
-    # installer added before it, restoring the user's file byte-for-byte.
-    awk '
-      { L[NR] = $0 }
+    # installer added before it, restoring the user's file byte-for-byte. Fence state is
+    # tracked in streaming order; marker lines are classified into T[] as they are read, so
+    # the END-phase deletion pass sees only REAL (unfenced) markers.
+    awk "$FENCE_GATE"'
+      { L[NR] = $0
+        if (!infence && $0 ~ /^<!-- AGENTFW:BEGIN/) T[NR] = 1
+        else if (!infence && $0 ~ /^<!-- AGENTFW:END/) T[NR] = 2
+      }
       END {
         inb = 0
         for (i = 1; i <= NR; i++) {
-          if (L[i] ~ /AGENTFW:BEGIN/) {
+          if (T[i] == 1) {
             inb = 1; del[i] = 1
             if (i > 1 && L[i-1] ~ /^[[:space:]]*$/ && !del[i-1]) del[i-1] = 1
-          } else if (L[i] ~ /AGENTFW:END/) {
+          } else if (T[i] == 2) {
             del[i] = 1; inb = 0
           } else if (inb) del[i] = 1
         }
@@ -307,19 +439,47 @@ do_uninstall() {
   fi
   if [ -d "$SKILL_DEST" ]; then
     rm -rf "$SKILL_DEST"
-    log "  - Removed skill dir $SKILL_DEST (including policy/)"
+    log "  - Removed skill dir $SKILL_DEST (including policy/, tools/validate-plan, and the install manifest — consumed)"
     removed=1
   else
     log "  - Skill dir absent ($SKILL_DEST)"
   fi
-  local f found=0
-  for f in "$AGENTS_DEST"/agentfw-*.md; do
-    [ -e "$f" ] || continue
-    rm -f "$f"
-    log "  - Removed agent $f"
-    found=1; removed=1
-  done
-  [ "$found" -eq 0 ] && log "  - No agentfw-*.md agent files in $AGENTS_DEST"
+  # Agent removal is manifest-driven: remove EXACTLY the agent files the installer
+  # recorded — never a glob, so user-created agentfw-*.md files are never touched.
+  local f name found=0
+  if [ -n "$mtmp" ]; then
+    log "  - Using install manifest (only files the installer recorded are removed)"
+    while IFS= read -r line; do
+      case "$line" in ''|\#*) continue ;; esac
+      case "$line" in
+        /*|*..*) log "  - SKIPPED suspicious manifest entry (not CLAUDE_DIR-relative): $line"; continue ;;
+      esac
+      case "$line" in
+        agents/*.md)
+          if [ -f "$CLAUDE_DIR/$line" ]; then
+            rm -f "$CLAUDE_DIR/$line"
+            log "  - Removed agent $CLAUDE_DIR/$line (manifest entry)"
+            found=1; removed=1
+          fi
+          ;;
+        skills/agentfw) ;;   # handled above as the skill-dir removal
+        *) log "  - Ignored manifest entry outside expected namespaces: $line" ;;
+      esac
+    done < "$mtmp"
+    rm -f "$mtmp"
+  else
+    log "  - No install manifest (pre-manifest legacy install) — falling back to the three"
+    log "    known shipped agent filenames (never a glob; your own agentfw-*.md files are kept)"
+    for name in agentfw-implementer.md agentfw-verifier.md agentfw-plan-critic.md; do
+      f="$AGENTS_DEST/$name"
+      if [ -f "$f" ]; then
+        rm -f "$f"
+        log "  - Removed agent $f"
+        found=1; removed=1
+      fi
+    done
+  fi
+  [ "$found" -eq 0 ] && log "  - No shipped agentfw agent files to remove in $AGENTS_DEST"
   log "NOT removed (intentional): backup files ($CLAUDE_DIR/CLAUDE.md.agentfw-backup-*) and any"
   log "settings.json entries you merged manually — remove those by hand (see UNINSTALL.md)."
   [ "$removed" -eq 1 ] && log "Uninstall complete." || log "Nothing was installed; nothing removed."
@@ -332,14 +492,19 @@ Usage: agentfw-install <install|upgrade|uninstall|status>
 Target: \${CLAUDE_DIR:-\$HOME/.claude}  (currently: $CLAUDE_DIR)
 
   install    Insert the AgentFW $VERSION_TAG block into CLAUDE.md (backup first; append —
-             never overwrite user content), install the agentfw skill (+ policy/) and the
-             agentfw-* agents. Idempotent: an existing block makes install behave as upgrade.
+             never overwrite user content), install the agentfw skill (+ policy/ +
+             tools/validate-plan), the agentfw-* agents, and an install manifest.
+             Idempotent: an existing block makes install behave as upgrade.
   upgrade    Replace any existing AGENTFW block (any version tag); detect marker-less r6/r7/r8
              installs by heading heuristics and conservatively excise them into a backup;
-             refuse when ambiguous.
-  uninstall  Remove the block, the skill dir, and the agentfw-* agents; preserve everything
-             else byte-for-byte; remove CLAUDE.md if it becomes empty; print an inventory.
-  status     Report block presence/version, skill dir, agent files.
+             refuse when ambiguous. Refreshes skill, validator, agents, manifest.
+  uninstall  Remove the block, the skill dir, and EXACTLY the manifest-recorded agent files
+             (legacy fallback: the three known shipped filenames — never a glob; user-created
+             agentfw-*.md files are never touched); preserve everything else byte-for-byte;
+             remove CLAUDE.md if it becomes empty; print an inventory.
+  status     Report block presence/version, skill dir, agent files, plus configured-state
+             probes (settings deny rules yes/no/unknown, installed validator, manifest,
+             shipped agents) mapped to capability.yaml activation_probe entries.
 EOF
 }
 

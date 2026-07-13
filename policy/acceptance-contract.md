@@ -2,9 +2,9 @@
 
 **WHY:** the acceptance contract is the load-bearing artifact of verification. It is authored at plan
 time, hardened by the Plan-Critique Gate (`policy/plan-critique.md`), copied verbatim into the worker
-dispatch, and RE-EXECUTED by an independent judge after the work lands. The producer's recorded check
-output is evidence to re-execute, not proof to accept. A contract whose discriminating lever lives only
-in prose verifies nothing — a wrong implementation passes it.
+dispatch, and — at the tiers that require it — RE-EXECUTED by an independent judge after the work
+lands. The producer's recorded check output is evidence to re-execute, not proof to accept. A contract
+whose discriminating lever lives only in prose verifies nothing — a wrong implementation passes it.
 
 ## Fields — one-line semantics
 
@@ -20,6 +20,7 @@ in prose verifies nothing — a wrong implementation passes it.
 | `evidence` | Artifact types the check records (test log, build output, diff, rendered page) + **freshness: `produced_after_change`** — evidence older than the change it claims to verify is void. |
 | `rerunnable` | Boolean — the check can be executed again, from the tree, by a context that did not produce the work. Non-rerunnable evidence is testimony. |
 | `constraints` | Runtime/network/side-effect bounds the check must respect (e.g. no network, sandbox only, read-only on the live store). |
+| `required_verification_tier` | The terminal verified state this item must reach — `verified_producer` \| `verified_independent` \| `verified_adversarial` — derived from assurance + risk (derivation table below). |
 
 ## Tier-1 definition
 
@@ -30,16 +31,67 @@ skipped/disabled test is equally void — a green run proves nothing when the as
 Tier-2 (weaker, for when Tier-1 is genuinely unreachable) = the contract carries ≥1 explicit
 disconfirming criterion an independent reviewer checks against the artifact.
 
-A work item CANNOT move `completed` → `verified` without recorded machine-check output from the
-`acceptance_command`, fresh per `produced_after_change`, re-executed by the independent judge.
+A work item CANNOT reach its terminal verified state without recorded machine-check output from the
+`acceptance_command`, fresh per `produced_after_change`. **Who** must have executed that run before
+the terminal state is reached is fixed by `required_verification_tier` — see the next section.
 
-## Non-shell evidence path (docs / research / design work)
+## Verification tiers — terminal states
 
-When the deliverable has no runtime to exercise, `acceptance_command` may be a **named mechanical
-check** — a pattern search over the artifact, a link-checker, a renderer/validator run — **plus a
-designated independent reviewer** with explicit disconfirming criteria written before review.
-Prose-only acceptance ("reads well", "covers the topic") is **never Tier-1** and never sufficient on
-its own: pair the mechanical floor with the independent reviewer, and record both outputs as evidence.
+`verified` is not one state; it is three. Which one is terminal for a work item is fixed at plan time
+by `required_verification_tier`:
+
+| Terminal state | Who re-executes the `acceptance_command` | Sufficient terminal state for |
+|---|---|---|
+| `verified_producer` | the producing context — recorded machine-check output from the producer, fresh per `produced_after_change` | A0 and A1 work — this is the terminal state, not a waypoint |
+| `verified_independent` | an independent, input-curated judge re-executes the `acceptance_command` | A2 integration seams; all A3+ |
+| `verified_adversarial` | an independent judge, plus deliberate refutation attempts and probes beyond what the contract anticipated | A4; security/destructive work at any level |
+
+**Producer evidence remains evidence at every tier.** Every producer runs its own checks and records
+the output, fresh per `produced_after_change`, at every assurance level. What changes across tiers is
+not whether that evidence exists but **who must re-execute the `acceptance_command` before the
+terminal state is reached**: at `verified_producer` the producer's own recorded run *is* the verdict
+of record; at the higher tiers it is input handed to a judge who runs the command again — evidence to
+re-execute, not proof to accept.
+
+### `required_verification_tier` — derivation from assurance + risk
+
+| Assurance + risk surface | `required_verification_tier` |
+|---|---|
+| A0, A1 | `verified_producer` |
+| A2, item touches no integration seam | `verified_producer` |
+| A2, item sits on an integration seam | `verified_independent` |
+| A3 | `verified_independent` |
+| A4 | `verified_adversarial` |
+| security-sensitive or destructive work, at ANY assurance level | `verified_adversarial` |
+
+## Evidence classes — non-code and mixed work
+
+When the deliverable is not (only) executable code, "machine-checkable" fans out into five evidence
+classes. A contract for such work names which classes it uses; each class establishes only what it can
+establish, and no class substitutes for another.
+
+| Class | What it is | What it establishes — and what it never can |
+|---|---|---|
+| **behavioral-machine** | a command that exercises the artifact's behavior (test run, executable example, renderer round-trip asserting semantics) | behavior under the exercised conditions — the strongest class wherever any runtime exists |
+| **structural-artifact** | link checkers, format/schema validators, rendering checks, pattern searches | form only. A link checker never validates substance; a structural pass says nothing about whether the content is true |
+| **source-grounded** | every load-bearing claim traced to a retrievable source, plus contradiction checks across sources | that claims are grounded and mutually consistent — not that the synthesis is complete or well-judged |
+| **expert-judgment** | a designated reviewer judging against explicit disconfirming criteria written BEFORE the review | substance quality — valid only when the criteria predate the review and the reviewer records what would have failed the artifact |
+| **human-authorization** | explicit human sign-off | permission for irreversible or outward-facing effects — never a substitute for any other class's evidence |
+
+### Combination table — minimum classes by assurance tier
+
+| Work / tier | Minimum evidence-class combination |
+|---|---|
+| docs / design, A0–A1 | structural-artifact (producer-run) |
+| docs / design, A2+ | structural-artifact + expert-judgment (independent, per the item's `required_verification_tier`) |
+| research, A0–A1 | source-grounded (producer-run spot checks) |
+| research, A2 | structural-artifact + source-grounded + independent expert-judgment |
+| research / docs, A3+ | the full A2 row, executed at the item's `required_verification_tier` |
+| irreversible or outward-facing effects, any tier | the applicable row above + human-authorization |
+
+Prose-only acceptance ("reads well", "covers the topic") remains **never Tier-1** and never sufficient
+on its own: it is expert-judgment with no disconfirming criteria — which is to say, no evidence class
+at all. Record every class's output as evidence.
 
 ## Exemplar — BAD vs GOOD (concurrency risk)
 

@@ -8,7 +8,7 @@ A cross-model design review of r8 (with GPT 5.6 Sol) surfaced the structural wea
 ### Added
 - **`policy/` suite** — the semantic policy core: **assurance model A0–A4** with the 3-question derivation (blast radius/reversibility, defect-escape probability, autonomy/irreversibility); **Acceptance Contract v2** (requirement ids, environment, negative cases, evidence freshness, non-shell evidence path); **two-layer Plan-Critique Gate** — Layer 1 is a real, runnable deterministic validator (`tools/validate-plan`, with positive AND negative fixtures under `tools/fixtures/`), Layer 2 the C0–C5 semantic judge; **capability contracts** (`policy/capability-contract.md` + per-adapter `capability.yaml`, every claim carrying a `verified:` annotation — an unverified true gates as false); **recovery decision model** (failure scope, contamination analysis, retry budget, evidence invalidation, lesson-not-state carry-forward); **anti-patterns** carried forward plus new **Prose-API** (specifying behavior as function signatures no runtime implements) and **Adapter Sprawl** (shipping platform bindings no eval has executed).
 - **Adapters.** `adapters/claude-code/` — thin bootloader + skill + agent definitions, with a marker-block installer (`tools/agentfw-install`) whose clean upgrade (including from marker-less r6/r7/r8 installs) and clean uninstall are roundtrip-tested (`tools/tests/install-roundtrip.sh`) to preserve user content byte-for-byte. `adapters/codex/` — doc-grounded: platform capability claims verified against official documentation, annotated per source.
-- **Guided profiles.** `profiles/chatgpt.md` and `profiles/claude-projects.md` — honest lower-autonomy profiles for runtimes with no enforcement surface; explicitly not adapters.
+- **Guided profiles.** `profiles/chatgpt-projects.md` (named `profiles/chatgpt.md` before the fix pass below) and `profiles/claude-projects.md` — honest lower-autonomy profiles for runtimes with no enforcement surface; explicitly not adapters.
 
 ### Kept deliberately
 - **Visible `[ASSURANCE]` / `[CONTEXT HEALTH]` markers as forcing functions** — adapters may hide them from end-user display, but the model must emit them.
@@ -18,6 +18,20 @@ A cross-model design review of r8 (with GPT 5.6 Sol) surfaced the structural wea
 
 ### Status
 **Draft — not eval-validated (golden-task re-run pending).** r8 remains in `core/` + `references/`, untouched, and stays the validated install until r9 passes evaluation. Eval re-ledger, stated honestly: the last golden-task run (2026-05-29, against r8) scored 5 PASS / 3 UNTESTED — the 3 "partials" were test-design issues, meaning those criteria were UNTESTED, not passed; no eval has yet run against r9.
+
+### Fix pass (2026-07-11, post external review)
+An adversarial review of the r9 draft (GPT 5.6 Sol; every finding independently re-reproduced against the tree before acceptance) drove eleven hardening fixes, worked as PLAN-r9-fixpass.md:
+- **Validator ships with the skill (FR1)** — both installs copy `tools/validate-plan` alongside the installed policy; both SKILL.md files resolve it skill-relative first, repo checkout second. Single source of truth stays in the repo.
+- **Validator hardening (FR2)** — mechanically rejects empty A2+ plans, unknown/duplicate/malformed requirement records, and missing `rerunnable` at A2+; hostile fixtures prove each rejection.
+- **Manifest-based uninstall (FR3)** — uninstall removes exactly what install recorded; a seeded user `agentfw-custom.md` now survives the roundtrip.
+- **Effect-honest settings example (FR4)** — file-dumper and test-runner command allows removed; the example now names the limitation command-name allowlists cannot express.
+- **Install routing (FR5)** — `metadata.json` gains `install` → `adapters/<platform>/INSTALL.md`; the r8 installer is relabeled `bootstrap_r8` and `bootstrap.md` carries a two-line r9 notice.
+- **Tiered verified states (FR6)** — `verified_producer` / `verified_independent` / `verified_adversarial` with `required_verification_tier` derived from assurance + risk, resolving the producer/independent contradiction.
+- **Evidence classes (FR7)** — five classes (behavioral-machine, structural-artifact, source-grounded, expert-judgment, human-authorization) with assurance-tier combinations replace the single mechanical floor for non-code work.
+- **ChatGPT profile rescoped (FR8)** — `profiles/chatgpt.md` → `profiles/chatgpt-projects.md`, claims scoped to standard ChatGPT/Projects; ChatGPT Work acknowledged as a different surface (hosted subagents/skills) and the designated r9.1 *adapter* candidate — deferred until both shipped adapters pass evals, per the Adapter Sprawl rule.
+- **Capability schema split (FR9)** — `available` (platform offers) vs `configured` (this install activated) with `activation_probe` / `required_for`; both instances migrated honestly (repo-shipped examples say `unknown`, not `true`); claude-code `persistent_state` downgraded to partial (memory/transcripts persist; no atomic task store).
+- **A3 escalator narrowed (FR10)** — "autonomous multi-file" alone no longer escalates; escalation requires autonomy PLUS material side effects, unclear seams, elevated defect-escape probability, or absence of rapid human review. Applied in policy and both bootloaders, byte caps held.
+- **Marker compression + verifier ceiling (FR11)** — guided profiles may compress the A0 marker to one short clause (never silent); verifier agents gain a standing off-contract hostile-probe instruction, and the policy names contract-bounded verification's ceiling.
 
 ---
 

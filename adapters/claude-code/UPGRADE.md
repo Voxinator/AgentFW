@@ -19,9 +19,11 @@ If your `CLAUDE.md` contains an `<!-- AGENTFW:BEGIN … -->` / `<!-- AGENTFW:END
 version tag), the tool replaces that block **in place** with the new payload. Everything outside
 the markers is untouched. If duplicate blocks somehow exist, they collapse to one.
 
-The skill dir (`$CLAUDE_DIR/skills/agentfw/`, including its `policy/` copy) and the `agentfw-*`
-agent files are refreshed wholesale — they are AgentFW-owned; don't keep local edits there (put
-local policy in your own CLAUDE.md content or settings instead).
+The skill dir (`$CLAUDE_DIR/skills/agentfw/`, including its `policy/` copy and the packaged
+`tools/validate-plan`) and the shipped `agentfw-*` agent files are refreshed wholesale — they are
+AgentFW-owned; don't keep local edits there (put local policy in your own CLAUDE.md content or
+settings instead). Upgrade also (re)writes the install manifest
+(`skills/agentfw/.install-manifest`), so a later uninstall removes only what was installed.
 
 ## Case 2 — upgrading a marker-less r6/r7/r8 install
 
@@ -66,7 +68,7 @@ nothing**. It will never guess-delete user content. In that case:
 ## Verify after upgrade
 
 1. `tools/agentfw-install status` — expect: block version tag r9, exactly one block, skill with
-   `policy/`, three agents.
+   `policy/`, validator present + executable, manifest present, three agents.
 2. `grep -c 'AGENTFW:BEGIN' ~/.claude/CLAUDE.md` — expect `1`.
 3. Confirm your own content survived: skim `~/.claude/CLAUDE.md` for your sections (or diff
    against the backup).

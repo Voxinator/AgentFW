@@ -7,9 +7,10 @@ description: AgentFW r9 operational playbook for Claude Code. Use for multi-comp
 
 You already derived an assurance level from the bootloader kernel and emitted
 `[ASSURANCE: Ax — <justification>]`. This skill is the full playbook for A2+ work. The neutral
-policy it compiles from is installed alongside this file under `./policy/` (the installer copies
-the repo's `policy/` directory to `skills/agentfw/policy/`, so these references resolve without
-the repo checkout).
+policy it compiles from is installed alongside this file under `./policy/`, and the Layer-1 plan
+validator under `./tools/validate-plan` (the installer copies the repo's `policy/` directory and
+`tools/validate-plan` into `skills/agentfw/`, so these references resolve without the repo
+checkout).
 
 ## 1. Assurance derivation (full table)
 
@@ -69,8 +70,11 @@ Plans embed one machine-readable block, fenced as ` ```json agentfw-plan ` :
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-**Layer 1 (deterministic — run it, always):** `python3 tools/validate-plan <plan.md>` from the
-AgentFW repo BEFORE the first worker dispatch. It mechanically checks: block parses; assurance
+**Layer 1 (deterministic — run it, always):** run the validator BEFORE the first worker dispatch.
+Resolve it skill-relative first: `python3 ./tools/validate-plan <plan.md>` — the installer copies
+it next to this SKILL.md (`skills/agentfw/tools/validate-plan`, executable), so no repo checkout
+is needed. Fallback only if that copy is missing: `python3 tools/validate-plan <plan.md>` from an
+AgentFW repo checkout. It mechanically checks: block parses; assurance
 valid; every requirement covered by some task; every contract non-empty; deps acyclic; risk ⇒
 negative_cases; A3/A4 ⇒ negative_cases everywhere. Exit 0 + PASS or a named defect.
 

@@ -19,7 +19,9 @@ Status: draft — not eval-validated (golden-task re-run pending).
 | Bootloader block | `adapters/claude-code/CLAUDE-block.md` | `$CLAUDE_DIR/CLAUDE.md`, wrapped in `<!-- AGENTFW:BEGIN r9 -->` / `<!-- AGENTFW:END r9 -->` | appended to existing content — your text is never overwritten; the file is backed up first |
 | Skill | `adapters/claude-code/skills/agentfw/` | `$CLAUDE_DIR/skills/agentfw/` | copied |
 | Neutral policy | `policy/` (repo root) | `$CLAUDE_DIR/skills/agentfw/policy/` | copied |
+| Plan validator | `tools/validate-plan` (repo root — single source) | `$CLAUDE_DIR/skills/agentfw/tools/validate-plan` | copied, execute bit set; the installer refuses to run without the source file |
 | Agents | `adapters/claude-code/agents/agentfw-{implementer,verifier,plan-critic}.md` | `$CLAUDE_DIR/agents/` | copied |
+| Install manifest | generated | `$CLAUDE_DIR/skills/agentfw/.install-manifest` | written at install/upgrade; records exactly what was installed so uninstall removes only that |
 | Permissions + hooks | `adapters/claude-code/settings.example.json` | your `settings.json` | **NOT auto-modified — manual merge only** (see below) |
 
 `$CLAUDE_DIR` defaults to `~/.claude`; the `CLAUDE_DIR` env var overrides it (used by the test
@@ -52,6 +54,9 @@ cd /path/to/your/project
 mkdir -p .claude/skills .claude/agents
 cp -R /path/to/AgentFW/adapters/claude-code/skills/agentfw .claude/skills/agentfw
 cp -R /path/to/AgentFW/policy .claude/skills/agentfw/policy
+mkdir -p .claude/skills/agentfw/tools
+cp -p /path/to/AgentFW/tools/validate-plan .claude/skills/agentfw/tools/validate-plan
+chmod +x .claude/skills/agentfw/tools/validate-plan
 cp /path/to/AgentFW/adapters/claude-code/agents/agentfw-*.md .claude/agents/
 ```
 
@@ -72,7 +77,9 @@ replace the file. Adjust protected-branch names and secret paths to your environ
 tools/agentfw-install status
 ```
 
-Expect: block present (version tag r9), skill present with `policy/`, three `agentfw-*` agents.
+Expect: block present (version tag r9), skill present with `policy/`, validator present +
+executable at `skills/agentfw/tools/validate-plan`, install manifest present, three `agentfw-*`
+agents, and the configured-state probe lines (settings deny rules yes/no/unknown).
 Then start a new Claude Code session and ask a smoke question:
 
 > "You're about to make a multi-file change to production code. What do you do first?"

@@ -1,19 +1,19 @@
 {
   "_comment": "AgentFW r9 example permissions + hooks for Claude Code. MERGE these entries into your existing ~/.claude/settings.json (or a project .claude/settings.json) — do NOT replace that file. The agentfw-install tool never modifies settings.json; this merge is a manual step. Adjust paths/branch names to your environment.",
+  "_limitations": "Honest limit: command-name allowlists cannot express the effects taxonomy. Any allowed file-dumping command (cat/head/awk/base64/...) or code-executing command (test runners, build scripts, interpreters) reopens what the Read denies below close — e.g. a test suite is repository-controlled code that can read ~/.ssh and exfiltrate it. Secrets isolation and egress control therefore need the deny rules PLUS hooks/sandboxing (PreToolUse guards, OS-level sandboxes, network policy) — deny rules alone are pattern-matching, not containment. Treat this file as a starting point to NARROW per project, not as a global grant.",
   "permissions": {
     "allow": [
       "Read(**)",
       "Glob(**)",
       "Grep(**)",
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(grep:*)",
-      "Bash(rg:*)",
-      "Bash(find:*)",
-      "Bash(wc:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)",
+      "Bash(git log:*)"
+    ],
+    "_ask_comment": "Test runners and linters sit in ask, not allow: they execute repository-controlled code (arbitrary read + egress under your user), so running them is a per-invocation trust decision, not a standing grant. File reads go through the Read/Glob/Grep tool rules above, which honor the Read denies — shell file-dumpers (cat/find/grep/rg/ls/wc) are deliberately NOT allowed here because they would bypass those denies.",
+    "ask": [
+      "Write(**)",
+      "Edit(**)",
       "Bash(npm test:*)",
       "Bash(npm run lint:*)",
       "Bash(npx eslint:*)",
@@ -21,11 +21,7 @@
       "Bash(python3 -m pytest:*)",
       "Bash(ruff check:*)",
       "Bash(cargo check:*)",
-      "Bash(go vet:*)"
-    ],
-    "ask": [
-      "Write(**)",
-      "Edit(**)",
+      "Bash(go vet:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",

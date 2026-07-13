@@ -18,17 +18,28 @@ judge context driving the C0–C5 rubric over the plan.
 The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan ```` and closing with
 ```` ``` ````. The validator (stdlib-only, exit-code honest) mechanically checks:
 
-1. The block parses as valid JSON, and `version` is present.
+1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
+   keys are rejected as silently-accepted ambiguity), and `version` is present.
 2. `assurance` is present and one of A0–A4.
-3. **Coverage:** every requirement id is covered by ≥1 task's `requirement_ids`.
-4. **Contracts:** every task carries a contract with non-empty `criteria` + `acceptance_command` +
-   `expected_signal`.
-5. **Dependencies:** `deps` reference existing task ids and are acyclic (real cycle detection).
-6. **Risk discipline:** `risk` present ⇒ `negative_cases` non-empty.
-7. **Assurance discipline:** A3/A4 plans ⇒ EVERY contract has non-empty `negative_cases`.
+3. **Substance:** A2+ plans ⇒ `requirements` and `tasks` lists are non-empty (an assured plan
+   cannot be empty of either).
+4. **Record shape:** every requirement record carries a non-empty `id` and `text`.
+5. **Identity:** requirement ids are unique; task ids are unique.
+6. **Coverage:** every requirement id is covered by ≥1 task's `requirement_ids`, and every
+   `requirement_ids` entry names a DECLARED requirement (no phantom references).
+7. **Contracts:** every task carries a contract with non-empty `criteria` + `acceptance_command` +
+   `expected_signal`; A2+ plans ⇒ every contract also carries the `rerunnable` field.
+8. **Dependencies:** `deps` reference existing task ids and are acyclic (real cycle detection).
+9. **Risk discipline:** `risk` present ⇒ `negative_cases` non-empty.
+10. **Assurance discipline:** A3/A4 plans ⇒ EVERY contract has non-empty `negative_cases`.
 
 Exit 0 + `PASS` on success; on any failure, non-zero exit with messages naming the offending
 task/requirement id and defect class. All defects are reported, not just the first.
+
+**Defect-keyword contract (stable, grep-able):** every failure message carries exactly one of the
+defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`, `empty`, `duplicate`.
+Harness code and fixtures key on these words; changing them is a breaking schema change to this
+file, the schema of record.
 
 **Honest limit (Layer 1):** the validator verifies **structure and coverage** — that a discriminating
 command EXISTS for every requirement and the plan graph is sound. It **cannot judge command STRENGTH**:
@@ -92,3 +103,11 @@ Each check with its one-line pass test:
 A clean verdict RAISES THE FLOOR on plan structure + verifiability. It does not machine-check command
 strength beyond a judge's reading, and it does not verify correctness of the eventual work — the
 downstream independent verification tier (see `policy/acceptance-contract.md`) still owns that.
+
+**Contract-bounded verification has a ceiling.** Acceptance contracts bound what verification sees:
+a verifier that only re-executes the contracts inherits every blind spot the plan author had.
+Verifiers must therefore additionally attempt **off-contract hostile probes** — empty inputs,
+duplicate inputs, hostile/seeded user content, bypass paths the contracts never anticipated — and
+report them alongside the contract re-runs. This is an empirical lesson, not a hypothetical: the two
+probes that broke this framework's own first build (an empty assured plan that PASSed validation, and
+a phantom requirement reference that PASSed coverage) were both off-contract.

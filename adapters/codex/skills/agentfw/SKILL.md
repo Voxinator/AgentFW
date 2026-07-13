@@ -8,8 +8,9 @@ description: AgentFW r9 operational playbook for OpenAI Codex. Use for multi-com
 You already derived an assurance level from the bootloader kernel in AGENTS.md and emitted
 `[ASSURANCE: Ax — <justification>]`. This skill is the full playbook for A2+ work. The neutral
 policy it compiles from lives at `../../../../policy/` in the AgentFW repo; the install copies
-that directory alongside this file (as `policy/` next to this SKILL.md), so the references below
-resolve without the repo checkout.
+that directory alongside this file (as `policy/` next to this SKILL.md) and the Layer-1
+validator too (as `tools/validate-plan` next to this SKILL.md), so the references below
+resolve — and the validator runs — without the repo checkout.
 
 ## 1. Assurance derivation (full table)
 
@@ -22,11 +23,14 @@ irreversibility — map to a level. Full model: `../../../../policy/assurance-mo
 | A0 | lookup / explanation / tiny reversible edit | direct execution; producer check |
 | A1 | bounded single-seam implementation | lightweight plan; producer tests (machine-checked) |
 | A2 | multi-component / integration seams | decompose; independent verification at seams; Layer-1 plan validation; Layer-2 critique if ambiguity/shared values |
-| A3 | production bug, security, infra, multi-file autonomous | independent workers + independent verifier; full acceptance contracts; both plan-critique layers; checkpoints |
+| A3 | production bug, security, infra; autonomy compounded by risk (see escalators) | independent workers + independent verifier; full acceptance contracts; both plan-critique layers; checkpoints |
 | A4 | irreversible / destructive / critical autonomous | A3 + adversarial verification + explicit human authorization + rollback proof (restorability, not just backup integrity) |
 
 Escalators (any one bumps to at least A3): production/live infra; security-sensitive;
-destructive/history-rewriting; autonomous multi-file. Verification tiers: **producer** always;
+destructive/history-rewriting; autonomy PLUS at least one of {material side effects, unclear
+integration seams, elevated defect-escape probability, no rapid human review}. Autonomy alone
+does not escalate: a routine, reversible multi-file refactor with strong tests is A2 even when
+run autonomously. Verification tiers: **producer** always;
 **independent** at A2 seams and all A3+; **adversarial** at A4 and for security/destructive work
 regardless of level.
 
@@ -78,8 +82,11 @@ Plans embed one machine-readable block, fenced as ` ```json agentfw-plan ` :
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-**Layer 1 (deterministic — run it, always):** `python3 tools/validate-plan <plan.md>` from the
-AgentFW repo BEFORE the first worker dispatch. It requires a local shell with `python3` (stdlib
+**Layer 1 (deterministic — run it, always):** run the validator BEFORE the first worker
+dispatch. Resolve it skill-relative FIRST: `python3 <skill-dir>/tools/validate-plan <plan.md>` —
+the copy installed next to this SKILL.md (`./tools/validate-plan`). Fallback, only if the
+skill-local copy is missing: `python3 tools/validate-plan <plan.md>` from an AgentFW repo
+checkout. It requires a local shell with `python3` (stdlib
 only) — on Codex that means running it as a sandboxed command; in `read-only` sandbox it can run
 but the plan file must already exist on disk. It mechanically checks: block parses; assurance
 valid; every requirement covered by some task; every contract non-empty; deps acyclic; risk ⇒

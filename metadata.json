@@ -10,8 +10,9 @@
   "compatibility": ["claude-code", "codex"],
   "core_file": "policy/core.md",
   "adapters": ["claude-code", "codex"],
-  "profiles": ["chatgpt", "claude-projects"],
-  "bootstrap": "bootstrap.md",
+  "profiles": ["chatgpt-projects", "claude-projects"],
+  "install": "adapters/<platform>/INSTALL.md",
+  "bootstrap_r8": "bootstrap.md",
   "license": "MIT",
   "tags": ["agentfw", "firmware", "workflow", "agent-architecture", "planner-worker-judge", "verification", "role-separation", "native-primitive-delegation", "plan-critique-gate", "assurance-model", "capability-contract"]
 }

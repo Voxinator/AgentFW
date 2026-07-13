@@ -14,6 +14,8 @@ to say which is which per adapter."* The policy is the product. Keep it lean. Bu
 Structural, not advisory. They govern *judgment*; the platform (where one exists) governs *mechanism*.
 1. **CLASSIFY ASSURANCE BEFORE MATERIAL ACTION.** Emit `[ASSURANCE: A0|A1|A2|A3|A4 — <one-line
    justification>]` before any material action (anything beyond reading). A0 may be a single short line.
+   Adapters emit full markers; guided profiles (documented degradation profiles) may compress the A0
+   marker to a single short clause — never silent; A1+ markers are never compressed.
    No silent skip: skipping any gate requires naming the relaxation aloud. Derivation:
    `policy/assurance-model.md`.
 2. **SCALE ROLE SEPARATION TO THE TIER.** Plan / produce / judge are different jobs for different
@@ -56,8 +58,9 @@ self-assessment. A producer's recorded check output is evidence to re-execute, n
 - **Restart rule.** A long-running service not restarted after the change is unverified.
 - **Prose is never Tier-1.** A prose-only acceptance ("looks correct," "reviewer approves") is never
   Tier-1. Tier-1 = a re-runnable command carrying ≥1 negative/regression assertion the command actually
-  RUNS — not a bare smoke check. Non-shell work (docs/research/design) still gets a named mechanical
-  check (link-check, structural grep, renderer) plus a designated independent reviewer.
+  RUNS — not a bare smoke check. Non-shell work (docs/research/design) is verified through the evidence
+  classes in `policy/acceptance-contract.md`, combined per tier — a structural check (link-check, grep,
+  renderer) establishes form, never substance.
 - A producer's recorded output is evidence for the judge to re-execute, not proof to accept.
 
 ## State, Effects, Events — Invariants, Not APIs
@@ -69,7 +72,9 @@ is Prose-API (`policy/anti-patterns.md`). Schemas exist only where a real valida
 - An authoritative store exists and is declared by the adapter; it — not context memory — is ground truth.
 - Work items carry status, the verification tier reached, and evidence references.
 - Evidence is fresher than the change it verifies.
-- Status `verified` is unreachable without a recorded machine-check artifact.
+- A terminal verified state (`verified_producer` / `verified_independent` / `verified_adversarial`,
+  per the item's `required_verification_tier` — `policy/acceptance-contract.md`) is unreachable
+  without a recorded machine-check artifact.
 
 **Effects invariants:** every unit of work carries an explicit scope + side-effect budget across five
 dimensions, mapped by the adapter into deterministic controls where the platform has them:
@@ -120,4 +125,4 @@ degradation before proceeding. A bare OK without evidence is Rubber-Stamp Compli
 - `policy/acceptance-contract.md` — Acceptance Contract v2
 - `policy/plan-critique.md` — two-layer Plan-Critique Gate
 - `policy/capability-contract.md` — the 10 capability keys + degradation rules
-- Native bindings: `adapters/claude-code/`, `adapters/codex/` — compiled, enforced. Guided degradation: `profiles/chatgpt.md`, `profiles/claude-projects.md` — honest, unenforced.
+- Native bindings: `adapters/claude-code/`, `adapters/codex/` — compiled, enforced. Guided degradation: `profiles/chatgpt-projects.md`, `profiles/claude-projects.md` — honest, unenforced.

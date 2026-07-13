@@ -1,5 +1,15 @@
 # AgentFW r9 — capability instance: OpenAI Codex (CLI / IDE extension / desktop app)
-# Spec: ../../policy/capability-contract.md — exactly 10 keys, true|false|partial, each verified:.
+# Spec: ../../policy/capability-contract.md — exactly 10 keys. Per key:
+#   available:  what the PLATFORM offers (true|false|partial) — former `value` semantics; the
+#               `verified:` annotation is evidence for THIS field.
+#   configured: honest per-install ACTIVATION state (true|false|partial|unknown|n/a). This file
+#               ships in the repo as an example, so anything depending on a specific install
+#               (~/.codex/config.toml contents, Codex version, desktop app presence) is
+#               `unknown` until probed on the live machine.
+#   activation_probe: (where meaningful) the cheap check that resolves `configured` locally.
+#   required_for: (where meaningful) the assurance tiers that consume this capability.
+# Assurance gating consults the ACTIVE state: available && configured. An unverified
+# `available: true` still counts as false for gating decisions until re-verified.
 #
 # Grounding note (2026-07-11): developers.openai.com/codex/* now 308-redirects to
 # learn.chatgpt.com/docs/* — the learn.chatgpt.com URLs below are the official OpenAI Codex
@@ -9,40 +19,61 @@
 # that downgrade — every claim was confirmed; three are honestly `partial` on the merits.)
 
 filesystem:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    Inspect ~/.codex/config.toml: sandbox_mode present and not "danger-full-access"; check
+    [sandbox_workspace_write].writable_roots against the intended scope.
+  required_for: side-effect budgets at A2+; the enforcement floor for A3+
   verified: https://learn.chatgpt.com/docs/config-file/config-reference
   notes: >
     Platform-enforced sandbox scopes file access: sandbox_mode = "read-only" |
     "workspace-write" | "danger-full-access"; [sandbox_workspace_write].writable_roots adds
-    roots; exclude_slash_tmp / exclude_tmpdir_env_var narrow them.
+    roots; exclude_slash_tmp / exclude_tmpdir_env_var narrow them. Which mode is active is
+    per-install config, not a platform given.
 
 shell:
-  value: true
+  available: true
+  configured: true  # command execution is native to every Codex install; policy comes from the sandbox
   verified: https://learn.chatgpt.com/docs/developer-commands?surface=cli
   notes: >
     Model-generated commands run under the sandbox policy (-s/--sandbox); non-interactive
     `codex exec` records real output — machine-check evidence is producible and recordable.
+    The governing sandbox/approval configuration is tracked under filesystem and
+    deterministic_permissions.
 
 isolated_agents:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    In a live session run /agent — presence of the subagent interface confirms a
+    subagent-capable Codex version; absence means fall back per the capability contract's
+    degradation rules (fresh second session or human review).
+  required_for: independent verification at A2 seams and all A3+
   verified: https://learn.chatgpt.com/docs/agent-configuration/subagents
   notes: >
     Subagents run in their own threads with separate model and tool execution; results return
     to the caller consolidated. Custom agents are standalone TOML files in ~/.codex/agents/
     (personal) or .codex/agents/ (project) with name/description/developer_instructions and
     optional model/sandbox_mode overrides. Input-curation of a judge's prompt remains the
-    caller's obligation — the platform isolates output, not input.
+    caller's obligation — the platform isolates output, not input. Subagent support is
+    version-dependent per install.
 
 parallel_agents:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    /agent present (see isolated_agents); check agents.max_threads / agents.max_depth in
+    ~/.codex/config.toml for install-specific caps.
   verified: https://learn.chatgpt.com/docs/agent-configuration/subagents
   notes: >
     Subagents spawn and run in parallel; agents.max_threads (default 6) caps concurrency and
     agents.max_depth (default 1) caps nesting. Available in CLI (/agent), IDE extension, and
-    the ChatGPT desktop app.
+    the ChatGPT desktop app — on versions that ship subagents.
 
 persistent_state:
-  value: partial
+  available: partial
+  configured: true  # transcript persistence is default-on; the missing task store is a platform gap, not config
   verified: https://learn.chatgpt.com/docs/codex/cli
   notes: >
     Session transcripts persist and reload via `codex resume` and `codex exec resume`
@@ -51,7 +82,13 @@ persistent_state:
     files the agent maintains in the repo (user-managed convention, no guaranteed reload).
 
 deterministic_permissions:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    Inspect ~/.codex/config.toml for approval_policy and sandbox_mode — confirm the
+    config.example.toml keys from this adapter were actually merged (shipped example is not
+    proof of activation).
+  required_for: the enforcement floor at A2+; mandatory for A3+ autonomy
   verified: https://learn.chatgpt.com/docs/config-file/config-reference
   notes: >
     approval_policy ("untrusted" | "on-request" | "never" | granular table) and sandbox_mode
@@ -62,7 +99,11 @@ deterministic_permissions:
     on sandbox + approvals first, hooks second.
 
 worktree_isolation:
-  value: partial
+  available: partial
+  configured: unknown
+  activation_probe: >
+    Requires the ChatGPT desktop app installed, signed in, and left running, with the target
+    repo a git repo — check the desktop app's scheduled-task (automations) surface.
   verified: https://learn.chatgpt.com/docs/automations?surface=app
   notes: >
     Dedicated background worktrees exist for scheduled tasks in the ChatGPT desktop app (git
@@ -71,7 +112,11 @@ worktree_isolation:
     serialize them.
 
 scheduled_resume:
-  value: partial
+  available: partial
+  configured: unknown
+  activation_probe: >
+    Check the ChatGPT desktop app / web automations surface for the ability to create scheduled
+    tasks; the CLI and IDE extension lack the management interface.
   verified: https://learn.chatgpt.com/docs/automations?surface=app
   notes: >
     Scheduled tasks (fixed intervals, RRULE custom schedules, one-time or recurring) are
@@ -81,7 +126,12 @@ scheduled_resume:
     `codex exec` in external schedulers (cron/CI), which is user-managed, not platform-managed.
 
 independent_review:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    /review available in a live session; /agent present for a subagent judge of record (see
+    isolated_agents for the version-dependence and the degradation fallback).
+  required_for: judge-of-record at A2 seams and all A3+
   verified: https://learn.chatgpt.com/docs/agent-configuration/subagents
   notes: >
     A subagent thread that did not produce the artifact can serve as judge of record; the
@@ -90,7 +140,8 @@ independent_review:
     job: give the judge requirements + state + contracts, never the producer's reasoning.
 
 structured_output:
-  value: true
+  available: true
+  configured: true  # CLI flags, present in every install; nothing to activate
   verified: https://learn.chatgpt.com/docs/developer-commands?surface=cli
   notes: >
     `codex exec --output-schema <file>` supplies a JSON Schema "describing the expected final

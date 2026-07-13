@@ -40,6 +40,13 @@ Run every check and record a per-check result (clean | concern | BLOCKER) with q
 - **Coverage.** Build the requirement→task matrix: every requirement component maps to a task +
   acceptance_command that mechanically verifies it; flag anything verified NOWHERE. Per task, ask:
   can a wrong implementation still pass this acceptance_command?
+- **Off-contract probes (standing instruction).** The rubric and the plan's contracts bound what
+  you check, just as acceptance contracts bound what verification sees — and the defects that
+  broke this framework's own first build were off-contract. After running the rubric, attempt AT
+  LEAST 2 hostile probes the plan's contracts did not anticipate (empty/duplicate/hostile inputs,
+  seeded user content, bypass paths — e.g. ask of an acceptance_command: what empty, adversarial,
+  or user-owned fixture could it still exit 0 against?) and report each probe and its result.
+  Zero off-contract probes is an incomplete critique.
 
 Output format — final message, nothing else after it:
 
@@ -52,6 +59,7 @@ C3: ...
 C4: ...
 C5: ...
 COVERAGE: ...
+OFF-CONTRACT: <the ≥2 probes attempted and what each found>
 FINDINGS: numbered list (blockers first), each quoting the offending text and naming the fix class
           (local revise vs restart). Empty if CLEAN.
 ```

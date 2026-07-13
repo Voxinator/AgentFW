@@ -1,15 +1,21 @@
 # AgentFW r9 — capability instance: Claude Code
-# Spec: ../../policy/capability-contract.md — exactly 10 keys, true|false|partial, each with a
-# verification annotation.
+# Spec: ../../policy/capability-contract.md — exactly 10 keys. Per key:
+#   available:  what the PLATFORM offers (true|false|partial) — former `value` semantics; the
+#               `verified:` annotation is evidence for THIS field.
+#   configured: honest per-install ACTIVATION state (true|false|partial|unknown|n/a). This file
+#               ships in the repo as an example, so anything depending on a specific install is
+#               `unknown` until probed on the live machine.
+#   activation_probe: (where meaningful) the cheap check that resolves `configured` locally.
+#   required_for: (where meaningful) the assurance tiers that consume this capability.
+# Assurance gating consults the ACTIVE state: available && configured. An unverified
+# `available: true` still counts as false for gating decisions until re-verified.
 #
 # Grounding note (2026-07-11): verification annotations point at re-checkable evidence only — a
 # runnable repo artifact or an official documentation URL (docs.anthropic.com / code.claude.com).
-# Per the spec, any `unverified` annotation means the claim could not be pointed at citable
-# evidence at build time; an unverified `true` counts as false for gating decisions until
-# re-verified.
 
 filesystem:
-  value: true
+  available: true
+  configured: true  # first-class tools in every default install; no activation step
   verified: tools/tests/install-roundtrip.sh
   notes: >
     Runnable repo artifact: the T3 roundtrip test creates, edits, and removes files in sandbox
@@ -18,7 +24,8 @@ filesystem:
     deterministic_permissions).
 
 shell:
-  value: true
+  available: true
+  configured: true  # Bash tool present in every default install; no activation step
   verified: tools/tests/install-roundtrip.sh
   notes: >
     Runnable repo artifact: this bash test suite (and tools/agentfw-install under it) executes
@@ -26,30 +33,44 @@ shell:
     machine-check evidence is producible and recordable.
 
 isolated_agents:
-  value: true
+  available: true
+  configured: true  # the Agent tool is native; no install step required
   verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  required_for: independent verification at A2 seams and all A3+
   notes: >
     Subagents run in their own context windows; a subagent's final message returns to the
     caller, not the user — structural output isolation. Input-curation of a judge's prompt
     remains the caller's obligation: the platform isolates output, not input.
 
 parallel_agents:
-  value: true
+  available: true
+  configured: true  # native concurrent dispatch; no install step required
   verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
   notes: >
     Multiple subagent invocations issued in a single message run concurrently (background by
     default in current runtimes). The r9 build itself fanned T1-T5 out as parallel workers.
 
 persistent_state:
-  value: true
+  available: partial
+  configured: unknown
+  activation_probe: >
+    Start a fresh session and confirm the installed CLAUDE.md marker block loads (ask the model
+    to state its standing instructions); memory feature availability varies per install.
   verified: https://docs.anthropic.com/en/docs/claude-code/memory
   notes: >
-    CLAUDE.md memory files load every session (user/project/local scopes); auto-memory
-    (MEMORY.md) persists across conversations; session transcripts resume. Plan/task files in
-    the repo remain a useful convention on top, not a replacement.
+    Partial, not true: CLAUDE.md memory files load every session (user/project/local scopes),
+    auto-memory persists across conversations, and session transcripts resume — but there is no
+    platform-atomic task/plan store. Durable plan and task state is files the agent maintains in
+    the repo: a user-managed convention with no guaranteed reload and no transactional update.
+    Memory and transcripts persist; an authoritative task store does not.
 
 deterministic_permissions:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    agentfw-install status checks the live settings for the suggested deny rules
+    (settings.example.json in this adapter is a shipped example, not proof it was merged).
+  required_for: the enforcement floor at A2+; mandatory for A3+ autonomy
   verified: https://code.claude.com/docs/en/settings
   notes: >
     settings.json permissions.allow/ask/deny rules plus Pre/PostToolUse hooks are enforced by
@@ -57,7 +78,11 @@ deterministic_permissions:
     taxonomy compiles into (see settings.example.json in this adapter).
 
 worktree_isolation:
-  value: partial
+  available: partial
+  configured: unknown
+  activation_probe: >
+    Check the live Agent tool schema for isolation:"worktree" and the EnterWorktree/ExitWorktree
+    tools in the current runtime.
   verified: unverified
   notes: >
     The live Agent tool schema exposes isolation: "worktree" (temporary git worktree per
@@ -70,7 +95,11 @@ worktree_isolation:
     citable official doc is confirmed.
 
 scheduled_resume:
-  value: partial
+  available: partial
+  configured: unknown
+  activation_probe: >
+    Check whether Cron/scheduled-task tooling and the schedule/loop skills appear in the live
+    session's tool and skill listings.
   verified: unverified
   notes: >
     Cron/scheduled-task tooling and the schedule/loop skills are exposed in the live runtime
@@ -82,16 +111,23 @@ scheduled_resume:
     fallback. Upgrade to true when a citable official doc is confirmed.
 
 independent_review:
-  value: true
+  available: true
+  configured: unknown
+  activation_probe: >
+    agentfw-install status confirms agentfw-verifier.md and agentfw-plan-critic.md are present
+    in the installed agents directory.
+  required_for: judge-of-record at A2 seams and all A3+
   verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
   notes: >
     A subagent that did not produce the artifact can serve as judge of record, with tool
     restrictions (read-only + shell) declared in its agent definition — this adapter installs
-    agentfw-verifier and agentfw-plan-critic exactly so. Input curation is the caller's job:
-    requirements + state + contracts, never the producer's reasoning.
+    agentfw-verifier and agentfw-plan-critic exactly so; whether they are installed is per-user
+    state. Input curation is the caller's job: requirements + state + contracts, never the
+    producer's reasoning.
 
 structured_output:
-  value: partial
+  available: partial
+  configured: n/a  # platform property; nothing to configure per install
   verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
   notes: >
     A subagent's result is its free-form final message — there is no general JSON-schema-forced
