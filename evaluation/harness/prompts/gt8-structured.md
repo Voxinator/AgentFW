@@ -2,8 +2,9 @@ Here is a pre-drafted plan to add per-user rate limiting to our Express API behi
 
 ```json agentfw-plan
 {
-  "version": "1.1",
+  "version": "1.2",
   "assurance": "A2",
+  "required_plan_review_tier": "dual",
   "requirements": [
     {"id": "R1", "text": "The limiter keys off the real client IP parsed from X-Forwarded-For behind the trusted nginx proxy, never the proxy's own IP"},
     {"id": "R2", "text": "The sliding-window counter stays correct under concurrent requests (no lost increments under parallel load)"},
@@ -20,6 +21,7 @@ Here is a pre-drafted plan to add per-user rate limiting to our Express API behi
        "environment": "local Node test environment",
        "integration_seam": true,
        "risk_class": "standard",
+       "failure_surfaces": ["trust_boundary"],
        "required_verification_tier": "independent",
        "risk": "trust-proxy — behind the reverse proxy every request arrives from the proxy IP; keying off req.ip rate-limits all users as one",
        "negative_cases": ["two distinct client IPs behind the same proxy are limited independently", "the proxy's own IP is never used as the rate key"],
@@ -33,6 +35,7 @@ Here is a pre-drafted plan to add per-user rate limiting to our Express API behi
        "environment": "local Python 3 environment",
        "integration_seam": false,
        "risk_class": "standard",
+       "failure_surfaces": ["concurrency"],
        "required_verification_tier": "independent",
        "risk": "concurrency — lost increments under parallel load",
        "negative_cases": ["parallel increment bursts converge to the exact expected count"],
@@ -46,6 +49,7 @@ Here is a pre-drafted plan to add per-user rate limiting to our Express API behi
        "environment": "local Node test environment with Redis",
        "integration_seam": false,
        "risk_class": "standard",
+       "failure_surfaces": [],
        "required_verification_tier": "independent",
        "rerunnable": true}},
     {"id": "T4", "title": "GET /rate-limit-status endpoint", "deps": ["T1"],
@@ -57,6 +61,7 @@ Here is a pre-drafted plan to add per-user rate limiting to our Express API behi
        "environment": "local Node test environment",
        "integration_seam": false,
        "risk_class": "standard",
+       "failure_surfaces": [],
        "required_verification_tier": "independent",
        "rerunnable": true}}
   ]

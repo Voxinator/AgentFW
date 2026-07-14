@@ -82,14 +82,15 @@ each selects the corresponding terminal STATE `verified_producer` / `verified_in
 valid field values, and the validator rejects them; write `independent`, never `verified_independent`,
 in the field.
 
-## Block versioning — `"version": "1.1"` is MANDATORY; `"version": "1"` is legacy-only
+## Block versioning — `"1.2"` is the schema of record; `"1.1"` remains valid; `"1"` is legacy-only
 
-The plan's embedded machine-readable block declares a schema `version`. Schema `"1.1"` is
-**mandatory**: default validation REQUIRES `"version": "1.1"` and rejects a `"version": "1"`
-block as a legacy schema version. Version `"1"` exists for HISTORICAL PROVENANCE ONLY —
-re-checking plans authored before the 1.1 schema — and is accepted solely under
-`tools/validate-plan --legacy`, which applies the original v1 rules. Never author a new plan
-against v1. Unknown version strings are rejected naming the version.
+The plan's embedded machine-readable block declares a schema `version`. Schema `"1.2"` is the
+**schema of record** — author new plans against it (see the schema 1.2 section below). Schema
+`"1.1"` remains valid for plans that predate 1.2: default validation accepts `"version": "1.1"`
+or `"version": "1.2"` and rejects a `"version": "1"` block as a legacy schema version. Version
+`"1"` exists for HISTORICAL PROVENANCE ONLY — re-checking plans authored before the 1.1 schema —
+and is accepted solely under `tools/validate-plan --legacy`, which applies the original v1 rules.
+Never author a new plan against v1. Unknown version strings are rejected naming the version.
 
 Blocks declaring `"version": "1.1"` are additionally held, per contract, to the
 mandatory-by-tier field table below (machine-enforced by `tools/validate-plan`):
@@ -111,6 +112,39 @@ a contract declaring `risk_class` `security` or `destructive` must declare
 Fields not listed keep their version-1 rules (`criteria` / `acceptance_command` / `expected_signal`
 non-empty; `rerunnable` present at A2+; `risk` ⇒ `negative_cases`; A3/A4 ⇒ `negative_cases` in every
 contract).
+
+## Schema 1.2 — the schema of record: plan-review tier + failure surfaces
+
+Schema `"1.2"` is ADDITIVE over 1.1: every 1.1 rule above applies unchanged to a 1.2 block, and
+two fields are added (machine-enforced by `tools/validate-plan`):
+
+| Field (1.2) | Level | Mandatory at | Rule |
+|---|---|---|---|
+| `required_plan_review_tier` | plan | always (any assurance) | ∈ `single` \| `dual` — how many independent, input-curated Layer-2 judges must review the PLAN before dispatch; must be ≥ the floor mechanically derived below |
+| `failure_surfaces` | per contract | A2+ | a JSON **array** (possibly **EMPTY** — emptiness is a valid declaration, absence is a defect), a SUBSET of `concurrency` \| `trust_boundary` \| `streaming` \| `clock` \| `production_only` — the production-environment failure layers this task's risk lives in; the named `acceptance_command` must exercise those layers |
+
+### `required_plan_review_tier` — mechanical floor derivation
+
+The minimum plan-review tier is DERIVED from structured fields only — the plan-level `assurance`
+plus each contract's `risk_class` and `failure_surfaces`. Free-form `risk` prose never enters the
+derivation. With the tier order `single` < `dual`, the declared `required_plan_review_tier` must
+be ≥ the derived floor; a declaration below its floor is rejected naming the derivation.
+
+| Derivation input | Effect on the minimum plan-review tier |
+|---|---|
+| assurance A0 / A1 / A2 | base floor `single` |
+| assurance A3 / A4 | floor `dual` |
+| any task with `risk_class: "security"` or `"destructive"` | floor `dual` — at EVERY assurance level |
+| any task with NON-EMPTY `failure_surfaces` | floor `dual` — at EVERY assurance level |
+
+### 1.1 compatibility — the two fields REQUIRE 1.2
+
+Schema 1.1 does not define the two fields above. A `"version": "1.1"` block carrying
+`required_plan_review_tier` or `failure_surfaces` is REJECTED with a diagnostic naming schema
+1.2 — declaring the fields without declaring the schema that defines them is the
+declared-single-on-1.1 dodge, not backward compatibility. Existing 1.1 plans that do not carry
+the fields validate exactly as before. Validators that predate 1.2 fail safely on it: they reject
+`"version": "1.2"` as an unknown schema version rather than fail open on the unknown fields.
 
 ## Evidence classes — non-code and mixed work
 

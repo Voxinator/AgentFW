@@ -20,7 +20,8 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 
 1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
    keys are rejected as silently-accepted ambiguity), and `version` is present and — in default
-   mode — exactly `"1.1"`: **schema 1.1 is mandatory**. A `"version": "1"` block is rejected as a
+   mode — `"1.1"` or `"1.2"`: **schema 1.2 is the schema of record** (author new plans against
+   it; 1.1 remains valid for plans that predate it). A `"version": "1"` block is rejected as a
    legacy schema version; unknown version strings are rejected naming the version. The `--legacy`
    flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules (rules 2–10 below; none of
    rule 11's 1.1 fields are required — the task-id precheck still applies in every mode, being a
@@ -54,18 +55,30 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
     at A3+ — non-empty `evidence` (string or object). `constraints` is explicitly optional,
     type-checked only when present. Field semantics, the mandatory-by-tier table, and the
     derivation table: `policy/acceptance-contract.md`.
+12. **Schema 1.2 plan-review tier + failure surfaces (additive over 1.1):** a `"1.2"` block
+    enforces every rule above PLUS: plan-level `required_plan_review_tier` present, ∈ `single` |
+    `dual`, and ≥ the mechanically derived floor (the derivation and its timing live in the
+    compose/stop policy below); at A2+, EVERY contract carries `failure_surfaces` — a JSON array
+    (possibly EMPTY: emptiness is a valid declaration, absence is a defect) whose members are a
+    subset of `concurrency` | `trust_boundary` | `streaming` | `clock` | `production_only`,
+    naming the production-environment failure layers the task's `acceptance_command` must
+    exercise. A `"1.1"` block carrying either 1.2-only field is rejected with a diagnostic
+    naming schema 1.2. Field semantics and the floor table: `policy/acceptance-contract.md`.
 
 Exit 0 + `PASS` on success; on any failure, non-zero exit with messages naming the offending
 task/requirement id and defect class. All defects are reported, not just the first.
 
 **Defect-keyword contract (stable, grep-able):** every failure message carries exactly one of the
 defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`, `empty`, `duplicate`,
-`tier`, `version` (`tier` covers every tier-derivation defect — a missing/invalid
-`required_verification_tier`, a missing/invalid `integration_seam` or `risk_class` derivation
-input, or a declared tier below the mechanically derived floor; `empty` includes the task-id
-precheck; `version` covers legacy-`"1"` and unknown-version rejections, the legacy message also
-naming `--legacy`). Harness code and fixtures key on these words; changing them is a breaking
-schema change to this file, the schema of record.
+`tier`, `review`, `failure_surface`, `version` (`tier` covers every tier-derivation defect — a
+missing/invalid `required_verification_tier`, a missing/invalid `integration_seam` or
+`risk_class` derivation input, or a declared tier below the mechanically derived floor; `review`
+covers every plan-review-tier defect — a missing/invalid `required_plan_review_tier` or one
+declared below its derived floor; `failure_surface` covers `failure_surfaces` shape and enum
+defects; `empty` includes the task-id precheck; `version` covers legacy-`"1"`, unknown-version,
+and 1.1-carrying-1.2-field rejections, the legacy message also naming `--legacy`). Harness code
+and fixtures key on these words; changing them is a breaking schema change to this file, the
+schema of record.
 
 **Honest limit (Layer 1):** the validator verifies **structure and coverage** — that a discriminating
 command EXISTS for every requirement and the plan graph is sound. It **cannot judge command STRENGTH**:
@@ -111,8 +124,22 @@ Each check with its one-line pass test:
 
 ## Compose / stop policy
 
-- **Judge count:** ONE judge by default (a deliberate leanness/independence trade). TWO independent
-  judges with disjoint inputs for **A3+/destructive** plans.
+- **Judge count — mechanically derived, never inferred from prose.** The count is read off the
+  plan block's STRUCTURED fields per the floor table (`single` < `dual`): assurance A3/A4 ⇒
+  `dual`; any task with `risk_class` `security` or `destructive` ⇒ `dual`; any task with
+  non-empty `failure_surfaces` ⇒ `dual`; otherwise `single`. Free-form `risk` prose NEVER
+  participates in the derivation — prose is the judge's reading material, not a tier input.
+  `single` remains the default (a deliberate leanness/independence trade).
+- **Absent declaration relaxes nothing:** an absent (undeclared) `required_plan_review_tier` — a
+  1.1 block, or a block omitting the field — means the derived floor applies exactly as if it had
+  been declared.
+- **When the count is decided:** after Layer 1 returns, before Layer-2 pass 1 is dispatched. The
+  validated block is the derivation input, and the judge lane(s) are fixed before any semantic
+  verdict exists to anchor them.
+- **What `dual` requires:** recorded evidence of TWO disjoint-input judge dispatches — two
+  separate judge contexts, each receiving the plan + requirements only, neither seeing the
+  other's verdict. One judge asked twice is not `dual`; a second pass over the first verdict is
+  not disjoint.
 - **Single-judge blocker:** one confirming independent pass before any re-plan — never re-plan off a
   single unconfirmed verdict.
 - **Hard 2-pass cap.** Cap reached with an open blocker ≠ proceed → **escalate to the human**. Never

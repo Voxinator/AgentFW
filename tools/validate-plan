@@ -8,7 +8,8 @@ every deterministic (Layer-1) check from policy/plan-critique.md:
 
   - block parses as valid JSON with NO duplicate object keys at any level
     (a last-wins duplicated key is silently-accepted ambiguity); `version`
-    present and, in DEFAULT mode, exactly "1.1" — schema 1.1 is MANDATORY.
+    present and, in DEFAULT mode, "1.1" or "1.2" — schema 1.2 is the schema
+    of record; 1.1 remains valid for plans that predate it.
     A "version": "1" block is rejected as a legacy schema version; unknown
     version strings are rejected naming the version
   - `--legacy` accepts "version": "1" blocks under the ORIGINAL v1 rules —
@@ -51,6 +52,26 @@ Version "1.1" blocks ADDITIONALLY enforce, per contract:
   - `constraints` is EXPLICITLY OPTIONAL — validated only for type when
     present (string, list, or object)                        [keyword: contract]
 
+Version "1.2" blocks enforce EVERY 1.1 rule above (1.2 is additive) plus:
+
+  - plan-level `required_plan_review_tier` present and one of single/dual —
+    the declared Layer-2 plan-review tier                    [keyword: review]
+  - assurance A2+ => EVERY contract carries `failure_surfaces`, a JSON
+    array (possibly EMPTY) whose members are a subset of
+    concurrency / trust_boundary / streaming / clock / production_only;
+    an invalid or duplicated member is rejected naming the enum
+                                                  [keyword: failure_surface]
+  - the declared `required_plan_review_tier` must be >= the MECHANICALLY
+    DERIVED floor (single < dual):
+      assurance A3/A4 => floor dual;
+      any task risk_class security or destructive => floor dual;
+      any task with non-empty failure_surfaces => floor dual;
+      otherwise floor single                                 [keyword: review]
+
+The two 1.2-only fields are NOT defined by schema 1.1: a "version": "1.1"
+block carrying `required_plan_review_tier` or `failure_surfaces` is rejected
+with a diagnostic naming schema 1.2                          [keyword: version]
+
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
 defect class keyword (contract / cover / cycl / negative / assurance /
@@ -73,6 +94,11 @@ VALID_RISK_CLASSES = ("none", "standard", "security", "destructive")
 # v1.1 mechanical tier derivation: base floor by assurance level
 BASE_FLOOR = {"A0": "producer", "A1": "producer", "A2": "producer",
               "A3": "independent", "A4": "adversarial"}
+# v1.2 plan-review tier: who reviews the PLAN (Layer 2), single vs dual judge
+VALID_REVIEW_TIERS = ("single", "dual")
+REVIEW_RANK = {"single": 0, "dual": 1}
+VALID_FAILURE_SURFACES = ("concurrency", "trust_boundary", "streaming",
+                          "clock", "production_only")
 
 
 def reject_duplicate_keys(pairs):
@@ -111,6 +137,24 @@ def derive_floor(assurance, seam, risk_class):
         floor = "adversarial"
         reason = "risk_class=%s" % risk_class
     return floor, reason
+
+
+def derive_review_floor(assurance, risky_tasks, surfaced_tasks):
+    """Mechanically derive the minimum required_plan_review_tier (v1.2).
+
+    Returns (floor, reason) — reason names the binding derivation input.
+    Uses ONLY structured fields (assurance, per-task risk_class and
+    failure_surfaces); free-form prose never enters.
+    """
+    if assurance in ("A3", "A4"):
+        return "dual", "assurance %s" % assurance
+    if risky_tasks:
+        tid, rc = risky_tasks[0]
+        return "dual", "task %s declares risk_class=%s" % (tid, rc)
+    if surfaced_tasks:
+        return "dual", ("task %s declares non-empty failure_surfaces"
+                        % surfaced_tasks[0])
+    return "single", "no dual trigger"
 
 
 def find_cycles(task_ids, graph):
@@ -195,12 +239,39 @@ def main():
             errors.append("plan: legacy schema version \"1\" — migrate to "
                           "\"1.1\" or run with --legacy (version \"1\" is "
                           "accepted for historical provenance only)")
-    elif version != "1.1":
+    elif version not in ("1.1", "1.2"):
         errors.append("plan: unknown schema version %r — known versions are "
-                      "\"1\" (legacy, --legacy only) and \"1.1\"; assurance "
-                      "rules for an unknown schema version cannot be applied"
-                      % (version,))
-    v11 = version == "1.1"
+                      "\"1\" (legacy, --legacy only), \"1.1\", and \"1.2\"; "
+                      "assurance rules for an unknown schema version cannot "
+                      "be applied" % (version,))
+    # schema 1.2 is ADDITIVE over 1.1: every 1.1 rule applies to a 1.2 block
+    v11 = version in ("1.1", "1.2")
+    v12 = version == "1.2"
+
+    # v1.2-only fields are NOT defined by schema 1.1 — a 1.1 block carrying
+    # them is rejected naming the schema version that defines them
+    if version == "1.1" and "required_plan_review_tier" in plan:
+        errors.append("plan: 'required_plan_review_tier' is a schema-1.2 "
+                      "field — schema 1.1 does not define it; declare "
+                      "\"version\": \"1.2\" to use the plan-review tier "
+                      "(wrong schema version)")
+
+    # v1.2 plan-level required_plan_review_tier: present and single/dual
+    review_tier = None
+    if v12:
+        rt = plan.get("required_plan_review_tier")
+        if "required_plan_review_tier" not in plan or not nonempty_str(rt):
+            errors.append("plan: schema 1.2 requires "
+                          "'required_plan_review_tier' (one of %s) at the "
+                          "plan level — the plan-review tier field is "
+                          "missing or empty"
+                          % "/".join(VALID_REVIEW_TIERS))
+        elif rt not in VALID_REVIEW_TIERS:
+            errors.append("plan: invalid required_plan_review_tier %r — "
+                          "must be one of %s"
+                          % (rt, "/".join(VALID_REVIEW_TIERS)))
+        else:
+            review_tier = rt
 
     # assurance
     assurance = plan.get("assurance")
@@ -263,6 +334,8 @@ def main():
     # per-task: contract completeness, risk=>negative_cases, dep references
     graph = {}
     covered = set()
+    risky_tasks = []     # v1.2 review-floor input: (tid, risk_class)
+    surfaced_tasks = []  # v1.2 review-floor input: tids w/ non-empty surfaces
     for idx, t in enumerate(tasks):
         if not isinstance(t, dict):
             continue  # already reported by the task-id precheck
@@ -376,6 +449,55 @@ def main():
                                       "required_verification_tier is below "
                                       "the mechanical floor (misclassified "
                                       "tier)" % (tid, rc, tier))
+            # ---- version 1.2 additional per-contract rules ----
+            if v12:
+                if "failure_surfaces" not in c:
+                    if assurance in A2_PLUS:
+                        errors.append("task %s: schema 1.2 at assurance %s "
+                                      "requires 'failure_surfaces' in every "
+                                      "contract — a JSON array (possibly "
+                                      "EMPTY), a subset of %s; the field is "
+                                      "missing" % (tid, assurance,
+                                       "/".join(VALID_FAILURE_SURFACES)))
+                else:
+                    fs = c["failure_surfaces"]
+                    if not isinstance(fs, list):
+                        errors.append("task %s: 'failure_surfaces' must be "
+                                      "a JSON array (possibly empty) — a "
+                                      "subset of the enum %s (invalid "
+                                      "failure_surface)"
+                                      % (tid,
+                                         "/".join(VALID_FAILURE_SURFACES)))
+                    else:
+                        bad = [m for m in fs
+                               if m not in VALID_FAILURE_SURFACES]
+                        for m in bad:
+                            errors.append("task %s: invalid failure_surfaces "
+                                          "member %r — must be drawn from "
+                                          "the enum %s (invalid "
+                                          "failure_surface)"
+                                          % (tid, m,
+                                             "/".join(VALID_FAILURE_SURFACES)))
+                        fdupes = sorted({str(m) for m in fs
+                                         if fs.count(m) > 1})
+                        for m in fdupes:
+                            errors.append("task %s: duplicate "
+                                          "failure_surfaces member %r — the "
+                                          "field is a SUBSET of the enum %s "
+                                          "(invalid failure_surface)"
+                                          % (tid, m,
+                                             "/".join(VALID_FAILURE_SURFACES)))
+                        if fs and not bad:
+                            surfaced_tasks.append(tid)
+                # review-floor input: security/destructive at ANY assurance
+                rc_val = c.get("risk_class")
+                if rc_val in ("security", "destructive"):
+                    risky_tasks.append((tid, rc_val))
+            elif version == "1.1" and "failure_surfaces" in c:
+                errors.append("task %s: 'failure_surfaces' is a schema-1.2 "
+                              "field — schema 1.1 does not define it; "
+                              "declare \"version\": \"1.2\" to use failure "
+                              "surfaces (wrong schema version)" % tid)
             if assurance in ("A3", "A4"):
                 # evidence: non-empty string or non-empty object
                 ev = c.get("evidence")
@@ -434,6 +556,18 @@ def main():
     for cyc in find_cycles(list(graph.keys()), graph):
         errors.append("dependency cycle detected: %s (cyclic deps)"
                       % " -> ".join(cyc))
+
+    # v1.2: declared plan-review tier must be >= the mechanically derived
+    # floor (single < dual) — skipped when the field itself already errored
+    if v12 and review_tier is not None:
+        rfloor, rreason = derive_review_floor(assurance, risky_tasks,
+                                              surfaced_tasks)
+        if REVIEW_RANK[review_tier] < REVIEW_RANK[rfloor]:
+            errors.append("plan: derived minimum plan-review tier is %s "
+                          "(%s); plan declares %r — "
+                          "required_plan_review_tier is below the mechanical "
+                          "floor (misclassified review tier)"
+                          % (rfloor, rreason, review_tier))
 
     # A3/A4 => every contract carries negative_cases
     if assurance in ("A3", "A4"):

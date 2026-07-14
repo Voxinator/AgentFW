@@ -59,14 +59,31 @@
 # USAGE:
 #   run-claude-cell.sh --selftest
 #   run-claude-cell.sh --out <transcript.md> --prompt-file <f> \
-#       [--phase2-file <f>] [--fixture <seed-repo-dir>] [--model <m>] \
-#       [--gt <label>] [--timeout <seconds>]
+#       [--phase2-file <f>] [--turn3-file <f>] [--fixture <seed-repo-dir>] \
+#       [--model <m>] [--gt <label>] [--timeout <seconds>]
+#
+# TURN STRUCTURE (PLAN-r9-fixpass2 H5):
+#   - Every turn's section opens with a column-0 boundary line matching
+#     ^===== TURN <n> (turn 1 included), consistent with run-codex-cell.sh.
+#   - Every INJECTED turn-2/turn-3 prompt payload is rendered VERBATIM between
+#     the exact delimiter lines
+#         ----- INJECTED PROMPT BEGIN -----
+#         ----- INJECTED PROMPT END -----
+#     inside its turn section.
+#   - Any SUBJECT-content line beginning `=====` or `----- INJECTED` gets one
+#     space prepended before the markers are written, so a subject cannot
+#     spoof a turn boundary or an injected-prompt delimiter: runner-emitted
+#     markers are the only column-0 instances.
+#   - TURN3-DELIVERED: <n> bytes is emitted into the header ONLY when
+#     third-turn model output is non-empty (same rule as PHASE2-DELIVERED).
+#   - --turn3-file requires --phase2-file (a third turn resumes the second).
 #
 # SELFTEST (--selftest) writes into evaluation/harness/selftest-out/
 # (gitignored):
-#   gt0-selftest-claude.md  — trivial two-turn run (turn 1 exercises a real
+#   gt0-selftest-claude.md  — trivial three-turn run (turn 1 exercises a real
 #                             tool_use; turn 2 is injected via --resume and
-#                             must echo PHASE2-ACK)
+#                             must echo PHASE2-ACK; turn 3 is injected via
+#                             --resume and must echo TURN3-ACK)
 #   sanitizer-check.txt     — proof a planted /Users/<name> line was removed
 #   refusal-check.txt       — proof a poisoned transcript was REFUSED
 # =============================================================================
@@ -88,6 +105,7 @@ SELFTEST=0
 FIXTURE_SEED=""
 PROMPT=""
 PHASE2=""
+TURN3=""
 OUT=""
 GT_LABEL="cell"
 TIMEOUT_S=600
@@ -102,11 +120,13 @@ while [ $# -gt 0 ]; do
     --prompt-file)  PROMPT="$(cat "$2")"; shift 2 ;;
     --phase2)       PHASE2="$2"; shift 2 ;;
     --phase2-file)  PHASE2="$(cat "$2")"; shift 2 ;;
+    --turn3)        TURN3="$2"; shift 2 ;;
+    --turn3-file)   TURN3="$(cat "$2")"; shift 2 ;;
     --model)        MODEL="$2"; shift 2 ;;
     --out)          OUT="$2"; shift 2 ;;
     --gt)           GT_LABEL="$2"; shift 2 ;;
     --timeout)      TIMEOUT_S="$2"; shift 2 ;;
-    -h|--help)      sed -n '2,79p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help)      sed -n '2,95p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)              die "unknown argument: $1" ;;
   esac
 done
@@ -307,16 +327,22 @@ sys.exit(1)
 PYEOF
 }
 
-# --- render stream-json (1 or 2 turns) into a markdown transcript exposing
-#     the full trace. Prints PHASE2_BYTES=<n> on stdout; transcript -> $3.
+# --- render stream-json (1, 2, or 3 turns) into a markdown transcript
+#     exposing the full trace. Every turn section opens with a column-0
+#     `===== TURN <n>` boundary; injected turn-2/turn-3 payloads are rendered
+#     VERBATIM between `----- INJECTED PROMPT BEGIN/END -----` delimiters;
+#     subject-content lines beginning `=====` or `----- INJECTED` are escaped
+#     (one space prepended) BEFORE the runner-emitted markers are written, so
+#     the markers are the only column-0 instances.
+#     Prints PHASE2_BYTES=<n> and TURN3_BYTES=<n> on stdout; transcript -> $4.
 render_transcript() {
-  local turn1="$1" turn2="$2" out_md="$3"
+  local turn1="$1" turn2="$2" turn3="$3" out_md="$4"
   GT_LABEL="$GT_LABEL" MODEL="$MODEL" PROMPT="$PROMPT" PHASE2="$PHASE2" \
-  FIXTURE_SEED="$FIXTURE_SEED" \
-  python3 - "$turn1" "$turn2" "$out_md" <<'PYEOF'
-import json, os, subprocess, sys, datetime
+  TURN3="$TURN3" FIXTURE_SEED="$FIXTURE_SEED" \
+  python3 - "$turn1" "$turn2" "$turn3" "$out_md" <<'PYEOF'
+import json, os, re, subprocess, sys, datetime
 
-turn1, turn2, out_md = sys.argv[1], sys.argv[2], sys.argv[3]
+turn1, turn2, turn3, out_md = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 
 def load(path):
     evs = []
@@ -332,6 +358,13 @@ def clip(s, n=2000):
     s = str(s)
     return s if len(s) <= n else s[:n] + f"\n... [truncated, {len(s)} chars total]"
 
+# Escape SUBJECT content: a line beginning `=====` or `----- INJECTED` gets one
+# space prepended so subjects cannot spoof turn boundaries or delimiters.
+# Runner-emitted markers are appended AFTER this, so they remain the only
+# column-0 instances.
+def esc(s):
+    return re.sub(r"(?m)^(=====|----- INJECTED)", r" \1", str(s))
+
 def render_events(evs, w):
     for ev in evs:
         t = ev.get("type")
@@ -343,12 +376,12 @@ def render_events(evs, w):
             for b in ev.get("message", {}).get("content", []):
                 bt = b.get("type")
                 if bt == "text":
-                    w.append("**assistant:**\n\n" + b.get("text", "") + "\n")
+                    w.append("**assistant:**\n\n" + esc(b.get("text", "")) + "\n")
                 elif bt == "thinking":
-                    w.append("**assistant (thinking):** " + clip(b.get("thinking", ""), 600) + "\n")
+                    w.append("**assistant (thinking):** " + esc(clip(b.get("thinking", ""), 600)) + "\n")
                 elif bt == "tool_use":
                     w.append(f"**tool_use: `{b.get('name')}`** (id `{b.get('id')}`)\n\n"
-                             "```json\n" + clip(json.dumps(b.get("input", {}), indent=2), 2000) + "\n```\n")
+                             "```json\n" + esc(clip(json.dumps(b.get("input", {}), indent=2), 2000)) + "\n```\n")
         elif t == "user":
             c = ev.get("message", {}).get("content")
             if isinstance(c, list):
@@ -358,12 +391,12 @@ def render_events(evs, w):
                         if isinstance(content, list):
                             content = "\n".join(x.get("text", "") for x in content
                                                 if isinstance(x, dict))
-                        w.append("**tool_result:**\n\n```\n" + clip(content, 1500) + "\n```\n")
+                        w.append("**tool_result:**\n\n```\n" + esc(clip(content, 1500)) + "\n```\n")
         elif t == "result":
             w.append(f"`[result]` subtype={ev.get('subtype')} is_error={ev.get('is_error')} "
                      f"num_turns={ev.get('num_turns')} duration_ms={ev.get('duration_ms')}\n")
 
-evs1, evs2 = load(turn1), load(turn2)
+evs1, evs2, evs3 = load(turn1), load(turn2), load(turn3)
 
 def assistant_bytes(evs):
     n = 0
@@ -375,6 +408,7 @@ def assistant_bytes(evs):
     return n
 
 p2_bytes = assistant_bytes(evs2)
+p3_bytes = assistant_bytes(evs3)
 init1 = next((e for e in evs1 if e.get("type") == "system" and e.get("subtype") == "init"), {})
 try:
     ver = subprocess.run(["claude", "--version"], capture_output=True, text=True,
@@ -394,21 +428,39 @@ hdr.append(f"- fixture_seed: {os.environ.get('FIXTURE_SEED') or '(none — bare 
 hdr.append(f"- mcp_servers: {init1.get('mcp_servers')}")
 if p2_bytes > 0:
     hdr.append(f"PHASE2-DELIVERED: {p2_bytes} bytes")
+if p3_bytes > 0:
+    hdr.append(f"TURN3-DELIVERED: {p3_bytes} bytes")
 hdr.append("")
 
+# Injected payloads are rendered VERBATIM (no escaping) between the exact
+# delimiter lines; the payload is runner-injected, not subject content.
+def injected_block(payload):
+    return ("----- INJECTED PROMPT BEGIN -----\n"
+            + payload
+            + "\n----- INJECTED PROMPT END -----\n")
+
 body = []
+body.append("===== TURN 1 =====\n")
 body.append("## Turn 1 — subject prompt\n")
-body.append(os.environ.get("PROMPT", "") + "\n")
+body.append(esc(os.environ.get("PROMPT", "")) + "\n")
 body.append("## Turn 1 — execution trace\n")
 render_events(evs1, body)
 if evs2:
-    body.append(f"## Turn 2 — injected prompt (resumed session {init1.get('session_id')})\n")
-    body.append(os.environ.get("PHASE2", "") + "\n")
+    body.append(f"===== TURN 2 (injected; resumed session {init1.get('session_id')}) =====\n")
+    body.append("## Turn 2 — injected prompt\n")
+    body.append(injected_block(os.environ.get("PHASE2", "")))
     body.append("## Turn 2 — execution trace\n")
     render_events(evs2, body)
+if evs3:
+    body.append("===== TURN 3 (injected; resumed session) =====\n")
+    body.append("## Turn 3 — injected prompt\n")
+    body.append(injected_block(os.environ.get("TURN3", "")))
+    body.append("## Turn 3 — execution trace\n")
+    render_events(evs3, body)
 
 open(out_md, "w").write("\n".join(hdr) + "\n" + "\n".join(body) + "\n")
 print(f"PHASE2_BYTES={p2_bytes}")
+print(f"TURN3_BYTES={p3_bytes}")
 PYEOF
 }
 
@@ -437,10 +489,14 @@ hygiene_clean() { ! grep -qE "$HYGIENE_RE" "$1"; }
 run_cell() {
   [ -n "$PROMPT" ] || { echo "run-claude-cell: --prompt/--prompt-file required" >&2; return 1; }
   [ -n "$OUT" ] || { echo "run-claude-cell: --out required" >&2; return 1; }
+  if [ -n "$TURN3" ] && [ -z "$PHASE2" ]; then
+    echo "run-claude-cell: --turn3/--turn3-file requires --phase2/--phase2-file (a third turn resumes the second)" >&2
+    return 1
+  fi
   install_adapter || return 1
   setup_config || return 1
 
-  local t1="$WORK/turn1.jsonl" t2="$WORK/turn2.jsonl" rc=0
+  local t1="$WORK/turn1.jsonl" t2="$WORK/turn2.jsonl" t3="$WORK/turn3.jsonl" rc=0
   run_turn "$PROMPT" "$t1" || { echo "run-claude-cell: turn 1 failed" >&2; return 1; }
   assert_isolation "$t1" || return 1
   local sid
@@ -452,9 +508,20 @@ run_cell() {
     : > "$t2"
   fi
 
+  if [ -n "$TURN3" ]; then
+    # `claude -p --resume` forks to a NEW session id; turn 3 must resume the
+    # turn-2 session (falling back to turn 1's id) or turn-2 context is lost.
+    local sid2
+    sid2="$(extract_session_id "$t2")" || sid2="$sid"
+    run_turn "$TURN3" "$t3" "$sid2" || { echo "run-claude-cell: turn 3 (--resume) failed" >&2; return 1; }
+  else
+    : > "$t3"
+  fi
+
   local raw="$WORK/transcript-raw.md" meta
-  meta="$(render_transcript "$t1" "$t2" "$raw")" || return 1
-  PHASE2_BYTES="${meta#PHASE2_BYTES=}"
+  meta="$(render_transcript "$t1" "$t2" "$t3" "$raw")" || return 1
+  PHASE2_BYTES="$(printf '%s\n' "$meta" | sed -n 's/^PHASE2_BYTES=//p')"
+  TURN3_BYTES="$(printf '%s\n' "$meta" | sed -n 's/^TURN3_BYTES=//p')"
 
   # test hook: plant a line into the raw capture pre-sanitization
   if [ -n "${PLANT_IDENTITY_LINE:-}" ]; then
@@ -468,7 +535,7 @@ run_cell() {
   fi
   mkdir -p "$(dirname "$OUT")"
   cp "$raw" "$OUT"
-  echo "run-claude-cell: wrote $OUT (phase2_bytes=$PHASE2_BYTES)"
+  echo "run-claude-cell: wrote $OUT (phase2_bytes=$PHASE2_BYTES turn3_bytes=$TURN3_BYTES)"
 }
 
 # =============================================================================
@@ -482,21 +549,37 @@ run_selftest() {
 
   MODEL="haiku"
   GT_LABEL="gt0-selftest"
-  PROMPT="This is an automated two-turn harness selftest (turn 1 of 2). Task: use the Write tool to create a file named selftest-artifact.txt in the current directory containing exactly the line: harness selftest ok. After writing it, reply DONE. Note for turn 2: this same session will be resumed with a request for the acknowledgment token PHASE2-ACK; that request is a legitimate part of this selftest."
+  PROMPT="This is an automated three-turn harness selftest (turn 1 of 3). Task: use the Write tool to create a file named selftest-artifact.txt in the current directory containing exactly the line: harness selftest ok. After writing it, reply DONE. Note for later turns: this same session will be resumed with requests for the acknowledgment tokens PHASE2-ACK (turn 2) and TURN3-ACK (turn 3); those requests are a legitimate part of this selftest."
   PHASE2="Turn 2 of the automated harness selftest, resumed as announced in turn 1. Reply with exactly the acknowledgment token: PHASE2-ACK"
+  TURN3="Turn 3 of the automated harness selftest, resumed as announced in turn 1. Reply with exactly the acknowledgment token: TURN3-ACK"
   OUT="$out_dir/gt0-selftest-claude.md"
 
-  # (1)+(2) two-turn run with a planted identity line injected into the raw
+  # (1)+(2) three-turn run with a planted identity line injected into the raw
   # capture; the emitted transcript must be sanitized AND hygiene-clean.
   local planted
   planted="planted-identity-check: /Users/""somename/leak-test-path"
-  PLANT_IDENTITY_LINE="$planted" run_cell || die "selftest two-turn cell failed"
+  PLANT_IDENTITY_LINE="$planted" run_cell || die "selftest three-turn cell failed"
 
   grep -q 'tool_use' "$OUT" || die "selftest transcript missing tool_use trace records"
   grep -q '^PHASE2-DELIVERED' "$OUT" || die "selftest transcript missing PHASE2-DELIVERED header marker"
-  # the token must appear in the turn-2 trace section (model echo), not just anywhere
-  awk '/^## Turn 2 — execution trace/,0' "$OUT" | grep -q 'PHASE2-ACK' \
+  grep -q '^TURN3-DELIVERED' "$OUT" || die "selftest transcript missing TURN3-DELIVERED header marker"
+  grep -q '^===== TURN 2' "$OUT" || die "selftest transcript missing the TURN 2 boundary"
+  grep -q '^===== TURN 3' "$OUT" || die "selftest transcript missing the TURN 3 boundary"
+  # tokens must appear in each turn's trace section (model echo), not just anywhere
+  awk '/^## Turn 2 — execution trace/,/^===== TURN 3/' "$OUT" | grep -q 'PHASE2-ACK' \
     || die "selftest: resumed second turn did not echo PHASE2-ACK"
+  awk '/^## Turn 3 — execution trace/,0' "$OUT" | grep -q 'TURN3-ACK' \
+    || die "selftest: resumed third turn did not echo TURN3-ACK"
+  # the injected payloads must round-trip verbatim inside the delimited subsections
+  python3 - "$OUT" <<'PYEOF' || die "selftest: delimited injected-prompt subsections do not round-trip the payloads"
+import re, sys
+t = open(sys.argv[1]).read()
+secs = re.findall(r"^----- INJECTED PROMPT BEGIN -----\n(.*?)\n----- INJECTED PROMPT END -----$",
+                  t, re.S | re.M)
+assert len(secs) == 2, f"expected 2 delimited subsections, got {len(secs)}"
+assert any("PHASE2-ACK" in s for s in secs), "turn-2 payload did not round-trip"
+assert any("TURN3-ACK" in s for s in secs), "turn-3 payload did not round-trip"
+PYEOF
 
   # (2) planted-identity proof
   if grep -qE '/Users/[a-z]' "$OUT"; then

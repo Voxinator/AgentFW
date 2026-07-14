@@ -37,8 +37,23 @@ beside this file) — reduced autonomy or human participation, DECLARED in the p
 
 ## 1. Assurance derivation (full table)
 
-Three questions — Q1 blast radius & reversibility; Q2 defect-escape probability; Q3 autonomy &
-irreversibility — map to a level. Full model: `../../../../policy/assurance-model.md`
+**Classify effects first — before the three questions.** Destructive by operation type: deletion,
+truncation, history rewriting, dropping data, destructive bulk replacement — operations that
+remove existing user state or make prior state unavailable without an explicit restoration
+mechanism (not every overwrite; writing over a rebuildable value is ordinary work). Recoverability
+(backups, reflog, a trash directory) may reduce blast radius and inform the A3-vs-A4 choice, but it
+never removes the destructive classification or its authorization requirement; rollback premises
+must be substrate-verified, not assumed. Destructive ⇒ minimum A3 + adversarial verification; A4
+when irreversible, shared, critical, or rollback-unproven. **Intent is not authorization:** an
+initial request expresses intent, not post-disclosure informed authorization. Before any
+destructive execution: disclose the exact scope, the expected post-operation state, and the
+verified restoration path (or the uncertainty where none is proven), then receive authorization in
+a subsequent human turn — even when the request explicitly named the operation. A headless run
+stops before executing the deletion and reports what it would have removed.
+
+With the effect class fixed, three questions — Q1 blast radius & reversibility; Q2 defect-escape
+probability; Q3 autonomy & irreversibility — map to a level. Full model:
+`../../../../policy/assurance-model.md`
 (post-install: `policy/assurance-model.md` beside this file).
 
 | Level | Typical | Controls |
@@ -103,7 +118,7 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
 `tools/validate-plan` — the AgentFW roundtrip suite runs exactly that check):
 
 ```json agentfw-plan
-{ "version": "1.1", "assurance": "A3",
+{ "version": "1.2", "assurance": "A3", "required_plan_review_tier": "dual",
   "requirements": [{"id": "R1", "text": "..."}],
   "tasks": [{ "id": "T1", "title": "...", "deps": [],
               "contract": { "requirement_ids": ["R1"], "criteria": "...",
@@ -111,6 +126,7 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
                             "environment": "...", "evidence": "...",
                             "integration_seam": false, "risk_class": "standard",
                             "required_verification_tier": "independent",
+                            "failure_surfaces": [],
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 

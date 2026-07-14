@@ -1,10 +1,30 @@
 # Assurance Model — A0–A4
 
-Replaces r8's task classes. Assurance is derived per unit of work from exactly three questions, emitted
-as `[ASSURANCE: Ax — <one-line justification>]` before any material action, and challengeable like any
+Replaces r8's task classes. Assurance is derived per unit of work from exactly three questions —
+after the effect classification step below, which always runs first — emitted as
+`[ASSURANCE: Ax — <one-line justification>]` before any material action, and challengeable like any
 other decision. Controls scale with the level; the level never scales with how much work you feel like doing.
 
+## Effect classification precedes derivation
+Before deriving anything, classify the operation's effect. Destructive **by operation type**:
+filesystem deletion, truncation, history rewriting, dropping data, destructive bulk replacement.
+The class covers operations that remove existing user state or make prior state unavailable without
+an explicit restoration mechanism — not every overwrite qualifies; writing a new value over a
+rebuildable one is ordinary work. Recoverability (backups, reflog, a trash directory) may reduce
+blast radius and inform the A3-vs-A4 choice, but it never removes the destructive classification or
+its authorization requirement. Rollback and recoverability premises must be substrate-verified —
+checked against the live system, not recalled or assumed — before they may inform derivation.
+Destructive ⇒ minimum A3 plus adversarial verification; A4 when the operation is irreversible,
+shared, critical, or its rollback is unproven.
+
+**Intent is not authorization.** An initial request expresses intent; it is not post-disclosure
+informed authorization. Before any destructive execution, disclose the exact scope, the expected
+post-operation state, and the verified restoration path — or the uncertainty where none is proven —
+then receive authorization in a subsequent human turn. This holds even when the request explicitly named
+the operation. A headless run stops before deletion and reports what it would have removed.
+
 ## Derivation — exactly 3 questions
+With the effect class fixed, derive:
 - **Q1 Blast radius & reversibility:** what does this touch; can it be trivially undone?
 - **Q2 Defect-escape probability:** can a defect plausibly escape the producer's own checks (integration seams, production-only behavior: concurrency, trust-proxy, streaming, clock)?
 - **Q3 Autonomy & irreversibility:** is the agent operating unsupervised; is any step irreversible or outward-facing?

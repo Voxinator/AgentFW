@@ -12,15 +12,29 @@
 #
 # Usage:
 #   run-codex-cell.sh --selftest-two-turn
-#   run-codex-cell.sh --gt <id> --prompt-file <file> [--phase2-file <file>] [--seed-dir <dir>]
-#                     [--out <transcript.md>] [--timeout <secs>] [--low-effort]
+#   run-codex-cell.sh --gt <id> --prompt-file <file> [--phase2-file <file>] [--turn3-file <file>]
+#                     [--seed-dir <dir>] [--out <transcript.md>] [--timeout <secs>] [--low-effort]
 #
 # Per-GT flow: hermetic mktemp fixture laid out per adapters/codex/INSTALL.md (marker-wrapped
 # AGENTS.md block at fixture root; repo-scope .agents/skills/agentfw/ with SKILL.md + policy/ +
 # tools/validate-plan + capability.yaml), optionally seeded from --seed-dir. Turn 1 runs the GT
 # prompt; the session_id is extracted and its rollout file under ~/.codex/sessions verified; turn 2
-# injects the Phase-2 prompt via `codex exec resume`. `PHASE2-DELIVERED: <n> bytes` is emitted into
-# the transcript HEADER only when second-turn model output is non-empty. The transcript is
+# injects the Phase-2 prompt via `codex exec resume`; an optional turn 3 (--turn3-file, requires
+# --phase2-file) injects a third prompt via another `codex exec resume` (-c overrides only).
+# `PHASE2-DELIVERED: <n> bytes` / `TURN3-DELIVERED: <n> bytes` are emitted into the transcript
+# HEADER only when that turn's model output is non-empty.
+#
+# TURN STRUCTURE (PLAN-r9-fixpass2 H5):
+#   - Every turn's section opens with a column-0 boundary line matching ^===== TURN <n>
+#     (turn 1 included), consistent with run-claude-cell.sh.
+#   - Every INJECTED turn-2/turn-3 prompt payload is rendered VERBATIM between the exact
+#     delimiter lines `----- INJECTED PROMPT BEGIN -----` and `----- INJECTED PROMPT END -----`
+#     inside its turn section.
+#   - Any SUBJECT-content line beginning `=====` or `----- INJECTED` gets one space prepended
+#     before the runner-emitted markers are written, so a subject cannot spoof a boundary or a
+#     delimiter: the markers remain the only column-0 instances.
+#
+# The transcript is
 # sanitized (/Users/<name> -> /Users/USER, MCP-connection noise stripped) and the script REFUSES
 # (nonzero exit, no transcript emitted) if the sanitized transcript would still fail the hygiene
 # sweep: rmcp::transport|AuthRequired|www_authenticate|\.well-known/oauth|/Users/[a-z]
@@ -38,6 +52,7 @@ SELFTEST=0
 GT_ID=""
 PROMPT_FILE=""
 PHASE2_FILE=""
+TURN3_FILE=""
 SEED_DIR=""
 OUT_FILE=""
 TURN_TIMEOUT=1800
@@ -49,11 +64,12 @@ while [ $# -gt 0 ]; do
     --gt)          GT_ID="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     --phase2-file) PHASE2_FILE="$2"; shift 2 ;;
+    --turn3-file)  TURN3_FILE="$2"; shift 2 ;;
     --seed-dir)    SEED_DIR="$2"; shift 2 ;;
     --out)         OUT_FILE="$2"; shift 2 ;;
     --timeout)     TURN_TIMEOUT="$2"; shift 2 ;;
     --low-effort)  LOW_EFFORT=1; shift ;;
-    -h|--help)     sed -n '2,22p' "$0"; exit 0 ;;
+    -h|--help)     sed -n '2,40p' "$0"; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
@@ -65,6 +81,7 @@ if [ "$SELFTEST" -eq 1 ]; then
   LOW_EFFORT=1
   PROMPT_TEXT="Reply with the single word READY"
   PHASE2_TEXT="Reply with exactly PHASE2-ACK"
+  TURN3_TEXT="Reply with exactly TURN3-ACK"
 else
   [ -n "$GT_ID" ] || die "--gt <id> is required (or use --selftest-two-turn)"
   [ -n "$PROMPT_FILE" ] && [ -f "$PROMPT_FILE" ] || die "--prompt-file <file> is required and must exist"
@@ -73,6 +90,12 @@ else
   if [ -n "$PHASE2_FILE" ]; then
     [ -f "$PHASE2_FILE" ] || die "--phase2-file does not exist: $PHASE2_FILE"
     PHASE2_TEXT="$(cat "$PHASE2_FILE")"
+  fi
+  TURN3_TEXT=""
+  if [ -n "$TURN3_FILE" ]; then
+    [ -f "$TURN3_FILE" ] || die "--turn3-file does not exist: $TURN3_FILE"
+    [ -n "$PHASE2_TEXT" ] || die "--turn3-file requires --phase2-file (a third turn resumes the second)"
+    TURN3_TEXT="$(cat "$TURN3_FILE")"
   fi
   [ -n "$OUT_FILE" ] || OUT_FILE="$HARNESS_DIR/out/${GT_ID}-codex.md"
 fi
@@ -164,11 +187,41 @@ if [ -n "$PHASE2_TEXT" ]; then
   fi
 fi
 
+# --- turn 3 (optional): another codex exec resume — same -c-overrides-only rule ---------------
+# `codex exec resume` may mint a NEW session id for the continued conversation; turn 3 must
+# resume the turn-2 session's id (falling back to turn 1's) or turn-2 context is lost.
+T3_LOG="$WORK/turn3.log"
+T3_MSG="$WORK/turn3-last-message.txt"
+T3_EXIT=""
+TURN3_BYTES=0
+T3_RESUME_ID="$SESSION_ID"
+if [ -n "$TURN3_TEXT" ]; then
+  SID2="$(grep -Eio 'session[ _]id:?[[:space:]]+[0-9a-f-]{36}' "$T2_LOG" | grep -Eo '[0-9a-f-]{36}' | head -1)"
+  [ -n "$SID2" ] && T3_RESUME_ID="$SID2"
+  ( cd "$FIXTURE" && with_timeout "$TURN_TIMEOUT" \
+      codex exec resume --skip-git-repo-check \
+        -c 'mcp_servers={}' -c 'sandbox_mode="workspace-write"' "${EFFORT_ARGS[@]}" \
+        -o "$T3_MSG" "$T3_RESUME_ID" "$TURN3_TEXT" </dev/null ) >"$T3_LOG" 2>&1
+  T3_EXIT=$?
+  [ "$T3_EXIT" -eq "$TIMEOUT_EXIT" ] && echo "run-codex-cell: turn 3 hit the ${TURN_TIMEOUT}s kill window" >&2
+  if [ -s "$T3_MSG" ]; then
+    TURN3_BYTES=$(wc -c < "$T3_MSG" | tr -d ' ')
+  fi
+fi
+
 # --- assemble + sanitize ----------------------------------------------------------------------
 sanitize() { # operator identity out; MCP-connection error noise stripped
   sed -E -e '/rmcp::transport/d' \
          -e '/ERROR:? +MCP client/d' \
          -e 's#/Users/[a-z][a-zA-Z0-9._-]*#/Users/USER#g'
+}
+
+# Escape SUBJECT content: any line beginning `=====` or `----- INJECTED` gets one space
+# prepended so a subject cannot spoof a turn boundary or an injected-prompt delimiter.
+# Runner-emitted markers are written into RAW AFTER this escaping, so they remain the only
+# column-0 instances. Injected payloads are rendered VERBATIM (runner-injected, not subject).
+escape_subject() {
+  sed -e 's/^=====/ =====/' -e 's/^----- INJECTED/ ----- INJECTED/'
 }
 
 RAW="$WORK/transcript.raw.md"
@@ -186,17 +239,35 @@ RAW="$WORK/transcript.raw.md"
       echo "PHASE2-DELIVERED: ${PHASE2_BYTES} bytes"
     fi
   fi
+  if [ -n "$TURN3_TEXT" ]; then
+    echo "turn3_exit: ${T3_EXIT}"
+    if [ "$TURN3_BYTES" -gt 0 ]; then
+      echo "TURN3-DELIVERED: ${TURN3_BYTES} bytes"
+    fi
+  fi
   echo
-  echo "===== PHASE 1 (codex exec) ====="
+  echo "===== TURN 1 (codex exec) ====="
   echo
-  cat "$T1_LOG"
+  escape_subject < "$T1_LOG"
   if [ -n "$PHASE2_TEXT" ]; then
     echo
-    echo "===== PHASE 2 (codex exec resume ${SESSION_ID}) ====="
+    echo "===== TURN 2 (codex exec resume ${SESSION_ID}) ====="
     echo
-    echo "injected prompt: ${PHASE2_TEXT}"
+    echo "----- INJECTED PROMPT BEGIN -----"
+    printf '%s\n' "$PHASE2_TEXT"
+    echo "----- INJECTED PROMPT END -----"
     echo
-    cat "$T2_LOG"
+    escape_subject < "$T2_LOG"
+  fi
+  if [ -n "$TURN3_TEXT" ]; then
+    echo
+    echo "===== TURN 3 (codex exec resume ${T3_RESUME_ID}) ====="
+    echo
+    echo "----- INJECTED PROMPT BEGIN -----"
+    printf '%s\n' "$TURN3_TEXT"
+    echo "----- INJECTED PROMPT END -----"
+    echo
+    escape_subject < "$T3_LOG"
   fi
 } > "$RAW"
 
@@ -215,7 +286,7 @@ mkdir -p "$(dirname "$OUT_FILE")"
 cp "$SANITIZED" "$OUT_FILE"
 echo "run-codex-cell: transcript -> $OUT_FILE (session_id: $SESSION_ID)"
 
-# --- phase-2 delivery is the contract: fail loudly when it did not happen --------------------
+# --- injected-turn delivery is the contract: fail loudly when it did not happen ---------------
 if [ -n "$PHASE2_TEXT" ]; then
   if [ "$PHASE2_BYTES" -eq 0 ]; then
     echo "run-codex-cell: FAIL — Phase-2 second-turn model output is empty (exit ${T2_EXIT}); transcript kept as evidence." >&2
@@ -223,6 +294,16 @@ if [ -n "$PHASE2_TEXT" ]; then
   fi
   if [ "$T2_EXIT" -ne 0 ]; then
     echo "run-codex-cell: FAIL — turn 2 exited ${T2_EXIT}; transcript kept as evidence." >&2
+    exit 1
+  fi
+fi
+if [ -n "$TURN3_TEXT" ]; then
+  if [ "$TURN3_BYTES" -eq 0 ]; then
+    echo "run-codex-cell: FAIL — third-turn model output is empty (exit ${T3_EXIT}); transcript kept as evidence." >&2
+    exit 1
+  fi
+  if [ "$T3_EXIT" -ne 0 ]; then
+    echo "run-codex-cell: FAIL — turn 3 exited ${T3_EXIT}; transcript kept as evidence." >&2
     exit 1
   fi
 fi
