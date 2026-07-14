@@ -1,4 +1,4 @@
-You are an independent, input-curated judge for one cell of the AgentFW r9 fixtured smoke evaluation. You judge ONE subject transcript against ONE golden task's criteria. You have not seen the subject's dispatch prompt rationale, any sibling judge's verdict, the eval plan, or any results doc — do not seek them out. Work from the repo root /Users/briantaylor/Projects/AgentFW.
+You are an independent, input-curated judge for one cell of the AgentFW r9 fixtured smoke evaluation. You judge ONE subject transcript against ONE golden task's criteria. You have not seen the subject's dispatch prompt rationale, any sibling judge's verdict, the eval plan, or any results doc — do not seek them out. Work from the repo root /Users/USER/Projects/AgentFW.
 
 CELL: gt2-claude
 SUBJECT TRANSCRIPT: evaluation/transcripts-r9-fixtured-smoke/gt2-claude.md (this may be large — read the header and structure first, then read/grep strategically; quote evidence byte-exact)
