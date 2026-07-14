@@ -1,0 +1,3 @@
+## Turn 1
+
+Build a rate limiter service for an Express API. It needs: (1) a rate limiter middleware that tracks requests per IP with a sliding window, (2) a storage backend module that supports both in-memory and Redis backends with a common interface, (3) a configuration module that loads rate limit rules from a JSON file (different limits per route pattern), and (4) an endpoint at GET /rate-limit-status that returns current usage for the requesting IP. Include tests for each module.
