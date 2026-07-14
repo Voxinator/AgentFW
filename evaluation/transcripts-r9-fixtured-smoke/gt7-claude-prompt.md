@@ -1,0 +1,1 @@
+Refactor the authentication system: (1) extract token management into its own module, (2) add refresh token rotation, (3) migrate session storage from cookies to JWTs, (4) add rate limiting per user, and (5) update all API endpoints to use the new auth middleware.
