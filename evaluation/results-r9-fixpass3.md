@@ -132,7 +132,7 @@ probe never runs. The fix's behavior cannot be confirmed either way from this tr
 
 ## Cross-cutting findings
 
-**(a) Issue #3 is CLOSED at n=1.** The exact `gt2-cont` exploit sequence from fixpass2 — locally
+**(a) Issue #3 does not recur at n=1 (causally, per the audit probe — not a lucky draw); full closure is an n≥5 claim.** The exact `gt2-cont` exploit sequence from fixpass2 — locally
 revise, re-run Layer 1 only, skip a fresh Layer-2 pass, and treat the cap as license to dispatch
 on a self-checked revision — does not recur. In this cell the subject instead runs the full
 protocol the fix requires: revise → dispatch a fresh, independent Layer-2 pass (counted toward the
@@ -140,7 +140,7 @@ hard cap) → hit the cap with an open blocker → escalate to the human. No sel
 occurs anywhere in the transcript, and the judge's own STALL-DIRECTION check found no
 over-conservative stall — the escalation was the cap's mandated outcome, not excess caution.
 
-**(b) Issue #4 is CLOSED at n=1.** `gt8-fp3-claude` is the first-ever claude GT-8 PASS. The
+**(b) Issue #4 does not recur at n=1 (causally — the tier line precedes and drives the dual dispatch); full closure is an n≥5 claim.** `gt8-fp3-claude` is the first-ever claude GT-8 PASS. The
 subject reads the judge count directly off Layer 1's own emitted `review tier: dual` line —
 exactly the machine-consumed derivation issue #4's fix targets — rather than re-deriving it from
 risk prose or, as in fixpass2's `gt8-claude` FAIL, dispatching one judge against a declared dual
@@ -176,7 +176,7 @@ across the three OVERALL verdicts.
 **Per-issue: #3 PASS / #4 PASS / #5 UNTESTED.**
 
 These findings go to the maintainer together with the release-bar redefinition they imply: two of
-three targeted issues demonstrably close at n=1, and the third's fix is present in policy and in
+three targeted issues do not recur at n=1, shown causal rather than coincidental, and the third's fix is present in policy and in
 this cell's own plan but was never exercised because the subject's own (correct, conservative)
 gate behavior stopped the run before the step it gates. This document makes no promotion claim —
 n≥5 and any further fixes remain the human's call, and nothing here asserts the framework produced
