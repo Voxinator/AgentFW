@@ -55,6 +55,26 @@ terminal state is reached**: at `verified_producer` the producer's own recorded 
 of record; at the higher tiers it is input handed to a judge who runs the command again — evidence to
 re-execute, not proof to accept.
 
+### Persisted evidence for delegated or platform-opaque execution
+
+The paragraph above assumes the parent's own record captures what ran. It often doesn't: when a
+producer runs destructive or verification-bearing commands in a context whose raw output the parent's
+record does not capture — a delegated subagent, a platform whose session logs don't expose subagent
+traces — the producer MUST persist the raw command output to files in the workspace (an `evidence/`
+directory, or the authoritative store) that the parent references by path and that a judge can read.
+This is the `evidence` field's freshness (`produced_after_change`) and `rerunnable` discipline applied
+at the exact point where, without persistence, there would be nothing left to re-execute against.
+
+Narration is testimony, not evidence: a parent's summary or narration of delegated execution never
+satisfies the capture condition, however detailed — no qualifier, no exception clause, and no "for
+purposes of" scoping narrows this. A detailed paraphrase of what a subagent did is still not the
+recorded output the subagent produced.
+
+Role separation holds unchanged here: the producer persists the files; the judge reads them and
+re-executes the `acceptance_command` against the tree, per "Producer evidence remains evidence at
+every tier" above — persisted files document that execution happened, they do not substitute for the
+judge's own re-run.
+
 ### `required_verification_tier` — mechanical floor derivation
 
 The minimum tier is DERIVED from structured fields only — the plan-level `assurance` plus the

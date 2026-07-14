@@ -150,6 +150,16 @@ Each check with its one-line pass test:
   2 clean = plan-polishing.
 - **Disposition by check:** a C5 goal-vs-proof contradiction ⇒ **restart** the plan; C2/C3 defects ⇒
   **local revise**. A check rated "clean" cannot coexist with a real defect mapped to it.
+- **Post-blocker protocol.** After ANY blocker verdict the only lawful continuations are: (a) local
+  revise → re-run Layer 1 → dispatch a FRESH independent input-curated Layer-2 pass over the revised
+  plan — this pass COUNTS toward the hard 2-pass cap above — then proceed only on a clean verdict
+  from THAT fresh pass; or (b) escalate to the human. No third path exists. Dispatch may begin from
+  exactly one thing: a clean verdict from a fresh independent Layer-2 pass, or explicit human
+  authorization — nothing else, no matter what Layer 1 reports.
+- **A self-checked revision is never a clean verdict** — Layer 1 plus the planner's own confirmation
+  does not clear a blocker; only a fresh independent Layer-2 pass, re-run after the revision, can.
+  The cap is a ceiling on Layer-2 passes, not a license to dispatch without one: reaching the cap
+  with an open blocker still means escalate (see "Hard 2-pass cap" above) — it never means dispatch.
 
 ## Honest limit (whole gate)
 

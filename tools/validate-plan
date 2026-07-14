@@ -414,6 +414,8 @@ def main():
                                       "required_verification_tier is below "
                                       "the mechanical floor (misclassified "
                                       "tier)" % (tid, floor, reason, tier))
+                if risk_class in ("security", "destructive"):
+                    risky_tasks.append((tid, risk_class))
                 # environment: non-empty string
                 if not nonempty_str(c.get("environment")):
                     errors.append("task %s: schema 1.1 at assurance %s "
@@ -440,6 +442,7 @@ def main():
                                   "one of %s (tier derivation input)"
                                   % (tid, rc, "/".join(VALID_RISK_CLASSES)))
                 elif rc in ("security", "destructive"):
+                    risky_tasks.append((tid, rc))
                     tier = c.get("required_verification_tier")
                     if tier != "adversarial":
                         errors.append("task %s: derived minimum tier is "
@@ -489,10 +492,9 @@ def main():
                                              "/".join(VALID_FAILURE_SURFACES)))
                         if fs and not bad:
                             surfaced_tasks.append(tid)
-                # review-floor input: security/destructive at ANY assurance
-                rc_val = c.get("risk_class")
-                if rc_val in ("security", "destructive"):
-                    risky_tasks.append((tid, rc_val))
+                # NOTE: risky_tasks (security/destructive risk_class) is
+                # populated above in the shared v1.1 branches — it feeds both
+                # the v1.2 review-floor derivation AND the v1.1 advisory line.
             elif version == "1.1" and "failure_surfaces" in c:
                 errors.append("task %s: 'failure_surfaces' is a schema-1.2 "
                               "field — schema 1.1 does not define it; "
@@ -592,6 +594,27 @@ def main():
           "checks passed (structure/coverage only — command strength is a "
           "Layer-2 judge question)" % (path, len(req_ids), len(tasks),
                                        assurance, mode))
+
+    # schema 1.2: state the DERIVED plan-review tier and its dispatch
+    # consequence — machine-consumed, not policy-prose-recalled (issue #4).
+    # The declared review_tier is already validated >= the mechanical floor
+    # above, so it is what governs dispatch; report it (never the bare
+    # floor, per the "declared tier exceeds floor => report declared" rule).
+    if v12 and review_tier is not None:
+        if review_tier == "dual":
+            print("review tier: dual — dispatch two disjoint-input judges "
+                  "after Layer 1, before Layer-2 pass 1")
+        else:
+            print("review tier: single")
+    # schema 1.1: no declared/enforced field exists yet — surface the same
+    # mechanical derivation as an ADVISORY floor only (not enforced).
+    elif version == "1.1":
+        afloor, areason = derive_review_floor(assurance, risky_tasks,
+                                              surfaced_tasks)
+        print("review floor (advisory, 1.1): %s (%s) — 1.1 plans carry no "
+              "enforced required_plan_review_tier; migrate to schema 1.2 to "
+              "have this floor mechanically enforced"
+              % (afloor, areason))
     return 0
 
 

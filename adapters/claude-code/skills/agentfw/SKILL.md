@@ -79,8 +79,8 @@ to the caller, not the user) — drive it; don't re-describe it.
 | Role | Native primitive |
 |---|---|
 | Planner / dispatcher | main session (or Plan mode + Plan agent). Never writes A2+ implementation inline. |
-| Worker | Agent subagent — the installed `agentfw-implementer` agent, or a Workflow `agent()` step. One task per dispatch, contract copied verbatim into the prompt. |
-| Judge of record | a *separate* subagent — the installed `agentfw-verifier` agent (or a Workflow judge step), input-curated. |
+| Worker | Agent subagent — the installed `agentfw-implementer` agent, or a Workflow `agent()` step. One task per dispatch, contract copied verbatim into the prompt. When a dispatched command's raw output is not captured in the parent's own record (delegated subagents, opaque logs), the worker persists it to workspace evidence files (`./policy/acceptance-contract.md`). |
+| Judge of record | a *separate* subagent — the installed `agentfw-verifier` agent (or a Workflow judge step), input-curated. Judges read those persisted evidence files and re-execute the `acceptance_command` themselves — narration of delegated execution is testimony, never evidence. |
 | Plan critic | the installed `agentfw-plan-critic` agent (Layer 2 of the plan-critique gate). |
 | Parallel fan-out | multiple Agent calls in one message, or `parallel()`. Use `isolation: "worktree"` when parallel edits collide on the same files. |
 
@@ -138,14 +138,22 @@ AgentFW repo checkout. It mechanically checks: block parses; assurance
 valid; every requirement covered by some task; every contract non-empty; deps acyclic; risk ⇒
 negative_cases; A3/A4 ⇒ negative_cases everywhere. Exit 0 + PASS or a named defect.
 
-**Layer 2 (semantic judge — A2 with ambiguity/shared values, all A3+):** dispatch
+**Layer 2 (semantic judge — A2 with ambiguity/shared values, all A3+):** MANDATORY checklist
+step before dispatch — read Layer 1's `review tier` line (schema 1.2: `review tier: dual` or
+`review tier: single`; schema 1.1: the advisory `review floor (advisory, 1.1): ...` line) and
+dispatch exactly the judge count it states — two disjoint-input judges for dual, one for single —
+the validator's own output, not memory of the policy, is the source of the count. Then dispatch
 `agentfw-plan-critic` with the plan + requirements ONLY. It runs the C0–C5 rubric
 (`./policy/plan-critique.md`): C0 substrate-grounding, C1 independence, C2 prose-vs-mechanical
 reachability (core check), C3 deps + cross-task consistency, C4 risk/role + irreversible-op
 pre-mortem, C5 approach-fit, plus requirement→task coverage. Hard 2-pass cap; a single-judge
 BLOCKER gets one confirming independent pass before any re-plan; cap-with-open-blocker never
-proceeds — escalate to the human. Honest limit: Layer 1 cannot judge command STRENGTH; Layer 2's
-clean verdict raises the floor, it does not verify correctness — downstream judges own that.
+proceeds — escalate to the human. Post-blocker: local revise → re-run Layer 1 → dispatch a fresh
+independent Layer-2 pass over the revision (this counts toward the cap) → dispatch only on that
+pass's clean verdict, or escalate — a self-checked revision is never a clean verdict, since Layer 1
+plus the planner's own confirmation does not clear a blocker. Honest limit: Layer 1 cannot judge
+command STRENGTH; Layer 2's clean verdict raises the floor, it does not verify correctness —
+downstream judges own that.
 
 ## 4. Effects → native controls
 

@@ -81,8 +81,8 @@ return consolidated results to the caller — drive that isolation; don't re-des
 | Role | Codex primitive |
 |---|---|
 | Planner / dispatcher | main session. Never writes A2+ implementation inline. |
-| Worker | a subagent thread (spawn via delegation; inspect with `/agent`). One task per dispatch, contract copied verbatim into the prompt. Optionally a custom agent: a TOML file in `~/.codex/agents/` or `.codex/agents/` with `name`, `description`, `developer_instructions`, and its own `sandbox_mode`. |
-| Judge of record | a *separate* subagent thread that did not produce the artifact, input-curated. For working-tree review, the built-in `/review` reports findings without modifying the tree. |
+| Worker | a subagent thread (spawn via delegation; inspect with `/agent`). One task per dispatch, contract copied verbatim into the prompt. When a dispatched command's raw output is not captured in the parent's own record (delegated subagents, opaque logs), the worker persists it to workspace evidence files (`./policy/acceptance-contract.md`). Optionally a custom agent: a TOML file in `~/.codex/agents/` or `.codex/agents/` with `name`, `description`, `developer_instructions`, and its own `sandbox_mode`. |
+| Judge of record | a *separate* subagent thread that did not produce the artifact, input-curated. Judges read those persisted evidence files and re-execute the `acceptance_command` themselves — narration of delegated execution is testimony, never evidence. For working-tree review, the built-in `/review` reports findings without modifying the tree. |
 | Plan critic | a separate subagent given the plan + requirements ONLY (Layer 2 below). |
 | Parallel fan-out | parallel subagents (`agents.max_threads`, default 6; nesting capped by `agents.max_depth`, default 1). |
 
@@ -151,15 +151,22 @@ but the plan file must already exist on disk. It mechanically checks: block pars
 valid; every requirement covered by some task; every contract non-empty; deps acyclic; risk ⇒
 negative_cases; A3/A4 ⇒ negative_cases everywhere. Exit 0 + PASS or a named defect.
 
-**Layer 2 (semantic judge — A2 with ambiguity/shared values, all A3+):** dispatch a plan-critic
+**Layer 2 (semantic judge — A2 with ambiguity/shared values, all A3+):** MANDATORY checklist step
+before dispatch — read Layer 1's `review tier` line (schema 1.2: `review tier: dual` or
+`review tier: single`; schema 1.1: the advisory `review floor (advisory, 1.1): ...` line) and
+dispatch exactly the judge count it states — two disjoint-input judges for dual, one for single —
+the validator output, not policy recall, is the source of the count. Then dispatch a plan-critic
 subagent with the plan + requirements ONLY. It runs the C0–C5 rubric
 (`../../../../policy/plan-critique.md`): C0 substrate-grounding, C1 independence, C2
 prose-vs-mechanical reachability (core check), C3 deps + cross-task consistency, C4 risk/role +
 irreversible-op pre-mortem, C5 approach-fit, plus requirement→task coverage. Hard 2-pass cap; a
 single-judge BLOCKER gets one confirming independent pass before any re-plan; cap-with-open-blocker
-never proceeds — escalate to the human. Honest limit: Layer 1 cannot judge command STRENGTH;
-Layer 2's clean verdict raises the floor, it does not verify correctness — downstream judges own
-that.
+never proceeds — escalate to the human. Post-blocker: local revise → re-run Layer 1 → dispatch a
+fresh independent Layer-2 pass over the revision (this counts toward the cap) → dispatch only on
+that pass's clean verdict, or escalate — a self-checked revision is never a clean verdict, since
+Layer 1 plus the planner's own confirmation does not clear a blocker. Honest limit: Layer 1 cannot
+judge command STRENGTH; Layer 2's clean verdict raises the floor, it does not verify correctness —
+downstream judges own that.
 
 ## 4. Effects → native controls
 
