@@ -2,13 +2,19 @@
 
 ## What This Is
 
-AI capabilities look jagged when you ask for one-shot answers. The same model that writes a flawless function will hallucinate a dependency or skip a critical edge case two prompts later. The inconsistency isn't in the model — it's in the lack of structure around it. Apply the same organizational patterns that make human teams effective (task decomposition, parallel execution, independent verification, iterative refinement) and the surface smooths out.
+**AgentFW is a governance layer for AI agents — the discipline that turns a capable model into a dependable one.**
 
-As of r9, AgentFW is a **portable governance layer**: a **platform-neutral semantic policy** (`policy/` — assurance levels, acceptance contracts, verification tiers, role separation; names capabilities and invariants, never vendor runtime primitives) **compiled into native adapters** (`adapters/` — each one maps the policy onto a specific runtime's real, deterministic controls). Where a runtime supplies enforcement (Claude Code, Codex), the adapter compiles into it; where none exists (chat products), guided profiles (`profiles/`) degrade honestly instead of pretending. The r9 thesis:
+Model capability looks jagged when you ask for one-shot answers. The same system that writes a flawless function will hallucinate a dependency, skip an edge case, or quietly delete something it shouldn't two prompts later. That inconsistency isn't really in the model — it's in the absence of structure around it. Human teams don't rely on any one person being perfect; they rely on decomposition, parallel work, independent review, and the discipline to verify before believing. AgentFW gives an agent the same scaffolding, as policy it must follow rather than advice it may ignore.
 
-> *"r9 governs work through portable assurance contracts compiled into native runtime behavior where a runtime exists to compile into, and into explicit, evidence-bearing model commitments where it doesn't — with the honesty to say which is which per adapter."*
+It is built on one load-bearing distinction: **separate what can be *guaranteed* from what can only be *encouraged*, and never let the second masquerade as the first.**
 
-AgentFW remains structured Markdown plus a few small stdlib-only validators — not a framework, library, or SDK.
+- **A platform-neutral semantic policy** (`policy/`) — assurance levels, acceptance contracts, verification tiers, role separation, effect classification. It names capabilities and invariants, never a specific vendor's runtime, so the same governance travels across platforms.
+- **Compiled into native adapters** (`adapters/`) — each adapter maps that policy onto a runtime's *real, deterministic* controls. Where a runtime supplies enforcement (Claude Code, Codex), the adapter compiles into it and the guarantee is mechanical. Where none exists (chat products), guided profiles (`profiles/`) degrade honestly instead of pretending to enforce.
+- **Backed by machine-checked evidence** — a stdlib validator that gates plans before any work is dispatched, an installer whose uninstall restores your files byte-for-byte, a schema that fails safe on unknown versions, and a suite that must be green for anything to ship.
+
+> *"Govern work through portable assurance contracts compiled into native runtime behavior where a runtime exists to compile into, and into explicit, evidence-bearing model commitments where it doesn't — with the honesty to say which is which, per adapter."*
+
+The result is deliberately small: **structured Markdown plus a few stdlib-only validators — no framework, no library, no SDK, no runtime dependency.** Nothing to install into your build, nothing to lock into. You can read the entire policy in an afternoon and audit every guarantee it makes. That legibility is the point: a governance layer you cannot inspect is just another thing to trust blindly, which is the problem it exists to solve.
 
 ## Status: v9.0.0 — released
 
