@@ -16,22 +16,33 @@ It is built on one load-bearing distinction: **separate what can be *guaranteed*
 
 The result is deliberately small: **structured Markdown plus a few stdlib-only validators — no framework, no library, no SDK, no runtime dependency.** Nothing to install into your build, nothing to lock into. You can read the entire policy in an afternoon and audit every guarantee it makes. That legibility is the point: a governance layer you cannot inspect is just another thing to trust blindly, which is the problem it exists to solve.
 
-## Status: v9.0.0 — released
+## What it's *not*
 
-**Released 2026-07-15 as `v9.0.0`** under a two-tier release bar (`RELEASE-BAR-r9.md`): a deterministic layer that is **machine-verified and release-blocking**, and a behavioral layer that is **measured and published with its limitations** rather than claimed as guaranteed.
+- **Not an agent or an orchestrator.** It doesn't run your work or replace your runtime. It governs whatever agent your runtime already gives you — Claude Code, Codex — raising the floor on how that agent plans, verifies, and handles risk.
+- **Not a framework, library, or SDK.** There's nothing to import and no API to call. You install a policy the model reads and a handful of validators you can run by hand. Uninstalling restores your files byte-for-byte.
+- **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
+- **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-- **Tier 1 — deterministic layer (release-blocking, satisfied):** installer roundtrip **25/25**, `tools/validate-plan` full fixture suite (schema 1.2 floors, fail-safe versioning, review-tier emission), capability contracts under both parsers, **57** relative links resolvable, r8 dirs frozen, publication-hygiene sweep clean over all committed transcripts. All green at release.
-- **Tier 2 — behavioral layer (published with limits):** behavior was exercised on **Claude Code** (claude-sonnet-5) and **Codex** (gpt-5.6-sol) across a fixtured smoke plus three targeted fix passes. Results are linked below and are honest about scope: **n=1 per cell** — behavior demonstrated changed, not proven stable. Targeted safety regressions were corrected and demonstrated at n=1 (see the fix-pass results docs); larger statistical calibration (n≥5, `EVAL-MATRIX-DESIGN.md`) is **post-release future work**, not a v9.0 blocker.
-- **Behavioral compliance is model- and version-dependent, not guaranteed.** The framework's mechanical guarantees hold deterministically; whether a given model follows the semantic policy on a given run is a propensity these evals measure, not a certainty — and a model update re-opens the behavioral (not the deterministic) question.
-- **r8** (tag `r8`) remains available as the prior release, installable from `core/` + `references/`.
+**Status: v9.0.0, released 2026-07-15** — the first AgentFW release under a two-tier bar where the guarantees that *can* be machine-verified are release-blocking and green, and the behavioral claims that can only be *measured* are published with their limits stated plainly. Full evidence ledger in [Verification & provenance](#verification--provenance).
 
-Evidence, linked: `evaluation/results-r9-fixtured-smoke.md` (fixtured smoke), `evaluation/results-r9-fixpass2.md` (destructive-floor + dual-review fixes), `evaluation/results-r9-fixpass3.md` (post-blocker protocol, machine-consumed review tier, delegated-evidence rule), `evaluation/results-r9-fixpass4.md` (authorization-provenance negative control — the fix inverted the codex polarity to refuse a simulated authorization). Each carries its own adversarial audit and, for the last, an Opus-tier final semantic review.
+## What's new in v9 — why it's worth the download
 
-> **Hermes variant moved.** The Hermes variant (Gemma-4 running AgentFW as a local orchestrator on Hermes Agent) has been extracted to its own project, **`agentfw-hermes`**, and removed from this repo. It is no longer part of AgentFW core. Historical commits in this repo's git history and `archive/` are unaffected.
+v9 is the version where the governance stops being Claude-Code-flavored prose and becomes a portable policy with mechanically-enforced teeth. If you ran r8, here is what changed:
 
-## What r9 is
+- **It's portable now.** The same policy runs on **Claude Code and Codex** from one platform-neutral source, compiled into each runtime's real controls; chat products without an enforcement surface get honest guided profiles instead of a broken promise. r8 was written *in* Claude Code's vocabulary and went no further.
+- **The plan gate is a program, not a paragraph.** Before any work is dispatched, a plan runs through `tools/validate-plan` — a real, stdlib-only validator with a versioned schema that **fails safe on unknown versions** and mechanically derives how much review a plan needs. r8's gate was a semantic judge only; v9 puts a deterministic floor under it that you can run yourself.
+- **Assurance replaces classification.** Work is graded A0–A4 by *how much independent evidence it needs before it's believed* (blast radius, defect-escape probability, autonomy/irreversibility) — a sharper primitive than r8's task buckets, and the thing every downstream control keys off.
+- **The installer is reversible and provable.** A marker-block install/upgrade/uninstall whose removal restores your files **byte-for-byte**, roundtrip-tested against hostile edge cases — versus r8's whole-file overwrite. You can adopt it without fear of what it leaves behind.
+- **Capabilities are gated on your install, not the brochure.** Every platform claim carries a `verified:` annotation and splits what a runtime *offers* from what your install has *configured*, with a local probe — so the framework degrades honestly on a machine that lacks a capability instead of assuming it.
+- **Safety rules that demonstrably changed behavior.** v9 hardened the sharp edges and *showed* it on both runtimes: destructive actions are classified and require authorization before they run; a **simulated or proxy "authorization" is refused** (the fix flipped Codex from executing a fake authorization to rejecting it); plans can't self-clear their own blockers; delegated work must persist real evidence, not narration. These are the fixes behind issues #3–#6, each with linked results and an adversarial audit.
 
-r9 splits the framework into four surfaces:
+**Honest bound:** the behavioral evidence is n=1 per cell — it shows these behaviors *changed under the framework*, not that they're statistically stable, and compliance is model- and version-dependent. Larger calibration (n≥5) is designed (`EVAL-MATRIX-DESIGN.md`) and scheduled as post-release work. The mechanical guarantees, by contrast, hold deterministically every run.
+
+> **Hermes variant moved.** The Hermes variant (Gemma-4 running AgentFW as a local orchestrator on Hermes Agent) has been extracted to its own project, **`agentfw-hermes`**. Historical commits in this repo's git history and `archive/` are unaffected.
+
+## How it works — the architecture
+
+Four surfaces, each with a clear job. The policy says *what* good governance is; the adapters compile it into *real controls* on a given runtime; the profiles degrade honestly where no controls exist; and the tools mechanically enforce the parts that can be.
 
 ### `policy/` — the platform-neutral semantic policy
 
@@ -82,7 +93,7 @@ What r9's quality claims rest on — and what they don't:
 
 ```
 agentfw/
-├── metadata.json                  # Project metadata (version 9.0.0-draft, install routing)
+├── metadata.json                  # Project metadata (version 9.0.0, install routing)
 ├── README.md                      # This file
 ├── CHANGELOG.md                   # Version history with audit trail
 ├── DESIGN.md                      # r8 design spec (r9 banner inside; full revision lands with validated r9)
@@ -150,4 +161,5 @@ r9 carries r8's load-bearing judgment forward: the input-curation bright line, t
 - **r7** (2026-04-17): Cross-model tuning pass for Opus 4.7 without non-target regression
 - **r7.1–r7.11** (2026-04-18 → 2026-04-30): Hermes-variant probe + campaign arc — extracted to `agentfw-hermes`; full history remains there and in this repo's git history
 - **r8** (2026-05-29): v8 governance refactor — governance layer over Claude Code 2.1 native primitives, Plan-Critique Gate + Acceptance-Contract spine, GT-8. **Last validated release.**
-- **r9-draft** (2026-07-11): Portable governance layer — platform-neutral semantic policy (`policy/`) + native adapters (claude-code, codex) + guided profiles + runnable validators. Built via the full harness, externally reviewed across seven rounds (zero open findings), mechanically suite-tested — **draft — not eval-validated (golden-task re-run pending)**.
+- **r9-draft → r9-draft.4** (2026-07-11 → 2026-07-14): Portable governance layer built and hardened through four adversarially-reviewed passes — platform-neutral policy + native adapters (claude-code, codex) + guided profiles + runnable validators; fixtured outcome evals on both adapters; safety fixes for issues #3–#6. Published as draft pre-releases.
+- **v9.0.0** (2026-07-15): **Released.** Deterministic layer machine-verified and release-blocking; behavioral evidence published on both runtimes with limits stated (n=1, model/version-dependent); n≥5 calibration scheduled post-release. See [What's new in v9](#whats-new-in-v9--why-its-worth-the-download).
