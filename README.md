@@ -32,11 +32,22 @@ was run for v9.1.0; the bounded v9.0.0 behavioral evidence remains the behaviora
 
 ## What's new in v9.1
 
-v9.1.0 implements all six [r9.x improvements](R9X-CANDIDATES.md): producer red-path probes and
-known-weak command lint; schema 1.3 `mutation_probes` with verifier scratch-copy execution;
-fixture leak-channel guidance; empirical C2 critic duties; a standard cap-with-open-blocker
-relaxation menu; and resolved command evidence for acceptance-critical utilities. Schema 1.3 is
-additive: historical schema 1.1 and 1.2 plans keep their existing validation behavior.
+v9.1.0 implements all six [r9.x improvements](R9X-CANDIDATES.md):
+
+- **C-1 — acceptance-command red paths and lint.** Producers prove each acceptance command turns
+  red against a deliberately broken case, and the validator rejects known weak command shapes.
+- **C-2 — additive schema 1.3 mutation probes.** Contracts can name `mutation_probes` that the
+  verifier runs on a scratch copy; schema 1.1 and 1.2 plans retain their existing behavior.
+- **C-3 — fixture leak-channel hygiene.** Guidance now covers names, contents, comments, committed
+  tooling, commit messages, refs, and reflogs so evaluation intent does not leak into fixtures.
+- **C-4 — empirical plan critics.** C2 reviewers run minimal hostile probes when feasible and label
+  findings as demonstrated by live output or reasoned without execution.
+- **C-5 — named cap relaxations.** An open-blocker escalation now offers one bounded extra pass,
+  mechanically compensated mutation-gated dispatch for C2-local blockers, or halt.
+- **C-6 — command-resolution evidence.** Installer status records how acceptance-critical `grep`,
+  `sed`, `find`, `md5`, and `sqlite3` commands resolve, including wrappers and missing commands.
+
+See [the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md) for the complete change and evidence record.
 
 ## What's new in v9 — why it's worth the download
 

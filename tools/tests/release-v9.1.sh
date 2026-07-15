@@ -64,6 +64,15 @@ PY
 require_contains README.md '**Status: v9.1.0, released 2026-07-15**'
 require_contains README.md 'deferred to **v9.2** as the designated adapter candidate'
 require_contains README.md 'No new behavioral-evaluation round'
+require_contains README.md '[r9.x improvements](R9X-CANDIDATES.md)'
+require_contains README.md '[the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md)'
+require_contains README.md '- **C-1 — acceptance-command red paths and lint.**'
+require_contains README.md '- **C-2 — additive schema 1.3 mutation probes.**'
+require_contains README.md '- **C-3 — fixture leak-channel hygiene.**'
+require_contains README.md '- **C-4 — empirical plan critics.**'
+require_contains README.md '- **C-5 — named cap relaxations.**'
+require_contains README.md '- **C-6 — command-resolution evidence.**'
+require_contains README.md 'schema 1.1 and 1.2 plans retain their existing behavior'
 require_contains profiles/chatgpt-projects.md 'Current release: **AgentFW v9.1.0**'
 require_contains profiles/chatgpt-projects.md 'designated v9.2 candidate'
 require_contains adapters/claude-code/INSTALL.md 'Current release: **AgentFW v9.1.0**'
@@ -75,6 +84,34 @@ require_contains DESIGN.md '**Current-release note (v9.1.0):**'
 require_not_contains README.md 'deferred to **r9.1** as the designated adapter candidate'
 require_not_contains README.md 'reserved for **r9.1**'
 require_not_contains profiles/chatgpt-projects.md 'designated r9.1 candidate'
+
+# Reject positive fresh-behavioral-evidence claims only in the current v9.1 section. Historical
+# v9.0 evidence remains valid, and explicit statements that no new evaluation ran remain allowed.
+python3 - "$ROOT/README.md" <<'PY' \
+  || fail "README.md overstates v9.1 behavioral evidence"
+import re
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+match = re.search(
+    r"^## What's new in v9\.1\s*$\n(?P<section>.*?)(?=^##\s)",
+    text,
+    flags=re.MULTILINE | re.DOTALL,
+)
+assert match, "missing What's new in v9.1 section"
+section = match.group("section")
+positive_claims = (
+    r"\b(?:v9\.1(?:\.0)?|this release)\s+"
+    r"(?:adds?|includes?|provides?|ships?|establishes?|demonstrates?)\s+"
+    r"(?:new|fresh)\s+behavioral(?:-evaluation)?\s+(?:evidence|results?)\b",
+    r"\b(?:new|fresh)\s+behavioral(?:-evaluation)?\s+(?:evidence|results?)\s+"
+    r"(?:was|were)\s+(?:added|produced|generated|established|demonstrated)\b",
+    r"\b(?:ran|performed|completed)\s+(?:a\s+)?(?:new|fresh)\s+"
+    r"behavioral(?:-evaluation)?\s+(?:round|evaluation)\b",
+)
+for pattern in positive_claims:
+    assert not re.search(pattern, section, flags=re.IGNORECASE), pattern
+PY
 
 require_contains CHANGELOG.md '## v9.1.0 (2026-07-15) — RELEASED'
 require_contains CHANGELOG.md 'C-1 — acceptance-command red paths'

@@ -1,0 +1,64 @@
+AgentFW v9.1.0 README release-gate evidence
+Produced after README.md and tools/tests/release-v9.1.sh changes on 2026-07-15.
+
+MUTATION COMMAND
+AGENTFW_RELEASE_ROOT=/tmp/agentfw-v91-readme.C0N76O AGENTFW_RELEASE_IDENTITY_ONLY=1 bash tools/tests/release-v9.1.sh
+
+MUTATION
+Removed the C-6 command-resolution README bullet from the scratch copy only.
+
+MUTATION RAW OUTPUT
+release-v9.1.sh: FAIL: README.md is missing required text: - **C-6 — command-resolution evidence.**
+MUTATION_EXIT=1
+
+MUTATION SUCCESS-SIGNAL CHECK
+No RELEASE_V9_1_IDENTITY_OK signal was emitted.
+
+ACCEPTANCE COMMAND
+bash -c 'set -euo pipefail; for c in C-1 C-2 C-3 C-4 C-5 C-6; do grep -q -- "- \\*\\*$c" README.md; done; bash tools/tests/release-v9.1.sh && echo README_V9_1_FIXES_OK'
+
+ACCEPTANCE RAW OUTPUT
+release-v9.1.sh: PASS: release identity, current docs, candidate status, and provenance
+validate-plan.sh: ALL CHECKS PASSED
+release-v9.1.sh: PASS: validator fixture harness
+PASS: fresh install — block present exactly once, sentinel preserved, skill + 3 agents + policy/ + manifest installed
+PASS: sandbox validator — installed copy is executable and EXECUTED in the sandbox against the staged plan-good fixture (exit 0, PASS output)
+PASS: idempotence — second install still exactly ONE AGENTFW:BEGIN, sentinel intact
+PASS: marker-less r8 upgrade — new block present, r8 heading excised, sentinel + user MCP section preserved, full-original backup exists
+PASS: uninstall — post-uninstall file cmp-identical to snapshot-minus-block, zero AGENTFW markers, sentinel count unchanged (1), user MCP section intact, skill + 3 shipped agents removed
+PASS: hostile uninstall — user-created agentfw-custom.md survived byte-identical while the three shipped agents were removed; manifest was present before uninstall and consumed by it
+PASS: block-only uninstall — CLAUDE.md removed when nothing but the AgentFW block remained
+PASS: prose-mention immunity — install/upgrade/uninstall over prose 'AGENTFW:BEGIN'/'AGENTFW:END' mentions (incl. same-line): real block managed, prose + sentinel byte-preserved, uninstall restores the original file cmp-identical
+PASS: unterminated-block refusal — install/upgrade/uninstall all refuse (named 'malformed' error), file byte-identical, no assets installed; status warns without touching the file
+PASS: fenced marker-example immunity — install/upgrade/uninstall over a column-0 ``` fence containing well-paired verbatim markers + inner sentinel: real block managed exactly once, fenced example byte-preserved throughout, uninstall restores the pre-install file cmp-identical
+PASS: tilde-fence immunity — ~~~ fence containing well-paired verbatim markers + inner sentinel: install/uninstall roundtrip cmp-identical, sentinel intact throughout
+PASS: four-backtick fence — ```` fence containing literal ``` lines + well-paired markers + sentinel: inner shorter runs did NOT close the fence; roundtrip cmp-identical
+PASS: indented fence — 3-space-indented ``` fence with verbatim markers + sentinel: roundtrip cmp-identical
+PASS: unclosed-fence refusal — unclosed backtick AND tilde fences: install/upgrade/uninstall all refuse (error says 'unclosed'), file byte-identical, no assets created; status warns and exits 0
+PASS: lookalike immunity — '<!-- AGENTFW:BEGINNING of notes -->' + user lines: install proceeded normally (no false refusal), block added exactly once, all user lines preserved, uninstall restored cmp-identical
+PASS: active-capabilities — capability.yaml packaged cmp-identical into the skill; status probe wrote per-rule results for REAL deny entries (ssh/env/git-push-force yes, aws/secrets no) with aggregate 'partial', mirrored on the console
+PASS: hostile probe seed — empty deny array + all five signatures planted in permissions.allow and a _comment: probe reports every rule no and aggregate false (nothing outside permissions.deny counts)
+PASS: malformed-settings probe — trailing-comma settings.json: status exits 0, every per-rule entry unknown, aggregate unknown (never yes, no crash)
+PASS: full deny-set probe — the full canonical deny set seeded: every per-rule entry yes, aggregate true
+PASS: hostile containment seed — Read(~/.ssh/known_hosts) and Bash(echo git push --force is bad:*) both report no (canonical-form matching, no substring credit), Read(**/.env) reports yes, aggregate partial, schema diagnostic true
+PASS: schema diagnostic — permissions.deny of wrong type (string) in valid JSON: settings_schema_valid false, rules no, aggregate false, status exit 0
+PASS: first-command containment — Bash(git push origin main && echo --force:*) and the glued ';echo --force' variant both report no (flags after a shell operator are not git push's); a genuine first-command force-push deny still reports yes
+PASS: CRLF fence — well-formed CRLF file with a paired fence containing a marker example + sentinel: no false 'unclosed' refusal, install/uninstall roundtrip cmp-identical (CR bytes preserved)
+PASS: missing final newline — CLAUDE.md without a trailing newline: install exit 0, record kept through upgrade's manifest rewrite, uninstall restores cmp-identical including the ABSENT final newline
+PASS: skill example sync — the embedded agentfw-plan example in BOTH adapter SKILL.md files validates against the current schema via tools/validate-plan (exit 0, PASS)
+PASS: command resolution — ordinary status persists exact absolute command -v paths plus type output for grep/sed/find/md5/sqlite3; console mirrors the report
+PASS: command wrapper resolution — exported grep function is recorded via command -v + multiline type output, hostile YAML punctuation parses safely, settings remain absent
+PASS: missing command resolution — sqlite3 absent from a restricted PATH is recorded explicitly, status exits 0, YAML parses, settings remain absent
+ALL CHECKS PASSED (28/28)
+release-v9.1.sh: PASS: installer roundtrip
+PASS: 59 links checked
+release-v9.1.sh: PASS: relative links
+PASS: /Users/briantaylor/Projects/AgentFW/adapters/claude-code/capability.yaml — all 10 capability keys present with valid available/configured values and verified annotations [parser: PyYAML]
+PASS: /Users/briantaylor/Projects/AgentFW/adapters/codex/capability.yaml — all 10 capability keys present with valid available/configured values and verified annotations [parser: PyYAML]
+release-v9.1.sh: PASS: capability validation via PyYAML
+PASS: /Users/briantaylor/Projects/AgentFW/adapters/claude-code/capability.yaml — all 10 capability keys present with valid available/configured values and verified annotations [parser: line-based fallback]
+PASS: /Users/briantaylor/Projects/AgentFW/adapters/codex/capability.yaml — all 10 capability keys present with valid available/configured values and verified annotations [parser: line-based fallback]
+release-v9.1.sh: PASS: capability validation via stdlib fallback
+RELEASE_V9_1_OK
+README_V9_1_FIXES_OK
+ACCEPTANCE_EXIT=0
