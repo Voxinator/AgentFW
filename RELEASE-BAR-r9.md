@@ -1,3 +1,13 @@
+# r9 Release-Bar — SATISFIED for v9.0.0 (maintainer release decision 2026-07-15)
+
+**v9.0.0 release amendment (maintainer, 2026-07-15):**
+- **Tier 1 (deterministic) remains release-blocking and is SATISFIED** — machine-verified green at release.
+- **Tier 2 (behavioral) is met by PUBLISHING the evidence currently available and its limitations** — the fixtured smoke + three fix-pass results docs, each n=1 per cell with its scope stated, linked from the README and release notes. Tier 2 does not require a passing statistical bar for v9.0.0; it requires an honest published ledger, which exists.
+- **n≥5 statistical calibration is a POST-RELEASE calibration target, not a v9.0 blocker.** `EVAL-MATRIX-DESIGN.md` is retained as optional future measurement work; it is not authorized to execute by this decision.
+- Everything below is the original approved bar, retained as the standing definition for future releases.
+
+---
+
 # r9 Release-Bar Redefinition — APPROVED by the maintainer 2026-07-14, as amended below
 
 **Problem.** The implicit r9 bar — every golden-task criterion PASS, n≥5, two platforms — demands

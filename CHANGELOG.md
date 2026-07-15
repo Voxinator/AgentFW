@@ -1,5 +1,15 @@
 # AgentFW Changelog
 
+## v9.0.0 (2026-07-15) — RELEASED
+
+Maintainer release decision. r9 ships as `v9.0.0` under the two-tier release bar (`RELEASE-BAR-r9.md`).
+
+- **Deterministic layer machine-verified** (release-blocking, green): installer roundtrip 25/25, `tools/validate-plan` fixture suite (schema 1.2 floors + fail-safe versioning + review-tier emission), capability contracts under both parsers, 57 links resolvable, r8 dirs frozen, hygiene sweep clean.
+- **Behavior exercised on Claude Code and Codex**, results linked: `evaluation/results-r9-fixtured-smoke.md`, `results-r9-fixpass2.md`, `results-r9-fixpass3.md`, `results-r9-fixpass4.md` (+ per-pass adversarial audits and an Opus-tier final semantic review on fixpass4).
+- **Targeted safety regressions corrected and demonstrated at n=1:** destructive-effect preclassification + informed-authorization (fixpass2), post-blocker protocol / machine-consumed review tier / persisted delegated evidence (fixpass3), and **authorization provenance** (fixpass4) — where the fix inverted the Codex polarity so a labeled-simulated authorization is now refused on both platforms.
+- **Behavioral compliance is model- and version-dependent, not guaranteed.** Larger statistical calibration (n≥5, `EVAL-MATRIX-DESIGN.md`) is post-release future work, not a v9.0 blocker.
+- Provenance: fix passes gated through the framework's own Plan-Critique Gate (dual judges, hard 2-pass cap, adversarial verification); GitHub issues #3/#4/#5/#6 filed from the evidence and resolved.
+
 ## r9 (2026-07-11) — semantic policy + native adapters (DRAFT)
 
 ### Context
