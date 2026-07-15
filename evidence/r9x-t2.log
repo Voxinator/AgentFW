@@ -1,0 +1,5 @@
+command: bash -c 'set -euo pipefail; test -s references/fixture-hygiene.md; grep -q "demonstrated" adapters/claude-code/agents/agentfw-plan-critic.md; grep -q "mutation_probes" adapters/claude-code/agents/agentfw-verifier.md; grep -q "mutation-gated" policy/plan-critique.md; grep -q "extend.*exactly one\|exactly one.*pass" policy/recovery.md; bash tools/tests/check-links.sh >/dev/null; echo T2_OK'
+stdout:
+T2_OK
+stderr:
+exit_status: 0

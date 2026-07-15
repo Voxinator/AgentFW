@@ -100,7 +100,8 @@ Every A2+ task carries a contract (full spec: `./policy/acceptance-contract.md`)
 must not also match a fail line), `negative_cases[]` (REQUIRED whenever `risk` is present), `risk`,
 `evidence` (freshness: produced_after_change), `integration_seam` (JSON boolean),
 `risk_class` (none | standard | security | destructive), `required_verification_tier`
-(producer | independent | adversarial), `rerunnable` (JSON boolean), `constraints` (optional).
+(producer | independent | adversarial), `mutation_probes[]` (schema 1.3 entries shaped exactly as
+`{mutation: non-empty string, expected: red}`), `rerunnable` (JSON boolean), `constraints` (optional).
 Tier-1 lever = at least
 one negative/regression assertion the command actually RUNS — a bare smoke import is not Tier-1.
 Non-shell work (docs/research/design): a named mechanical check (grep/link-check/renderer) plus a
@@ -111,28 +112,34 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
 `./tools/validate-plan` — the roundtrip suite runs exactly that check):
 
 ```json agentfw-plan
-{ "version": "1.2", "assurance": "A3", "required_plan_review_tier": "dual",
+{ "version": "1.3", "assurance": "A3", "required_plan_review_tier": "dual",
   "requirements": [{"id": "R1", "text": "..."}],
   "tasks": [{ "id": "T1", "title": "...", "deps": [],
               "contract": { "requirement_ids": ["R1"], "criteria": "...",
-                            "acceptance_command": "...", "expected_signal": "...",
+                            "acceptance_command": "bash -c 'run-task-tests && echo TASK_OK'",
+                            "expected_signal": "terminal line exactly TASK_OK with exit 0",
                             "environment": "...", "evidence": "...",
                             "integration_seam": false, "risk_class": "standard",
                             "required_verification_tier": "independent",
                             "failure_surfaces": [],
+                            "mutation_probes": [{"mutation": "on a scratch copy, replace the implementation with an unconditional-success stub", "expected": "red"}],
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-Schema versioning: `"version": "1.1"` is MANDATORY. A `"version": "1"` block is rejected by
-default and accepted only via `validate-plan --legacy` — historical provenance only (re-checking
-plans authored before the 1.1 schema); never author a new plan against v1. `"1.1"` requires, per
-contract at A2+: `integration_seam` (JSON boolean) and `risk_class` (the structured
-tier-derivation inputs — free-form `risk` prose never substitutes), `required_verification_tier`
-∈ {producer, independent, adversarial} and ≥ the floor mechanically derived from assurance +
-`integration_seam` + `risk_class` (A3 ⇒ independent; A4 ⇒ adversarial; `integration_seam: true`
-at A2 ⇒ independent; risk_class security/destructive ⇒ adversarial at EVERY level), a non-empty
-`environment`, and `rerunnable` as a JSON boolean; at A3+ also a non-empty `evidence`.
-`constraints` stays optional.
+Schema `"1.3"` is the schema of record; `"1.1"` and `"1.2"` remain valid for older plans. A
+`"version": "1"` block is rejected by default and accepted only via `validate-plan --legacy` for
+historical provenance; never author a new plan against v1. Schema 1.3 is additive over 1.2 and
+requires non-empty `mutation_probes` for every integration seam and every A3/A4 contract. Every
+entry contains exactly a non-empty `mutation` plus `"expected": "red"`. Schema 1.1 still defines
+the structured verification-tier fields, 1.2 adds plan-review tier and failure surfaces, and 1.3
+adds mutation probes plus deterministic rejection of known weak acceptance-command shapes.
+
+**Producer red-path gate (before Layer 2):** the planner, as producer of each contract, executes
+its `acceptance_command` against at least one deliberately broken scratch copy and records the
+non-zero/red output. Producers repeat every contracted 1.3 mutation after implementation; the
+required verifier independently executes every probe on scratch copies. The command must be
+exit-code gated with no pipe before a gating `&&`; emit an explicit success signal last, only after
+an immediately preceding successful `&&`, so every clause gates the terminal signal.
 
 **Layer 1 (deterministic — run it, always):** run the validator BEFORE the first worker dispatch.
 Resolve it skill-relative first: `python3 ./tools/validate-plan <plan.md>` — the installer copies
@@ -140,10 +147,11 @@ it next to this SKILL.md (`skills/agentfw/tools/validate-plan`, executable), so 
 is needed. Fallback only if that copy is missing: `python3 tools/validate-plan <plan.md>` from an
 AgentFW repo checkout. It mechanically checks: block parses; assurance
 valid; every requirement covered by some task; every contract non-empty; deps acyclic; risk ⇒
-negative_cases; A3/A4 ⇒ negative_cases everywhere. Exit 0 + PASS or a named defect.
+negative_cases; A3/A4 ⇒ negative_cases everywhere; and, under 1.3, mutation-probe contracts plus
+known weak command shapes. Exit 0 + PASS or a named defect.
 
 **Layer 2 (semantic judge — A2 with ambiguity/shared values, all A3+):** MANDATORY checklist
-step before dispatch — read Layer 1's `review tier` line (schema 1.2: `review tier: dual` or
+step before dispatch — read Layer 1's `review tier` line (schema 1.2/1.3: `review tier: dual` or
 `review tier: single`; schema 1.1: the advisory `review floor (advisory, 1.1): ...` line) and
 dispatch exactly the judge count it states — two disjoint-input judges for dual, one for single —
 the validator's own output, not memory of the policy, is the source of the count. Then dispatch

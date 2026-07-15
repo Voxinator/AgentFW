@@ -52,3 +52,24 @@ is cheap to replay. Decide on contamination, not on sunk cost — in either dire
 
 Every recovery decision is recorded in the authoritative store — scope, contamination, action, lesson —
 so a later context inherits the conclusion, not the investigation.
+
+## 7. Plan-gate cap recovery
+
+When the Layer-2 plan-critique cap is reached with an open blocker, stop and escalate. The standard
+recovery menu is deliberately closed:
+
+1. **Extend the gate by exactly one named Layer-2 pass** only when open blockers span multiple
+   rubric checks or any open blocker is non-C2. The human authorization names the pass. It is one
+   complete pass at the previously derived judge count, cannot become an open-ended retry, and cannot
+   be extended again.
+2. **mutation-gated dispatch** only when every open blocker is C2-local and every blocker has a
+   one-to-one contracted, mechanically executable `mutation_probes` compensation with expected result
+   red. The independent verifier executes all such probes on fresh scratch copies. A non-C2 blocker,
+   a missing mapping, a prose-only check, or an unexecutable mutation makes this option ineligible.
+3. **Halt** is always eligible and is the default: preserve the blocker evidence and dispatch no
+   worker.
+
+The menu grants no authority by itself. Extending or dispatching requires the human to choose the
+eligible option explicitly. Any other course is a **bespoke named relaxation** and must name the
+waived invariant, exact scope, mechanical compensation, and termination condition before explicit
+human authorization. Full gate semantics remain in [plan-critique.md](plan-critique.md).

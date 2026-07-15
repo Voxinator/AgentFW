@@ -23,7 +23,20 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.0.0, released 2026-07-15** — the first AgentFW release under a two-tier bar where the guarantees that *can* be machine-verified are release-blocking and green, and the behavioral claims that can only be *measured* are published with their limits stated plainly. Full evidence ledger in [Verification & provenance](#verification--provenance).
+**Status: v9.1.0, released 2026-07-15** — a backward-compatible minor release that strengthens
+acceptance-command evidence, fixture hygiene, plan-critic behavior, recovery choices, and command
+preflight reporting. The deterministic release gate is green. No new behavioral-evaluation round
+was run for v9.1.0; the bounded v9.0.0 behavioral evidence remains the behavioral record. See
+[the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md) and
+[Verification & provenance](#verification--provenance).
+
+## What's new in v9.1
+
+v9.1.0 implements all six [r9.x improvements](R9X-CANDIDATES.md): producer red-path probes and
+known-weak command lint; schema 1.3 `mutation_probes` with verifier scratch-copy execution;
+fixture leak-channel guidance; empirical C2 critic duties; a standard cap-with-open-blocker
+relaxation menu; and resolved command evidence for acceptance-critical utilities. Schema 1.3 is
+additive: historical schema 1.1 and 1.2 plans keep their existing validation behavior.
 
 ## What's new in v9 — why it's worth the download
 
@@ -47,7 +60,7 @@ Four surfaces, each with a clear job. The policy says *what* good governance is;
 ### `policy/` — the platform-neutral semantic policy
 
 - **Assurance model A0–A4** (`policy/assurance-model.md`) — how much independent evidence a change needs before it is believed, derived from three questions (blast radius/reversibility, defect-escape probability, autonomy/irreversibility). Replaces r8's task classification as the primary framing.
-- **Acceptance Contract v2** (`policy/acceptance-contract.md`) — requirement ids, environment, negative cases, evidence freshness, evidence classes for non-shell work, tiered verified states (`verified_producer` / `verified_independent` / `verified_adversarial`). Plan blocks use a **machine-enforced v1.1 schema** (versioned; v1 blocks retain v1 rules so historical plans still pass).
+- **Acceptance Contract v2** (`policy/acceptance-contract.md`) — requirement ids, environment, negative cases, evidence freshness, evidence classes for non-shell work, tiered verified states (`verified_producer` / `verified_independent` / `verified_adversarial`). Plan blocks use additive, machine-enforced schemas; **schema 1.3 is current**, with first-class mutation probes, while historical schema 1.1 and 1.2 plans retain their defined rules.
 - **Two-layer Plan-Critique Gate** (`policy/plan-critique.md`) — Layer 1 is a real, runnable deterministic validator (`tools/validate-plan`, with positive and hostile fixtures); Layer 2 is the C0–C5 semantic judge inherited from r8.
 - **Capability contracts** (`policy/capability-contract.md` + per-adapter `capability.yaml`) — every platform claim carries a `verified:` annotation (an unverified true gates as false), and each entry splits what the platform makes **available** from what a given install has **configured**, with an `activation_probe` to check locally. Assurance gating consults the active install, not the platform brochure.
 - **Recovery** (`policy/recovery.md`) — failure scope, contamination analysis, retry budget, evidence invalidation, lesson-not-state carry-forward.
@@ -67,7 +80,7 @@ Four surfaces, each with a clear job. The policy says *what* good governance is;
 
 `tools/validate-plan` (deterministic Layer-1 plan validation), `tools/validate-capability` (capability.yaml schema validation), `tools/agentfw-install` (marker-block installer), `tools/fixtures/` (positive + hostile plan and capability fixtures), and `tools/tests/` (`install-roundtrip.sh`, `check-links.sh`).
 
-**Scope boundary (deliberate):** r9 ships exactly two native adapters (Claude Code, Codex) and two guided profiles (standard ChatGPT/Projects, Claude.ai Projects). ChatGPT Work — a different surface with hosted subagents/skills — is acknowledged but deferred to **r9.1** as the designated adapter candidate, per the Adapter Sprawl rule (no platform binding ships before the existing adapters pass evals). This is a deliberate boundary, not full ChatGPT parity.
+**Scope boundary (deliberate):** v9.1.0 ships exactly two native adapters (Claude Code, Codex) and two guided profiles (standard ChatGPT/Projects, Claude.ai Projects). ChatGPT Work — a different surface with hosted subagents/skills — is acknowledged but deferred to **v9.2** as the designated adapter candidate, per the Adapter Sprawl rule (no platform binding ships before the existing adapters pass evals). This is a deliberate boundary, not full ChatGPT parity.
 
 ## Install / Upgrade / Uninstall
 
@@ -78,7 +91,8 @@ Four surfaces, each with a clear job. The policy says *what* good governance is;
 | ChatGPT / Projects (guided profile) | `profiles/chatgpt-projects.md` | — | — |
 | Claude.ai Projects (guided profile) | `profiles/claude-projects.md` | — | — |
 
-The r8 install path (`bootstrap.md` → `core/harness-core.md` as CLAUDE.md) remains available and is still the validated one — see [r8 below](#r8--the-last-validated-release).
+The r8 install path (`bootstrap.md` → `core/harness-core.md` as CLAUDE.md) remains available as a
+legacy validated path — see [r8 below](#r8--legacy-validated-release).
 
 ## Verification & provenance
 
@@ -86,7 +100,8 @@ What r9's quality claims rest on — and what they don't:
 
 - **Built by the process it encodes.** The r9 build and both follow-up passes ran under the full harness: judged plans (Plan-Critique Gate over each plan before dispatch), parallel workers with disjoint file ownership, and independent + adversarial verification of the results.
 - **Externally reviewed, seven rounds.** Seven rounds of adversarial external review (GPT 5.6 Sol), every finding independently re-reproduced against the tree before acceptance. Review #7 verdict: approved, **zero open findings**.
-- **Mechanical suite state:** install roundtrip **25/25** (including hostile fence cases: tilde fences, four-backtick fences with inner triple-backtick lines, indented fences, unclosed-fence refusal, marker lookalikes); hostile plan + capability fixtures all rejected with the defect named; capability validation exercised through **both parser paths** (PyYAML present and the stdlib fallback); **57 relative links/references** checked resolvable (`tools/tests/check-links.sh`).
+- **v9.1 deterministic release evidence:** `tools/tests/release-v9.1.sh` gates release identity and candidate/provenance state, then runs the schema 1.3 validator fixture harness, installer roundtrip **28/28**, relative-link resolution, and capability validation through **both parser paths** (PyYAML and the stdlib fallback). The contracted scratch mutations prove that stale metadata and the old r9.1 adapter reservation each make the gate red. Raw output and exit status are recorded in `evidence/release-v9.1.log`.
+- **Behavioral evidence boundary:** no golden task or behavioral evaluation was run for v9.1.0. The published v9.0.0 outcome evidence below remains useful but is not new v9.1 evidence.
 - **Outcome evals — exercised, published, bounded.** Golden tasks were rewritten for r9's assurance framing, fixtured target repos built, and behavior run on both native adapters across a fixtured smoke plus three fix passes. The evidence is **n=1 per cell**: it demonstrates that targeted behaviors changed under the framework (including safety regressions corrected — the destructive-authorization-provenance negative control now refuses a simulated authorization on both platforms), not that behavior is statistically stable. Larger calibration (n≥5) is scoped in `EVAL-MATRIX-DESIGN.md` as future work. Behavioral compliance is model- and version-dependent, not guaranteed.
 - **Test subjects (the models under evaluation).** Claude Code cells ran on **`claude-sonnet-5`** (Sonnet 5) via the Claude Code CLI; Codex cells ran on **`gpt-5.6-sol`** (GPT-5.6 "Sol") via the Codex CLI. Both are recorded per cell in the transcript headers of every fix-pass run (`evaluation/transcripts-r9-fixpass{2,3,4}/`). *One caveat:* the earliest 2026-07-13 smoke run drove the Claude subject through Agent-tool subagents rather than the pinned CLI, so its subject model is inferred rather than logged per cell; every fixpass2/3/4 cell has the model pinned in its header.
 - **Subjects ≠ scorers (independence).** The models *under test* (above) are distinct from the models *doing the measuring*: the input-curated judges, adversarial verifiers, and results writers were **Sonnet** subagents, with one **Opus 4.8** (max-effort) seat reserved for the final semantic review on the provenance pass. Evidence links: `evaluation/results-r9-fixtured-smoke.md`, `results-r9-fixpass2.md`, `results-r9-fixpass3.md`, `results-r9-fixpass4.md` (each with its own adversarial audit; the last also carries the Opus review).
@@ -95,16 +110,16 @@ What r9's quality claims rest on — and what they don't:
 
 ```
 agentfw/
-├── metadata.json                  # Project metadata (version 9.0.0, install routing)
+├── metadata.json                  # Project metadata (version 9.1.0, install routing)
 ├── README.md                      # This file
 ├── CHANGELOG.md                   # Version history with audit trail
-├── DESIGN.md                      # r8 design spec (r9 banner inside; full revision lands with validated r9)
+├── DESIGN.md                      # Historical r8 design spec with a v9.1 current-release banner
 ├── bootstrap.md                   # r8 installer (carries an r9 notice)
 │
 ├── policy/                        # r9 semantic policy (platform-neutral)
 │   ├── core.md                    # Policy core — critical rules, verification tiers, invariants
 │   ├── assurance-model.md         # A0–A4 derivation
-│   ├── acceptance-contract.md     # Contract v2 + v1.1 plan-block schema of record
+│   ├── acceptance-contract.md     # Contract v2 + additive plan-block schemas (1.3 current)
 │   ├── plan-critique.md           # Two-layer Plan-Critique Gate
 │   ├── capability-contract.md     # Capability claims: available/configured/verified
 │   ├── recovery.md                # Failure scope, contamination, retry budget
@@ -124,10 +139,10 @@ agentfw/
 │   ├── validate-plan              # Deterministic Layer-1 plan validator (stdlib python)
 │   ├── validate-capability        # capability.yaml schema validator (stdlib python)
 │   ├── agentfw-install            # Marker-block installer/upgrader/uninstaller + status probes
-│   ├── fixtures/                  # plan-good + 17 hostile plan fixtures; capability/ bad fixtures
-│   └── tests/                     # install-roundtrip.sh (25 cases), check-links.sh
+│   ├── fixtures/                  # positive + hostile plan/capability fixtures
+│   └── tests/                     # validator, installer-roundtrip, links, and v9.1 release gate
 │
-├── core/                          # r8 firmware (LAST VALIDATED INSTALL — harness-core.md, permissions.md)
+├── core/                          # Legacy r8 firmware (harness-core.md, permissions.md)
 ├── references/                    # r8 reference docs (native-primitives, verification tiers, …)
 ├── playbooks/                     # r6-era scenario playbooks (retained)
 ├── templates/                     # r6-era state/plan/log templates (retained)
@@ -138,11 +153,11 @@ agentfw/
 
 > The Hermes variant that previously lived under `variants/hermes/` has been extracted to its own project (`agentfw-hermes`).
 
-## r8 — the last validated release
+## r8 — legacy validated release
 
 r8 (tag `r8`, 2026-05-29) reframed the firmware as a governance layer over Claude Code 2.1 native primitives: the runtime supplies the harness (Workflow tool, subagents, Plan mode, Skills, MEMORY, hooks, worktrees); the firmware supplies classification, role discipline, the verification standard, and restraint (Rule 6: PREFER NATIVE PRIMITIVES). It added the Plan-Critique Gate + Acceptance-Contract spine, `references/native-primitives.md`, and GT-8; dropped cross-model content (Claude-Code-only); and extracted the Hermes variant.
 
-r8 remains fully installable and is the last validated release; its 2026-05-29 golden-task ledger reads 5 PASS / 3 PARTIAL / 0 FAIL (the 3 PARTIALs treated as UNTESTED under the honest-ledger rule):
+r8 remains fully installable; its 2026-05-29 golden-task ledger reads 5 PASS / 3 PARTIAL / 0 FAIL (the 3 PARTIALs treated as UNTESTED under the honest-ledger rule):
 
 ```
 cat bootstrap.md | claude        # detects environment and installs r8
@@ -162,6 +177,7 @@ r9 carries r8's load-bearing judgment forward: the input-curation bright line, t
 - **r6** (2026-04-10): Context degradation resistance — Critical Rules preamble, state-driven health gate, delegation self-check
 - **r7** (2026-04-17): Cross-model tuning pass for Opus 4.7 without non-target regression
 - **r7.1–r7.11** (2026-04-18 → 2026-04-30): Hermes-variant probe + campaign arc — extracted to `agentfw-hermes`; full history remains there and in this repo's git history
-- **r8** (2026-05-29): v8 governance refactor — governance layer over Claude Code 2.1 native primitives, Plan-Critique Gate + Acceptance-Contract spine, GT-8. **Last validated release.**
+- **r8** (2026-05-29): v8 governance refactor — governance layer over Claude Code 2.1 native primitives, Plan-Critique Gate + Acceptance-Contract spine, GT-8. **Legacy validated release.**
 - **r9-draft → r9-draft.4** (2026-07-11 → 2026-07-14): Portable governance layer built and hardened through four adversarially-reviewed passes — platform-neutral policy + native adapters (claude-code, codex) + guided profiles + runnable validators; fixtured outcome evals on both adapters; safety fixes for issues #3–#6. Published as draft pre-releases.
 - **v9.0.0** (2026-07-15): **Released.** Deterministic layer machine-verified and release-blocking; behavioral evidence published on both runtimes with limits stated (n=1, model/version-dependent); n≥5 calibration scheduled post-release. See [What's new in v9](#whats-new-in-v9--why-its-worth-the-download).
+- **v9.1.0** (2026-07-15): **Released.** Additive schema 1.3, mutation-gated acceptance strength, fixture-hygiene guidance, empirical critic duties, standard cap relaxations, and command-resolution preflight evidence. Deterministic suites only; no new behavioral-evaluation round. See [the release notes](RELEASE-NOTES-v9.1.0.md).

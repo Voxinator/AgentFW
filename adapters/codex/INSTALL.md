@@ -1,5 +1,9 @@
 # AgentFW r9 — Codex install (manual)
 
+Current release: **AgentFW v9.1.0**. The `r9` block markers are stable major-version install
+markers. v9.1.0 is deterministically verified; it carries forward v9.0.0's bounded behavioral
+evidence and does not claim a new behavioral-evaluation round.
+
 r9 ships **no installer script for Codex** — installation is a short manual procedure. Every
 platform claim below was verified against official Codex documentation on 2026-07-11
 (developers.openai.com/codex/* 308-redirects to learn.chatgpt.com/docs/* — URLs cited are the

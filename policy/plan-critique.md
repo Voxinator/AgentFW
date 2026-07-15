@@ -20,13 +20,14 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 
 1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
    keys are rejected as silently-accepted ambiguity), and `version` is present and — in default
-   mode — `"1.1"` or `"1.2"`: **schema 1.2 is the schema of record** (author new plans against
-   it; 1.1 remains valid for plans that predate it). A `"version": "1"` block is rejected as a
-   legacy schema version; unknown version strings are rejected naming the version. The `--legacy`
-   flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules (rules 2–10 below; none of
-   rule 11's 1.1 fields are required — the task-id precheck still applies in every mode, being a
-   validator correctness fix rather than a schema rule) — a provenance boundary for re-checking
-   plans authored before the 1.1 schema, never a license to author new v1 plans.
+   mode — `"1.1"`, `"1.2"`, or `"1.3"`: **schema 1.3 is the schema of record** (author new
+   plans against it; 1.1 and 1.2 remain valid for plans that predate it). A `"version": "1"`
+   block is rejected as a legacy schema version; unknown version strings are rejected naming the
+   version. The `--legacy` flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules
+   (rules 2–10 below; none of rules 11–13's newer fields are required — the task-id precheck still
+   applies in every mode, being a validator correctness fix rather than a schema rule) — a
+   provenance boundary for re-checking plans authored before the 1.1 schema, never a license to
+   author new v1 plans.
 2. `assurance` is present and one of A0–A4.
 3. **Substance:** A2+ plans ⇒ `requirements` and `tasks` lists are non-empty (an assured plan
    cannot be empty of either).
@@ -64,29 +65,59 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
     naming the production-environment failure layers the task's `acceptance_command` must
     exercise. A `"1.1"` block carrying either 1.2-only field is rejected with a diagnostic
     naming schema 1.2. Field semantics and the floor table: `policy/acceptance-contract.md`.
+13. **Schema 1.3 mutation probes + known command-shape lint (additive over 1.2):** a `"1.3"`
+    block enforces every 1.1 and 1.2 rule above PLUS: `mutation_probes`, when present, is a JSON
+    array whose entries are objects containing exactly `mutation` (a non-empty string) and
+    `expected` (the literal string `"red"`). A non-empty `mutation_probes` array is REQUIRED for
+    every `integration_seam: true` contract and every contract at assurance A3/A4; it remains
+    optional elsewhere, but is shape-checked whenever present. A `"1.1"` or `"1.2"` block
+    carrying `mutation_probes` is rejected with a diagnostic naming schema 1.3. For every 1.3
+    contract with a non-empty command and signal, the validator rejects three known weak
+    `acceptance_command` shapes:
+    1. a pipe operator before a gating `&&`;
+    2. an expected-signal `echo` that is not immediately preceded by `&&`;
+    3. an expected-signal `echo` followed by another clause, so the signal is not terminal.
+    This is narrow shape lint, not a shell parser or proof of semantic command strength. Field and
+    execution semantics: `policy/acceptance-contract.md`.
+
+**Schema 1.3 red-path execution duty:** Layer 1 validates the declared mutation roster and the
+three known weak command shapes; it does not execute mutation probes. Before Layer 2 dispatch, the
+contract producer MUST execute every proposed `acceptance_command` against a deliberately broken
+scratch copy and record the raw non-zero/red result. After implementation, the implementation
+producer repeats every contracted probe on scratch copies, and the verifier at the contract's
+required tier independently executes every probe on fresh scratch copies. Each probe passes only
+when the command exits non-zero and does not emit its terminal success signal.
 
 Exit 0 + `PASS` on success; on any failure, non-zero exit with messages naming the offending
 task/requirement id and defect class. All defects are reported, not just the first.
 
-**Defect-keyword contract (stable, grep-able):** every failure message carries exactly one of the
-defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`, `empty`, `duplicate`,
-`tier`, `review`, `failure_surface`, `version` (`tier` covers every tier-derivation defect — a
+**Defect-keyword contract (stable, grep-able):** harness-facing Layer-1 diagnostics carry one or
+more of the stable defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`,
+`empty`, `duplicate`, `tier`, `review`, `failure_surface`, `mutation`, `command`, `version`. A
+diagnostic may carry a general and a specific keyword together; fixtures should key on the most
+specific stable keyword. `tier` covers every tier-derivation defect — a
 missing/invalid `required_verification_tier`, a missing/invalid `integration_seam` or
 `risk_class` derivation input, or a declared tier below the mechanically derived floor; `review`
 covers every plan-review-tier defect — a missing/invalid `required_plan_review_tier` or one
 declared below its derived floor; `failure_surface` covers `failure_surfaces` shape and enum
-defects; `empty` includes the task-id precheck; `version` covers legacy-`"1"`, unknown-version,
-and 1.1-carrying-1.2-field rejections, the legacy message also naming `--legacy`). Harness code
-and fixtures key on these words; changing them is a breaking schema change to this file, the
-schema of record.
+defects; `mutation` covers every schema-1.3 `mutation_probes` presence and shape defect;
+`command` covers the three schema-1.3 weak acceptance-command shapes; `empty` includes the task-id
+precheck; `version` covers legacy-`"1"`, unknown-version, and
+older-schema-carrying-newer-schema-field rejections, the legacy message also naming `--legacy`.
+Harness code and fixtures key on these words; changing them is a breaking schema change to this
+file, the schema of record.
 
-**Honest limit (Layer 1):** the validator verifies **structure and coverage** — that a discriminating
-command EXISTS for every requirement and the plan graph is sound. It **cannot judge command STRENGTH**:
-whether the `acceptance_command` truly exercises the lever the `risk` names, or merely exits green
-around it. That is Layer 2's job. A Layer-1 PASS raises the floor; it green-lights nothing semantically.
+**Honest limit (Layer 1):** the validator verifies **structure, coverage, schema-1.3 mutation
+contracts, and three known weak command shapes**. It **cannot judge command STRENGTH**: whether the
+`acceptance_command` truly exercises the lever the `risk` names, or merely exits green around a
+shape the narrow lint does not recognize. Producer red-path probes provide execution evidence;
+Layer 2 still judges semantic reachability. A Layer-1 PASS raises the floor; it green-lights nothing
+semantically.
 
-**Temporal split:** at plan time the `acceptance_command` is read as a spec — it need not run green on
-a greenfield tree. At verification time it must run, and be re-run by the independent judge.
+**Temporal split:** at plan time the `acceptance_command` is read as a spec — it need not run green
+on a greenfield tree — but schema-1.3 red-path self-probes must run as specified above. At
+verification time both its green path and every contracted red path must run, and be re-run by the
+verifier at the required tier.
 
 ## Layer 2 — semantic judge (C0–C5 rubric)
 
@@ -105,7 +136,14 @@ Each check with its one-line pass test:
   REACHABLE by the `acceptance_command`, not just asserted in `expected_signal` prose. *Pass:* a wrong
   implementation makes the command exit non-zero, and the command exercises the layer the `risk` names
   (concurrency, trust-proxy, streaming/buffering, clock ⇒ blocker if unexercised). Tier-1 lever = ≥1
-  negative/regression assertion the command RUNS; Tier-2 = ≥1 disconfirming criterion.
+  negative/regression assertion the command RUNS; Tier-2 = ≥1 disconfirming criterion. The critic
+  MUST attempt an empirical C2 probe for every task and SHOULD execute the command against a minimal
+  hostile stub or disposable scratch artifact wherever feasible. Every C2 result and finding is
+  tagged **demonstrated** (the critic ran a probe and records its command, live output, and exit code)
+  or **reasoned** (execution was infeasible and the critic states why). A reasoned inference must
+  never be presented as demonstrated. Demonstrated blockers stand unless the plan is fixed or the
+  human explicitly selects a named relaxation; reasoned findings may be contested with an empirical
+  counter-probe, not mere reassurance.
 - **C3 Dependencies + cross-task consistency** — deps stated/acyclic; shared derived values
   reconciled. *Pass:* a shared value is a shared imported artifact (identity asserted) or an in-task
   consistency assertion — UNLESS some task (including an integration task) genuinely exercises the seam.
@@ -143,7 +181,23 @@ Each check with its one-line pass test:
 - **Single-judge blocker:** one confirming independent pass before any re-plan — never re-plan off a
   single unconfirmed verdict.
 - **Hard 2-pass cap.** Cap reached with an open blocker ≠ proceed → **escalate to the human**. Never
-  auto-dispatch past an open blocker.
+  auto-dispatch past an open blocker. The standard, human-selected menu at that escalation is:
+  1. **Extend by exactly one named Layer-2 pass.** Eligible only when the open blockers span more
+     than one rubric check or at least one blocker is not C2. The authorization names that one pass;
+     it is one complete pass at the already-derived judge count and cannot be chained into another
+     extension.
+  2. **mutation-gated dispatch.** Eligible only when ALL open blockers are C2-local and EACH blocker
+     maps one-to-one to a contracted, mechanically executable `mutation_probes` entry whose expected
+     result is red. The mapping and probe remain in the affected task's contract, and the verifier
+     must execute every probe on a fresh scratch copy. Any non-C2 blocker, unmapped blocker,
+     prose-only compensation, or mutation that cannot be executed makes this option ineligible.
+  3. **Halt.** Always eligible and the default when the human selects no relaxation; preserve the
+     blocker record and dispatch nothing.
+
+  Only an explicit human decision may select options 1 or 2. Any alternative is a **bespoke named
+  relaxation**: it must state the invariant being waived, exact task/blocker scope, compensating
+  mechanical controls, and termination condition, and it requires explicit human authorization.
+  The menu is decision support, never standing authorization.
 - **Do NOT trust a model-judged convergence signal.** Empirically, later passes each caught a real,
   distinct defect while the model's own "would another pass help?" said no every time — a fixed cap is
   better-calibrated than loop-until-clean. Never a numeric score (invites plan-polishing). Beyond pass
@@ -153,7 +207,9 @@ Each check with its one-line pass test:
 - **Post-blocker protocol.** After ANY blocker verdict the only lawful continuations are: (a) local
   revise → re-run Layer 1 → dispatch a FRESH independent input-curated Layer-2 pass over the revised
   plan — this pass COUNTS toward the hard 2-pass cap above — then proceed only on a clean verdict
-  from THAT fresh pass; or (b) escalate to the human. No third path exists. Dispatch may begin from
+  from THAT fresh pass; or (b) escalate to the human, who may select only an eligible standard menu
+  option or explicitly authorize a bespoke named relaxation as defined above. No implicit third path
+  exists. Dispatch may begin from
   exactly one thing: a clean verdict from a fresh independent Layer-2 pass, or explicit human
   authorization — nothing else, no matter what Layer 1 reports.
 - **A self-checked revision is never a clean verdict** — Layer 1 plus the planner's own confirmation
@@ -163,9 +219,10 @@ Each check with its one-line pass test:
 
 ## Honest limit (whole gate)
 
-A clean verdict RAISES THE FLOOR on plan structure + verifiability. It does not machine-check command
-strength beyond a judge's reading, and it does not verify correctness of the eventual work — the
-downstream independent verification tier (see `policy/acceptance-contract.md`) still owns that.
+A clean verdict RAISES THE FLOOR on plan structure + verifiability. Layer 1 machine-checks only the
+three known weak command shapes; semantic command strength still depends on red-path evidence and
+the judge's reading. The gate does not verify correctness of the eventual work — the downstream
+verification tier (see `policy/acceptance-contract.md`) still owns that.
 
 **Contract-bounded verification has a ceiling.** Acceptance contracts bound what verification sees:
 a verifier that only re-executes the contracts inherits every blind spot the plan author had.

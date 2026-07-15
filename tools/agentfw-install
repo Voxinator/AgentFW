@@ -89,6 +89,29 @@ NO_FINAL_NEWLINE_DIRECTIVE='#agentfw:no-final-newline'
 log() { printf '%s\n' "$*"; }
 die() { printf 'agentfw-install: ERROR: %s\n' "$*" >&2; exit 1; }
 
+# Emit one arbitrary shell string as a YAML double-quoted scalar. command/type output can include
+# function bodies, quotes, backslashes, newlines, tabs, and other control bytes; writing it as an
+# unquoted scalar or block body would let a wrapper corrupt the generated YAML structure. Bash
+# variables cannot contain NUL, but every other ASCII control byte is escaped explicitly. The
+# resulting scalar is also valid JSON string syntax, which keeps it within YAML 1.2's safe subset.
+yaml_quote() {
+  local s="${1-}"
+  s=${s//\\/\\\\}
+  s=${s//\"/\\\"}
+  s=${s//$'\001'/\\u0001}; s=${s//$'\002'/\\u0002}; s=${s//$'\003'/\\u0003}
+  s=${s//$'\004'/\\u0004}; s=${s//$'\005'/\\u0005}; s=${s//$'\006'/\\u0006}
+  s=${s//$'\007'/\\u0007}; s=${s//$'\010'/\\b};     s=${s//$'\011'/\\t}
+  s=${s//$'\012'/\\n};     s=${s//$'\013'/\\u000B}; s=${s//$'\014'/\\f}
+  s=${s//$'\015'/\\r};     s=${s//$'\016'/\\u000E}; s=${s//$'\017'/\\u000F}
+  s=${s//$'\020'/\\u0010}; s=${s//$'\021'/\\u0011}; s=${s//$'\022'/\\u0012}
+  s=${s//$'\023'/\\u0013}; s=${s//$'\024'/\\u0014}; s=${s//$'\025'/\\u0015}
+  s=${s//$'\026'/\\u0016}; s=${s//$'\027'/\\u0017}; s=${s//$'\030'/\\u0018}
+  s=${s//$'\031'/\\u0019}; s=${s//$'\032'/\\u001A}; s=${s//$'\033'/\\u001B}
+  s=${s//$'\034'/\\u001C}; s=${s//$'\035'/\\u001D}; s=${s//$'\036'/\\u001E}
+  s=${s//$'\037'/\\u001F}; s=${s//$'\177'/\\u007F}
+  printf '"%s"' "$s"
+}
+
 require_sources() {
   [ -f "$PAYLOAD" ] || die "payload not found: $PAYLOAD"
   [ -d "$ADAPTER_DIR/skills/agentfw" ] || die "adapter skill dir not found: $ADAPTER_DIR/skills/agentfw"
@@ -524,6 +547,39 @@ AGENTFW_PROBE_PY
     log "  manifest:                  absent — pre-manifest install; uninstall falls back to the three known shipped agent filenames"
   fi
 
+  # Command-critical utility resolution. `command -v` alone is insufficient: for a function it
+  # commonly returns only the command name, which can be mistaken for a system binary. Persist its
+  # output AND `type`'s classification so acceptance environments can cite what this status shell
+  # actually resolves. Missing commands are non-fatal and carry an explicit status plus the real
+  # (possibly empty) diagnostic output. `%q` keeps hostile multiline function bodies safe on the
+  # console; yaml_quote provides the stronger structural encoding in the snapshot below.
+  local resolution_commands=(grep sed find md5 sqlite3)
+  local resolution_command_v=() resolution_command_v_status=()
+  local resolution_type=() resolution_type_status=()
+  local resolution_i resolution_utility resolution_out resolution_display
+  log ""
+  log "Command resolution (current status shell):"
+  for ((resolution_i=0; resolution_i<${#resolution_commands[@]}; resolution_i++)); do
+    resolution_utility="${resolution_commands[$resolution_i]}"
+    if resolution_out=$(command -v "$resolution_utility" 2>&1); then
+      resolution_command_v_status[$resolution_i]=resolved
+    else
+      resolution_command_v_status[$resolution_i]=missing
+    fi
+    resolution_command_v[$resolution_i]="$resolution_out"
+    printf -v resolution_display '%q' "$resolution_out"
+    log "  $resolution_utility command -v [${resolution_command_v_status[$resolution_i]}]: $resolution_display"
+
+    if resolution_out=$(type "$resolution_utility" 2>&1); then
+      resolution_type_status[$resolution_i]=resolved
+    else
+      resolution_type_status[$resolution_i]=missing
+    fi
+    resolution_type[$resolution_i]="$resolution_out"
+    printf -v resolution_display '%q' "$resolution_out"
+    log "  $resolution_utility type [${resolution_type_status[$resolution_i]}]: $resolution_display"
+  done
+
   # --- active-capabilities.yaml ----------------------------------------------------------------
   # Persist the per-probe results next to the packaged capability.yaml so agents can read the
   # ACTIVE (probed) state without re-running the probes. Written only when the skill dir exists
@@ -551,6 +607,15 @@ AGENTFW_PROBE_PY
       printf '  agentfw_plan_critic: %s\n' "$agent_plan_critic"
       printf 'validator_present: %s\n' "$validator_present"
       printf 'manifest_present: %s\n' "$manifest_present"
+      printf 'command_resolution:\n'
+      for ((resolution_i=0; resolution_i<${#resolution_commands[@]}; resolution_i++)); do
+        resolution_utility="${resolution_commands[$resolution_i]}"
+        printf '  %s:\n' "$resolution_utility"
+        printf '    command_v_status: %s\n' "${resolution_command_v_status[$resolution_i]}"
+        printf '    command_v: '; yaml_quote "${resolution_command_v[$resolution_i]}"; printf '\n'
+        printf '    type_status: %s\n' "${resolution_type_status[$resolution_i]}"
+        printf '    type: '; yaml_quote "${resolution_type[$resolution_i]}"; printf '\n'
+      done
     } > "$active"
     log ""
     log "Wrote probe snapshot -> $active (regenerated on every status run)"
@@ -774,7 +839,9 @@ Target: \${CLAUDE_DIR:-\$HOME/.claude}  (currently: $CLAUDE_DIR)
              true/partial/false/unknown, installed validator,
              manifest, each shipped agent) mapped to the packaged capability.yaml
              activation_probe entries; write the probe snapshot to
-             skills/agentfw/active-capabilities.yaml when the skill dir exists. Warns (exit 0)
+             skills/agentfw/active-capabilities.yaml when the skill dir exists. The snapshot
+             also records command -v + type resolution for grep, sed, find, md5, and sqlite3,
+             including wrappers/functions and missing commands. Warns (exit 0)
              on malformed markers or an unclosed code fence; the mutating subcommands above
              REFUSE byte-untouched on either condition.
 EOF

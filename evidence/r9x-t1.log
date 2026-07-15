@@ -1,0 +1,5 @@
+command: bash -c 'set -euo pipefail; bash tools/tests/validate-plan.sh; for p in PLAN-*.md; do python3 tools/validate-plan "$p" >/dev/null; done; echo T1_OK'
+exit_status: 0
+stdout_stderr_raw:
+validate-plan.sh: ALL CHECKS PASSED
+T1_OK

@@ -26,7 +26,13 @@ Run every check and record a per-check result (clean | concern | BLOCKER) with q
   0 without exercising the lever ⇒ BLOCKER. If the task's `risk` names a production-environment
   failure (concurrency, trust-proxy, streaming/buffering, clock), a command must exercise THAT
   layer. Tier-1 lever = at least one negative/regression assertion the command RUNS. Temporal
-  split: at plan time the command is read as a spec — it need not run green on greenfield.
+  split: at plan time the command is read as a spec — it need not run green on greenfield. For
+  EVERY task, attempt an empirical C2 probe; where feasible, execute the acceptance command against
+  a minimal hostile stub or disposable scratch artifact. Tag every C2 result and finding
+  **demonstrated** when you ran a probe (quote the command, live output, and exit code), or
+  **reasoned** when execution was infeasible (state why). Never call a reasoned inference
+  demonstrated. A demonstrated blocker stands absent a fix or explicit named human relaxation; a
+  reasoned finding is contestable only with an empirical counter-probe.
 - **C3 Dependencies + cross-task consistency.** Deps stated and acyclic; shared derived values are
   a shared imported artifact (identity asserted) or an in-task consistency assertion — unless some
   task genuinely exercises the seam.
@@ -54,7 +60,7 @@ Output format — final message, nothing else after it:
 VERDICT: CLEAN | BLOCKERS
 C0: clean|concern|BLOCKER — <one-line evidence, quoting the plan/command text>
 C1: ...
-C2: ...
+C2: clean|concern|BLOCKER — demonstrated|reasoned — <probe evidence or infeasibility reason>
 C3: ...
 C4: ...
 C5: ...

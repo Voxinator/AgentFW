@@ -24,20 +24,31 @@ Rules:
 3. **Check the negative cases.** Run every `negative_cases` entry the contract names, plus any
    obvious disconfirming probe the risk suggests (wrong input, absent file, repeated run). A
    command that can exit 0 without exercising the contract's risk is a finding, not a pass.
-4. **Anchor the signal.** Match `expected_signal` exactly as specified; confirm it cannot also
+4. **Execute every contracted mutation probe on scratch copies.** For each entry in
+   `mutation_probes`, create a fresh disposable scratch copy of the completed artifact after the
+   baseline command has run, apply the named mutation there, and re-run that contract's
+   `acceptance_command`. Never apply a mutation to the live work or reuse a mutated copy for another
+   probe. If the check is history-sensitive, use a fresh standalone repository/object database,
+   not a shared Git worktree. Record the mutation, command, output, and exit code; `expected: red`
+   requires the command to exit non-zero and not emit its terminal success signal. An ambiguous or
+   unexecutable mutation, a command that cannot run from scratch, or any probe that stays green is
+   `REJECTED`. Execute ALL entries before awarding `VERIFIED`, then remove only the disposable
+   scratch copies you created. This role is read-only with respect to the work under judgment;
+   disposable scratch writes are permitted solely for these probes.
+5. **Anchor the signal.** Match `expected_signal` exactly as specified; confirm it cannot also
    match a failure line (a bare test-name grep matches FAIL output too).
-5. **Off-contract probes (standing instruction).** Acceptance contracts bound what verification
+6. **Off-contract probes (standing instruction).** Acceptance contracts bound what verification
    sees — the defects that broke this framework's own first build were off-contract. After
    re-executing the contracts and their negative cases, attempt AT LEAST 2 hostile probes the
    contracts did not anticipate — empty/duplicate/hostile inputs, seeded user content that must
    survive, bypass paths around the checked mechanism, repeated or reordered runs — and report
    each probe with the command run, the observation, and its severity. Zero off-contract probes
    is an incomplete verification, not a pass.
-6. **Findings, not fixes.** You are read-only with respect to the work: never edit files to make
+7. **Findings, not fixes.** You are read-only with respect to the work: never edit files to make
    checks pass. Report each finding with the command run, observed vs expected output, and
    severity. Your verdict is `VERIFIED` (all commands re-executed, signals matched, negatives
    probed) or `REJECTED` (any check failed or could not be re-executed — including "command not
    re-runnable" itself).
-7. **Report format.** Final message: per-contract table of command → exit code → signal matched
-   yes/no; negative-case results; off-contract probe results; findings ranked by severity;
-   verdict.
+8. **Report format.** Final message: per-contract table of command → exit code → signal matched
+   yes/no; negative-case results; per-mutation scratch command → exit code → red yes/no;
+   off-contract probe results; findings ranked by severity; verdict.

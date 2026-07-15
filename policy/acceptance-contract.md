@@ -16,6 +16,7 @@ whose discriminating lever lives only in prose verifies nothing — a wrong impl
 | `environment` | Where the evidence is valid (which host/sandbox/config); evidence produced elsewhere does not transfer. |
 | `expected_signal` | The exact output/exit pattern that means PASS — anchored so it cannot also match a fail line (see footguns below). |
 | `negative_cases[]` | Disconfirming assertions the command runs — inputs/states that a wrong implementation would mishandle. **REQUIRED whenever `risk` is present.** |
+| `mutation_probes[]` | Schema 1.3 roster of deliberate scratch-copy breakages, each shaped exactly as `{mutation: non-empty string, expected: "red"}`. The acceptance command must exit non-zero and must not emit its terminal success signal under each mutation. |
 | `risk` | The failure this task must not ship — name the layer (concurrency, trust-proxy, streaming/buffering, clock, data loss); the command must exercise THAT layer. |
 | `evidence` | Artifact types the check records (test log, build output, diff, rendered page) + **freshness: `produced_after_change`** — evidence older than the change it claims to verify is void. |
 | `rerunnable` | Boolean — the check can be executed again, from the tree, by a context that did not produce the work. Non-rerunnable evidence is testimony. |
@@ -32,6 +33,25 @@ nothing and a wrong implementation passes it. A test invocation whose discrimina
 skipped/disabled test is equally void — a green run proves nothing when the assertion never executed.
 Tier-2 (weaker, for when Tier-1 is genuinely unreachable) = the contract carries ≥1 explicit
 disconfirming criterion an independent reviewer checks against the artifact.
+
+### Producer red-path self-probe
+
+Before Layer 2 dispatch, the planner — as producer of the contract — MUST execute every proposed
+`acceptance_command` against at least one deliberately broken **scratch copy** and record the raw
+non-zero/red result. The breakage must target the discriminating lever (for example a hardcoded
+success token, empty test file, stale generated tag, removed assertion, or seeded leak), not an
+unrelated syntax error. Never perform a mutation probe in the authoritative working tree.
+
+For schema 1.3, encode those breakages in `mutation_probes`. Each implementation producer repeats
+the contracted probes after the change as part of its own checks, and the verifier at the contract's
+required tier executes every probe independently on scratch copies before returning a verified
+verdict. `expected: "red"` means the acceptance command exits non-zero **and** cannot reach its
+terminal success signal. Record both green-path and red-path output as fresh evidence.
+
+Shell success signals are ordered, not merely present: each checking clause must gate the next by
+exit status; no pipeline may appear before a gating `&&`; and an explicit success signal is emitted
+last, only after an immediately preceding successful `&&`. A signal printed before a later clause is
+not evidence that the later clause passed.
 
 A work item CANNOT reach its terminal verified state without recorded machine-check output from the
 `acceptance_command`, fresh per `produced_after_change`. **Who** must have executed that run before
@@ -102,15 +122,15 @@ each selects the corresponding terminal STATE `verified_producer` / `verified_in
 valid field values, and the validator rejects them; write `independent`, never `verified_independent`,
 in the field.
 
-## Block versioning — `"1.2"` is the schema of record; `"1.1"` remains valid; `"1"` is legacy-only
+## Block versioning — `"1.3"` is the schema of record; `"1.1"`/`"1.2"` remain valid; `"1"` is legacy-only
 
-The plan's embedded machine-readable block declares a schema `version`. Schema `"1.2"` is the
-**schema of record** — author new plans against it (see the schema 1.2 section below). Schema
-`"1.1"` remains valid for plans that predate 1.2: default validation accepts `"version": "1.1"`
-or `"version": "1.2"` and rejects a `"version": "1"` block as a legacy schema version. Version
-`"1"` exists for HISTORICAL PROVENANCE ONLY — re-checking plans authored before the 1.1 schema —
-and is accepted solely under `tools/validate-plan --legacy`, which applies the original v1 rules.
-Never author a new plan against v1. Unknown version strings are rejected naming the version.
+The plan's embedded machine-readable block declares a schema `version`. Schema `"1.3"` is the
+**schema of record** — author new plans against it (see the schema 1.3 section below). Schemas
+`"1.1"` and `"1.2"` remain valid for plans that predate 1.3: default validation accepts all three
+and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
+HISTORICAL PROVENANCE ONLY — re-checking plans authored before the 1.1 schema — and is accepted
+solely under `tools/validate-plan --legacy`, which applies the original v1 rules. Never author a new
+plan against v1. Unknown version strings are rejected naming the version.
 
 Blocks declaring `"version": "1.1"` are additionally held, per contract, to the
 mandatory-by-tier field table below (machine-enforced by `tools/validate-plan`):
@@ -133,7 +153,7 @@ Fields not listed keep their version-1 rules (`criteria` / `acceptance_command` 
 non-empty; `rerunnable` present at A2+; `risk` ⇒ `negative_cases`; A3/A4 ⇒ `negative_cases` in every
 contract).
 
-## Schema 1.2 — the schema of record: plan-review tier + failure surfaces
+## Schema 1.2 — retained: plan-review tier + failure surfaces
 
 Schema `"1.2"` is ADDITIVE over 1.1: every 1.1 rule above applies unchanged to a 1.2 block, and
 two fields are added (machine-enforced by `tools/validate-plan`):
@@ -165,6 +185,27 @@ Schema 1.1 does not define the two fields above. A `"version": "1.1"` block carr
 declared-single-on-1.1 dodge, not backward compatibility. Existing 1.1 plans that do not carry
 the fields validate exactly as before. Validators that predate 1.2 fail safely on it: they reject
 `"version": "1.2"` as an unknown schema version rather than fail open on the unknown fields.
+
+## Schema 1.3 — the schema of record: mutation probes + command-shape lint
+
+Schema `"1.3"` is ADDITIVE over 1.2: every 1.1 and 1.2 rule applies unchanged. It adds one
+per-contract field and deterministic lint for three known weak `acceptance_command` shapes:
+
+| Field (1.3) | Level | Mandatory at | Rule |
+|---|---|---|---|
+| `mutation_probes` | per contract | every `integration_seam: true` contract; every A3/A4 contract | a non-empty JSON array; every entry is an object containing exactly `mutation` (non-empty string) and `expected` (the literal string `"red"`) |
+
+When none of those triggers applies, `mutation_probes` is optional; if present, it is validated to
+the same entry shape. The field is not defined by schema 1.1 or 1.2, so either older schema carrying
+it is rejected with a diagnostic that requires version 1.3. Existing 1.1 and 1.2 plans without the
+field continue to validate exactly as before.
+
+For 1.3 commands, Layer 1 rejects the mechanically recognizable forms demonstrated to fail hollow
+implementations: a pipe operator before a gating `&&`; an `echo` that emits the named expected signal
+without an immediately preceding `&&`; and an expected-signal `echo` followed by another clause.
+This lint is deliberately narrower than a shell parser and does not claim that commands passing it
+are semantically strong. Producer red-path execution and independent mutation probing provide that
+evidence.
 
 ## Evidence classes — non-code and mixed work
 
@@ -215,7 +256,10 @@ at all. Record every class's output as evidence.
   "acceptance_command": "node test/atomicity.test.js  # fires 200 parallel incrs, asserts final===200; exits non-zero on drift",
   "expected_signal": "(✓|PASS).*atomic increment under 200-way concurrency",
   "risk": "concurrency — command spawns real parallel writers, not a serial loop",
-  "negative_cases": ["parallel writers with injected scheduling jitter still converge to exactly 200"]
+  "negative_cases": ["parallel writers with injected scheduling jitter still converge to exactly 200"],
+  "mutation_probes": [
+    {"mutation": "on a scratch copy, replace the atomic increment with read/sleep/write", "expected": "red"}
+  ]
 }
 ```
 
@@ -231,13 +275,18 @@ layer down does not discharge it.
 - **The pipe-discards-exit-code trap.** `command | tee log` reports `tee`'s success, not the test's —
   a failing test exits green. Capture `${PIPESTATUS[0]}` (or drop the pipe) so a failing test actually
   fails the gate.
+- **The premature-signal trap.** `check && echo OK && postcheck` prints `OK` before `postcheck` has
+  passed. Put the signal last: `check && postcheck && echo OK`. Under schema 1.3, the validator
+  rejects a recognizable expected-signal `echo` that is unguarded or non-terminal, and rejects a
+  pipe before a gating `&&`.
 - General principle: `expected_signal` must be a pattern that **cannot** appear in a failing run. If a
   fail line can print it, the signal is unanchored and the contract is broken.
 
 ## Validation
 
 Structural completeness of contracts (non-empty `criteria` + `acceptance_command` + `expected_signal`;
-`risk` ⇒ non-empty `negative_cases`; coverage; acyclic deps) is machine-checked by `tools/validate-plan`
+`risk` ⇒ non-empty `negative_cases`; coverage; acyclic deps), schema 1.3 mutation-probe shape and
+presence, and the known weak command shapes above are machine-checked by `tools/validate-plan`
 against the plan's embedded `json agentfw-plan` block — see `policy/plan-critique.md` Layer 1. Whether
-the command is STRONG enough to exercise the lever is a Layer-2 judge question; the validator cannot
-answer it.
+the command is STRONG enough to exercise the lever remains a Layer-2 judge question; passing the
+shape lint does not answer it.

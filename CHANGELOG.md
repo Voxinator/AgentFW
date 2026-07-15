@@ -1,5 +1,40 @@
 # AgentFW Changelog
 
+## v9.1.0 (2026-07-15) — RELEASED
+
+Backward-compatible r9.x evidence-strengthening release. Full detail:
+[RELEASE-NOTES-v9.1.0.md](RELEASE-NOTES-v9.1.0.md). All six items in
+[R9X-CANDIDATES.md](R9X-CANDIDATES.md) are implemented and verified:
+
+- **C-1 — acceptance-command red paths.** Contract producers must execute deliberately broken
+  cases before Layer 2; schema 1.3 also rejects known weak shapes such as a pipe before a gating
+  `&&`, an unguarded success signal, or a nonterminal success signal.
+- **C-2 — first-class mutation probes.** Additive plan schema **1.3** defines
+  `mutation_probes: [{mutation, expected: "red"}]`, requires them at integration seams and A3/A4,
+  and makes verifier execution on fresh scratch copies part of the evidence contract. Historical
+  schema 1.1 and 1.2 behavior remains supported.
+- **C-3 — fixture leak-channel hygiene.** New guidance covers names, contents, comments, committed
+  tooling, messages, refs, and reflogs; validation tooling stays outside the artifact under test.
+- **C-4 — empirical critic duties.** C2 plan-critic findings are tagged `demonstrated` with live
+  output or `reasoned` when execution is infeasible, making the strength of each finding explicit.
+- **C-5 — named cap relaxations.** Recovery now defines the standard decision menu after the
+  two-pass cap: one named extra pass under bounded conditions, mutation-gated dispatch only for
+  mechanically compensated C2-local blockers, or halt.
+- **C-6 — resolved command evidence.** Claude Code status preflight records both `command -v` and
+  `type` results for `grep`, `sed`, `find`, `md5`, and `sqlite3`, including wrappers/functions and
+  missing-command states, in generated active capability evidence.
+
+**Release evidence:** `tools/tests/release-v9.1.sh` gates current version/roadmap/candidate
+consistency and provenance presence, then runs the validator fixture harness, the installer
+roundtrip suite (28/28), the relative-link checker, and capability validation through both PyYAML
+and stdlib-fallback parser paths. Contracted scratch mutations confirm that stale `9.0.0` metadata
+and the old README reservation of the deferred adapter for r9.1 both turn the gate red. Raw output
+and exit status are in `evidence/release-v9.1.log`.
+
+**Behavioral evidence boundary:** no golden task, Bonksnake prompt, or behavioral evaluation was
+run for v9.1.0. The bounded n=1 behavioral evidence published with v9.0.0 is unchanged and is not
+presented as fresh v9.1 evidence.
+
 ## v9.0.0 (2026-07-15) — RELEASED
 
 Maintainer release decision. r9 ships as `v9.0.0` under the two-tier release bar (`RELEASE-BAR-r9.md`).

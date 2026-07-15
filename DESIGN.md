@@ -1,11 +1,11 @@
 # AgentFW — Design Specification
 
-> **Versioning note (r9 draft):** This document is the **r8 design spec**, retained as-is. r9 (draft
-> pre-release, tag `r9-draft`) restructures the framework into a platform-neutral semantic policy plus
-> native adapters — see `policy/core.md`, `policy/assurance-model.md`, and the README's r9 sections.
-> A full r9 design revision lands with the validated r9 release.
+> **Current-release note (v9.1.0):** This document remains the historical **r8 design spec**; its
+> body is retained as-is. The current framework is the v9.1.0 platform-neutral semantic policy plus
+> native adapters — see `policy/core.md`, `policy/assurance-model.md`, the README's v9 sections, and
+> `RELEASE-NOTES-v9.1.0.md`.
 
-**Version:** r8 (see r9 draft banner above)
+**Historical specification version:** r8 (see the current-release banner above)
 **Author:** Brian Taylor
 **Last updated:** 2026-05-29
 
@@ -624,3 +624,5 @@ The harness adds overhead that simple tasks don't need. The classification gate 
 | r7 | 2026-04-17 | Cross-model tuning pass — model-agnostic edits for Opus 4.7 without non-target regression, bounded model-family knobs subsection, reduced-scope Phase 0 multi-model probe |
 | r7.1–r7.11 | 2026-04-18 → 2026-04-30 | Hermes-variant probe + campaign arc (extracted to `agentfw-hermes`, removed from this repo) |
 | r8 | 2026-05-29 | v8 governance refactor — firmware reframed as a governance layer over Claude Code 2.1 native primitives (Rule 6), Plan-Critique Gate + Acceptance-Contract spine, `references/native-primitives.md`, GT-8; cross-model content dropped (Claude-Code-only); Hermes variant extracted |
+| v9.0.0 | 2026-07-15 | Portable policy, native Claude Code and Codex adapters, guided profiles, deterministic plan/capability gates, and bounded n=1 behavioral evidence |
+| v9.1.0 | 2026-07-15 | Additive schema 1.3, mutation-based acceptance strength, fixture-hygiene guidance, empirical critic duties, standard cap relaxations, and command-resolution preflight evidence |

@@ -709,4 +709,102 @@ for sk in "$SRC/adapters/claude-code/skills/agentfw/SKILL.md" "$REPO_ROOT/adapte
 done
 pass "skill example sync — the embedded agentfw-plan example in BOTH adapter SKILL.md files validates against the current schema via tools/validate-plan (exit 0, PASS)"
 
+# ==============================================================================================
+# (18) COMMAND RESOLUTION: status must persist both command -v and type for each command-critical
+#      utility. The ordinary sandbox proves the five real macOS system paths. Separate sandboxes
+#      prove that an exported grep wrapper is classified as a function (not mislabeled as the
+#      system grep), an unavailable sqlite3 is explicit and non-fatal, hostile function text is
+#      valid YAML, and settings.json remains untouched/absent throughout.
+# ==============================================================================================
+RESOLUTION_ARGS=()
+for utility in grep sed find md5 sqlite3; do
+  resolved="$(command -v "$utility")" || fail "check 18a: required macOS system utility missing: $utility"
+  case "$resolved" in
+    /*) ;;
+    *) fail "check 18a: $utility did not resolve to an absolute system path in the ordinary sandbox: $resolved" ;;
+  esac
+  RESOLUTION_ARGS+=("$utility" "$resolved")
+done
+python3 - "$ACT" "${RESOLUTION_ARGS[@]}" <<'PY' \
+  || fail "check 18a: active-capabilities.yaml did not preserve real command/type resolutions"
+import sys
+import yaml
+
+path, args = sys.argv[1], sys.argv[2:]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+resolution = data["command_resolution"]
+for utility, expected in zip(args[0::2], args[1::2]):
+    actual = resolution[utility]
+    assert actual["command_v_status"] == "resolved", (utility, actual)
+    assert actual["command_v"] == expected, (utility, actual, expected)
+    assert actual["type_status"] == "resolved", (utility, actual)
+    assert expected in actual["type"], (utility, actual, expected)
+PY
+grep -q '^Command resolution (current status shell):$' "$SB11/status.log" \
+  || fail "check 18a: status console output lacks the command-resolution report"
+pass "command resolution — ordinary status persists exact absolute command -v paths plus type output for grep/sed/find/md5/sqlite3; console mirrors the report"
+
+SB14="$(mktemp -d)"; SANDBOXES+=("$SB14")
+CLAUDE_DIR="$SB14" bash "$INSTALL" install > /dev/null || fail "check 18b: install exited non-zero"
+[ ! -e "$SB14/settings.json" ] || fail "check 18b: fixture unexpectedly has settings.json before wrapper probe"
+CLAUDE_DIR="$SB14" INSTALL="$INSTALL" /bin/bash -s > "$SB14/status.log" 2>&1 <<'BASH' \
+  || fail "check 18b: status exited non-zero with an exported grep wrapper"
+grep() {
+  : "hostile yaml: # [] {} \" ' \\ and a multiline function body"
+  /usr/bin/grep "$@"
+}
+export -f grep
+bash "$INSTALL" status
+BASH
+ACT14="$SB14/skills/agentfw/active-capabilities.yaml"
+python3 - "$ACT14" <<'PY' \
+  || fail "check 18b: wrapper resolution was mislabeled or active-capabilities.yaml is invalid"
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+grep = data["command_resolution"]["grep"]
+assert grep["command_v_status"] == "resolved", grep
+assert grep["command_v"] == "grep", grep
+assert grep["type_status"] == "resolved", grep
+assert "grep is a function" in grep["type"], grep
+assert "hostile yaml: # [] {}" in grep["type"], grep
+PY
+[ ! -e "$SB14/settings.json" ] || fail "check 18b: status created or changed user settings during wrapper probe"
+/usr/bin/grep -q 'grep command -v \[resolved\]: grep' "$SB14/status.log" \
+  || fail "check 18b: console did not report wrapper command-v resolution"
+pass "command wrapper resolution — exported grep function is recorded via command -v + multiline type output, hostile YAML punctuation parses safely, settings remain absent"
+
+SB15="$(mktemp -d)"; SANDBOXES+=("$SB15")
+CLAUDE_DIR="$SB15" bash "$INSTALL" install > /dev/null || fail "check 18c: install exited non-zero"
+MINPATH="$SB15/command-path"
+mkdir -p "$MINPATH"
+for utility in dirname awk sed ls tr date grep find md5; do
+  resolved="$(command -v "$utility")" || fail "check 18c: cannot construct restricted PATH; missing $utility"
+  ln -s "$resolved" "$MINPATH/$utility"
+done
+[ ! -e "$SB15/settings.json" ] || fail "check 18c: fixture unexpectedly has settings.json before missing-command probe"
+PATH="$MINPATH" CLAUDE_DIR="$SB15" /bin/bash "$INSTALL" status > "$SB15/status.log" 2>&1 \
+  || fail "check 18c: status exited non-zero when sqlite3 was unavailable"
+ACT15="$SB15/skills/agentfw/active-capabilities.yaml"
+python3 - "$ACT15" <<'PY' \
+  || fail "check 18c: unavailable sqlite3 was not explicit or generated YAML is invalid"
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+sqlite = data["command_resolution"]["sqlite3"]
+assert sqlite["command_v_status"] == "missing", sqlite
+assert sqlite["command_v"] == "", sqlite
+assert sqlite["type_status"] == "missing", sqlite
+assert "not found" in sqlite["type"], sqlite
+PY
+[ ! -e "$SB15/settings.json" ] || fail "check 18c: status created or changed user settings during missing-command probe"
+grep -q 'sqlite3 command -v \[missing\]:' "$SB15/status.log" \
+  || fail "check 18c: console did not report unavailable sqlite3 explicitly"
+pass "missing command resolution — sqlite3 absent from a restricted PATH is recorded explicitly, status exits 0, YAML parses, settings remain absent"
+
 printf 'ALL CHECKS PASSED (%d/%d)\n' "$PASS_COUNT" "$PASS_COUNT"

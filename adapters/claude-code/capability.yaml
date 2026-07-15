@@ -30,7 +30,10 @@ shell:
   notes: >
     Runnable repo artifact: this bash test suite (and tools/agentfw-install under it) executes
     via the platform's Bash tool with persistent working directory and recorded exit codes —
-    machine-check evidence is producible and recordable.
+    machine-check evidence is producible and recordable. agentfw-install status persists both
+    command -v and type resolution for grep, sed, find, md5, and sqlite3 under command_resolution
+    in active-capabilities.yaml; consult that snapshot before claiming a system-binary identity.
+    Exported functions/wrappers and unavailable commands are recorded explicitly.
 
 isolated_agents:
   available: true

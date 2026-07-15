@@ -1,0 +1,5 @@
+command: bash -c 'set -euo pipefail; bash tools/tests/validate-plan.sh; bash tools/tests/check-links.sh >/dev/null; python3 tools/validate-plan PLAN-r9x-fixes.md >/dev/null; echo IFIX_OK'
+combined stdout/stderr (raw):
+validate-plan.sh: ALL CHECKS PASSED
+IFIX_OK
+exit_status: 0

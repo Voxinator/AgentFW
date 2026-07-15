@@ -1,6 +1,8 @@
 # AgentFW r9 — Claude Code Install
 
-Status: draft — not eval-validated (golden-task re-run pending).
+Current release: **AgentFW v9.1.0**. The `r9` block markers are stable major-version install
+markers. v9.1.0 is deterministically verified; it carries forward v9.0.0's bounded behavioral
+evidence and does not claim a new behavioral-evaluation round.
 
 ## Prerequisites
 

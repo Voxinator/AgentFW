@@ -1,0 +1,4 @@
+acceptance_command: bash -c 'set -euo pipefail; o=$(bash tools/tests/install-roundtrip.sh); grep -q "ALL CHECKS PASSED" <<<"$o"; grep -q "command_resolution" tools/agentfw-install; echo T3_OK'
+raw_stdout_stderr:
+T3_OK
+exit_status: 0

@@ -40,3 +40,14 @@ A worker receiving 500 lines of relevant context will outperform one receiving 2
 You are not helping the worker by giving it everything. You are burying the signal in noise. Every line of context that isn't directly relevant to the task is a line that competes for attention with the lines that matter. The planner reads everything; the worker receives only what it needs.
 
 This applies doubly to judges. A judge that receives the worker's implementation plan will check whether the implementation matches the plan. A judge that receives only the requirements and the current system state will check whether the system actually meets the requirements. Those are different evaluations, and the second one is the one that matters.
+
+---
+
+## Fixture and Evaluation-Artifact Prompts
+
+When a worker constructs an artifact whose seeded behavior or evaluation intent must remain hidden,
+the prompt is only one observable channel. Follow the complete
+[fixture and evaluation-artifact hygiene checklist](fixture-hygiene.md): names, contents, messages,
+refs, reflog/object history, comments, and committed tooling all require inspection. Generate the
+worker's banned-word rule and the external guard patterns from the checklist's single canonical
+pattern source; never maintain them as separate lists.
