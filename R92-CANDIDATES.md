@@ -1,8 +1,16 @@
-# v9.2 candidates
+# v9.2 candidates — FROZEN SNAPSHOT (superseded by the rolling ledger)
 
-Status: **D-1 is IMPLEMENTED on main (unreleased); D-2 through D-6 remain design proposals.**
-Proposal entries are not policy until built and released. Each entry retains
-the observed scenario, root cause, and proposed mechanism, following the
+> **This file is a historical snapshot of the v9.2 design cycle.** The living backlog is now
+> [CANDIDATES.md](CANDIDATES.md) — add new candidates and flip statuses THERE, not here.
+>
+> Outcome of this cycle: **D-1 SHIPPED in v9.2.0** (2026-07-20, build commit `e59d6dc`, release
+> commit `3148554`, [release notes](RELEASE-NOTES-v9.2.0.md), issue #7 closed; build provenance
+> `PLAN-v9.2-d1-override.md`). **D-3 partially shipped** with it (inline surfacing of the
+> escalation menu/trigger/floor in both adapter skills — the override path; the general
+> cap-menu-surfacing remainder is still open). **D-2, D-4, D-5, D-6 were NOT built** — accepted
+> designs, carried forward in [CANDIDATES.md](CANDIDATES.md), tracked as issues #8–#12.
+
+Each entry retains the observed scenario, root cause, and proposed mechanism, following the
 [R9X-CANDIDATES.md](R9X-CANDIDATES.md) format (which documented the *implemented* r9.x set).
 
 Source incidents:
