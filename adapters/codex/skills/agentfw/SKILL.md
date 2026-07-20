@@ -137,13 +137,16 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-Schema `"1.3"` is the schema of record; `"1.1"` and `"1.2"` remain valid for older plans. A
-`"version": "1"` block is rejected by default and accepted only via `validate-plan --legacy` for
-historical provenance; never author a new plan against v1. Schema 1.3 is additive over 1.2 and
-requires non-empty `mutation_probes` for every integration seam and every A3/A4 contract. Every
-entry contains exactly a non-empty `mutation` plus `"expected": "red"`. Schema 1.1 still defines
+Schema `"1.4"` is the schema of record; `"1.1"`, `"1.2"`, and `"1.3"` remain valid for older
+plans. A `"version": "1"` block is rejected by default and accepted only via `validate-plan
+--legacy` for historical provenance; never author a new plan against v1. Schema 1.1 still defines
 the structured verification-tier fields, 1.2 adds plan-review tier and failure surfaces, and 1.3
-adds mutation probes plus deterministic rejection of known weak acceptance-command shapes.
+adds mutation probes — non-empty `mutation_probes` for every integration seam and every A3/A4
+contract, each entry exactly a non-empty `mutation` plus `"expected": "red"` — plus deterministic
+rejection of known weak acceptance-command shapes. The current tier, schema 1.4, is additive over
+1.3 and adds an OPTIONAL plan-level `overrides` ledger recording human-waived Layer-2 blockers
+under the delivery override (Layer 2 below): entries exactly
+`{blocker, assumption, followup_test, authorized_turn}`, each a non-empty string.
 
 **Producer red-path gate (before Layer 2):** the planner, as producer of each contract, executes
 its `acceptance_command` against at least one deliberately broken scratch copy and records the
@@ -173,7 +176,30 @@ subagent with the plan + requirements ONLY. It runs the C0–C5 rubric
 prose-vs-mechanical reachability (core check), C3 deps + cross-task consistency, C4 risk/role +
 irreversible-op pre-mortem, C5 approach-fit, plus requirement→task coverage. Hard 2-pass cap; a
 single-judge BLOCKER gets one confirming independent pass before any re-plan; cap-with-open-blocker
-never proceeds — escalate to the human. Post-blocker: local revise → re-run Layer 1 → dispatch a
+never proceeds — escalate to the human, who selects from the fixed four-option menu: **(1)** extend
+by exactly one named Layer-2 pass — eligible only when the open blockers span multiple rubric
+checks or at least one is non-C2; **(2)** mutation-gated dispatch — eligible only when ALL open
+blockers are C2-local and each maps one-to-one to a contracted `mutation_probes` entry expected
+red, verifier-executed on a fresh scratch copy;
+**(3)** assumption-gated dispatch (human delivery override);
+**(4)** halt — always eligible and the default. **Override trigger duty:** once
+Layer-2 findings exist, a genuine human delivery-intent turn ("implement now", "stop reviewing",
+or equivalent) means the model MUST NOT start a new plan/critique cycle; its only lawful responses
+are the override offer — one turn presenting the safety/assumption split, the assumption ledger
+with follow-up tests, review expenditure, and the exact dispatch scope — or a safety-floor refusal
+naming the floor blockers. The six-item safety floor is never waivable: destructive or
+externally-consequential action without authority/rollback, security boundary defect, irreversible
+architectural commitment, C5 goal/proof contradiction, unavailable required substrate,
+demonstrated-vacuous acceptance command. Every other waived blocker converts to a recorded
+assumption plus a required follow-up test in the affected task's contract (the schema 1.4
+`overrides` ledger is the mechanical record). Waived stays waived for the objective — a later
+cycle may raise genuinely new findings but never re-raises a waived assumption absent new
+evidence. Confirmation is a subsequent genuine human turn on the adapter-declared channel
+(provenance rules unchanged; no nonce ritual for non-destructive work); the model never clears
+its own blockers. Dispatch under override emits the
+`[OVERRIDE: assumption-gated dispatch — ...]` marker. Full override semantics:
+`../../../../policy/plan-critique.md` (post-install: `policy/plan-critique.md` beside this
+file). Post-blocker: local revise → re-run Layer 1 → dispatch a
 fresh independent Layer-2 pass over the revision (this counts toward the cap) → dispatch only on
 that pass's clean verdict, or escalate — a self-checked revision is never a clean verdict, since
 Layer 1 plus the planner's own confirmation does not clear a blocker. Honest limit: Layer 1 cannot

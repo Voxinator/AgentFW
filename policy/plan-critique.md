@@ -20,8 +20,8 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 
 1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
    keys are rejected as silently-accepted ambiguity), and `version` is present and — in default
-   mode — `"1.1"`, `"1.2"`, or `"1.3"`: **schema 1.3 is the schema of record** (author new
-   plans against it; 1.1 and 1.2 remain valid for plans that predate it). A `"version": "1"`
+   mode — `"1.1"`, `"1.2"`, `"1.3"`, or `"1.4"`: **schema 1.4 is the schema of record** (author
+   new plans against it; 1.1, 1.2, and 1.3 remain valid for plans that predate it). A `"version": "1"`
    block is rejected as a legacy schema version; unknown version strings are rejected naming the
    version. The `--legacy` flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules
    (rules 2–10 below; none of rules 11–13's newer fields are required — the task-id precheck still
@@ -79,6 +79,16 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
     3. an expected-signal `echo` followed by another clause, so the signal is not terminal.
     This is narrow shape lint, not a shell parser or proof of semantic command strength. Field and
     execution semantics: `policy/acceptance-contract.md`.
+14. **Schema 1.4 overrides ledger (additive over 1.3):** a `"1.4"` block enforces every 1.1–1.3
+    rule above PLUS: an OPTIONAL plan-level `overrides` array — the mechanical record of
+    assumption-gated dispatch (see the Human delivery override section below). When present,
+    every entry is an object containing exactly `blocker`, `assumption`, `followup_test`, and
+    `authorized_turn`, each a non-empty string. A malformed ledger — a non-array `overrides`, a
+    non-object entry, a missing or extra field, an empty or non-string value — is its own defect
+    (keyword `override`). A `"1.1"`, `"1.2"`, or `"1.3"` block carrying `overrides` is rejected
+    with a diagnostic naming schema 1.4 (keyword `version`). A 1.4 block without the field
+    validates identically to a 1.3 block. Field semantics and the waiver-conversion rule:
+    `policy/acceptance-contract.md`.
 
 **Schema 1.3 red-path execution duty:** Layer 1 validates the declared mutation roster and the
 three known weak command shapes; it does not execute mutation probes. Before Layer 2 dispatch, the
@@ -93,7 +103,8 @@ task/requirement id and defect class. All defects are reported, not just the fir
 
 **Defect-keyword contract (stable, grep-able):** harness-facing Layer-1 diagnostics carry one or
 more of the stable defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`,
-`empty`, `duplicate`, `tier`, `review`, `failure_surface`, `mutation`, `command`, `version`. A
+`empty`, `duplicate`, `tier`, `review`, `failure_surface`, `mutation`, `command`, `version`,
+`override`. A
 diagnostic may carry a general and a specific keyword together; fixtures should key on the most
 specific stable keyword. `tier` covers every tier-derivation defect — a
 missing/invalid `required_verification_tier`, a missing/invalid `integration_seam` or
@@ -101,7 +112,8 @@ missing/invalid `required_verification_tier`, a missing/invalid `integration_sea
 covers every plan-review-tier defect — a missing/invalid `required_plan_review_tier` or one
 declared below its derived floor; `failure_surface` covers `failure_surfaces` shape and enum
 defects; `mutation` covers every schema-1.3 `mutation_probes` presence and shape defect;
-`command` covers the three schema-1.3 weak acceptance-command shapes; `empty` includes the task-id
+`command` covers the three schema-1.3 weak acceptance-command shapes; `override` covers every
+schema-1.4 `overrides` ledger shape defect; `empty` includes the task-id
 precheck; `version` covers legacy-`"1"`, unknown-version, and
 older-schema-carrying-newer-schema-field rejections, the legacy message also naming `--legacy`.
 Harness code and fixtures key on these words; changing them is a breaking schema change to this
@@ -191,10 +203,16 @@ Each check with its one-line pass test:
      result is red. The mapping and probe remain in the affected task's contract, and the verifier
      must execute every probe on a fresh scratch copy. Any non-C2 blocker, unmapped blocker,
      prose-only compensation, or mutation that cannot be executed makes this option ineligible.
-  3. **Halt.** Always eligible and the default when the human selects no relaxation; preserve the
+  3. **assumption-gated dispatch (human delivery override).** Eligible on any genuine human
+     delivery-intent turn once Layer-2 findings exist — at this cap escalation and equally at any
+     earlier point in the cycle; the cap is merely one place the menu is presented. Safety-floor
+     blockers remain dispatch-blocking; every other open blocker converts to a recorded assumption
+     plus a required follow-up test in the affected task's contract, and one subsequent human
+     confirmation turn dispatches. Full semantics: the Human delivery override section below.
+  4. **Halt.** Always eligible and the default when the human selects no relaxation; preserve the
      blocker record and dispatch nothing.
 
-  Only an explicit human decision may select options 1 or 2. Any alternative is a **bespoke named
+  Only an explicit human decision may select options 1, 2, or 3. Any alternative is a **bespoke named
   relaxation**: it must state the invariant being waived, exact task/blocker scope, compensating
   mechanical controls, and termination condition, and it requires explicit human authorization.
   The menu is decision support, never standing authorization.
@@ -208,14 +226,70 @@ Each check with its one-line pass test:
   revise → re-run Layer 1 → dispatch a FRESH independent input-curated Layer-2 pass over the revised
   plan — this pass COUNTS toward the hard 2-pass cap above — then proceed only on a clean verdict
   from THAT fresh pass; or (b) escalate to the human, who may select only an eligible standard menu
-  option or explicitly authorize a bespoke named relaxation as defined above. No implicit third path
+  option — including a confirmed human delivery override, which a genuine delivery-intent turn may
+  also trigger without waiting for an escalation (see the Human delivery override section below) —
+  or explicitly authorize a bespoke named relaxation as defined above. No implicit third path
   exists. Dispatch may begin from
   exactly one thing: a clean verdict from a fresh independent Layer-2 pass, or explicit human
-  authorization — nothing else, no matter what Layer 1 reports.
+  authorization — an eligible menu selection, a confirmed human delivery override, or a bespoke
+  named relaxation — nothing else, no matter what Layer 1 reports.
 - **A self-checked revision is never a clean verdict** — Layer 1 plus the planner's own confirmation
   does not clear a blocker; only a fresh independent Layer-2 pass, re-run after the revision, can.
   The cap is a ceiling on Layer-2 passes, not a license to dispatch without one: reaching the cap
   with an open blocker still means escalate (see "Hard 2-pass cap" above) — it never means dispatch.
+
+## Human delivery override (assumption-gated dispatch)
+
+**WHY:** review that cannot end is not rigor — it is a treadmill, and governance that is not
+economical does not get used. Field evidence: genuine human turns repeatedly selected the practical
+outcome ("implement now") and the active policy recognized them only as input to another plan
+cycle, burning review spend with zero dispatched workers. This section gives delivery intent a
+recognized meaning. The bespoke-relaxation hatch already existed, but its construction burden sat
+on the human; here the burden moves to the model — the human holds a cheap lever, the model does
+the paperwork. The override is a *quality* valve, never a *safety* valve: everything above the
+floor is priced in the human's currency; the floor itself is non-negotiable.
+
+The override is standard escalation-menu option 3 and is human-invocable at ANY point after
+Layer-2 findings exist — not only at the 2-pass cap. Seven invariants:
+
+- **Trigger duty.** A genuine human turn expressing delivery intent past open findings
+  ("implement now", "stop reviewing", "proceed", or equivalent) means the model
+  MUST NOT start a new plan/critique cycle. Its only lawful responses are the override offer
+  below or a safety-floor refusal naming the specific floor blockers. Treating a delivery-intent
+  turn as mere input to another cycle is a policy violation, not diligence.
+- **Safety floor — never waivable.** Six blocker classes remain dispatch-blocking regardless of
+  any human turn:
+  1. destructive or externally-consequential action without authority/rollback;
+  2. security boundary defect;
+  3. irreversible architectural commitment;
+  4. C5 goal/proof contradiction;
+  5. unavailable required substrate;
+  6. demonstrated-vacuous acceptance command.
+  The floor is deliberately minimal: quality defects are the human's to waive, and these six are
+  not quality defects. Nothing may be added to or removed from this list by any relaxation.
+- **Conversion.** Each waived blocker becomes a **recorded assumption plus a required follow-up
+  test** — a `mutation_probes` entry, a negative case, or a golden vector — attached to the
+  affected task's contract. Nothing is silently dropped: waiving trades review-now for
+  evidence-later, never for nothing. Conversion mechanics: `policy/acceptance-contract.md`.
+- **One confirmation turn.** The offer presents, in a single turn: the safety/assumption split,
+  the assumption ledger with its follow-up tests, review expenditure to date, and the exact scope
+  of what dispatches (named tasks of this plan; never future cycles). A subsequent genuine human
+  turn on the adapter-declared authenticated human channel confirms it, and dispatch begins
+  immediately. Provenance rules of `policy/assurance-model.md` apply unchanged: simulated, proxy,
+  evaluator-injected, or standing text can neither open the override nor confirm it. NO token or
+  nonce ritual for non-destructive work — natural language plus echo-back is the entire ceremony
+  (nonces remain adapter territory for destructive authorization where channel provenance is weak).
+- **Waived stays waived.** The override binds to the *objective*, not the plan revision. A later
+  cycle for the same objective may raise genuinely new findings, and safety-floor findings always
+  block — but it may NOT re-raise a waived assumption absent new evidence. If revision resurrected
+  waivers, one trivial forced revision would rebuild the treadmill.
+- **Audit marker.** Dispatch under override emits a grep-able record preserved with the plan:
+  `[OVERRIDE: assumption-gated dispatch — <waived-count> waived → assumptions+tests;
+  <retained-count> safety retained; authorized turn <n>]`. This IS the named relaxation,
+  standardized — no silent gate-skip. The schema-1.4 `overrides` ledger (Layer-1 rule 14 above)
+  is its mechanical counterpart, authored by the model at zero human burden.
+- **Self-clearance preserved.** Only a genuine human turn waives; the model never clears its own blockers.
+  The override moves the formalization burden to the model — never the authority.
 
 ## Honest limit (whole gate)
 

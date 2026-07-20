@@ -99,8 +99,8 @@ expect_policy_text "$ACCEPTANCE_POLICY" 'success signal is emitted'
 # Regression guards for policy/plan-critique.md: reverting the schema of
 # record, dropping mutation contracts, or dropping any known weak command
 # shape must make this harness fail even when all fixtures still pass.
-expect_policy_text "$PLAN_POLICY" 'mode — `"1.1"`, `"1.2"`, or `"1.3"`'
-expect_policy_text "$PLAN_POLICY" '**schema 1.3 is the schema of record**'
+expect_policy_text "$PLAN_POLICY" 'mode — `"1.1"`, `"1.2"`, `"1.3"`, or `"1.4"`'
+expect_policy_text "$PLAN_POLICY" '**schema 1.4 is the schema of record**'
 expect_policy_text "$PLAN_POLICY" \
   '**Schema 1.3 mutation probes + known command-shape lint (additive over 1.2):**'
 expect_policy_text "$PLAN_POLICY" \
@@ -133,5 +133,13 @@ expect_policy_text "$PLAN_POLICY" \
   '`mutation` covers every schema-1.3 `mutation_probes` presence and shape defect'
 expect_policy_text "$PLAN_POLICY" \
   '`command` covers the three schema-1.3 weak acceptance-command shapes'
+
+# Schema 1.4 overrides ledger: additive positives and hostile shapes.
+expect_pass "$FIXTURES/plan-good-14-overrides.md" "known-command-shape lint"
+expect_pass "$FIXTURES/plan-good-14-no-overrides.md" "known-command-shape lint"
+expect_fail "$FIXTURES/plan-bad-14-override-shape.md" override
+expect_fail "$FIXTURES/plan-bad-14-override-nonarray.md" override
+expect_fail "$FIXTURES/plan-bad-13-carrying-14-field.md" version
+expect_policy_text "$PLAN_POLICY" '**Schema 1.4 overrides ledger (additive over 1.3):**'
 
 printf 'validate-plan.sh: ALL CHECKS PASSED\n'

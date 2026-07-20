@@ -66,7 +66,15 @@ recovery menu is deliberately closed:
    one-to-one contracted, mechanically executable `mutation_probes` compensation with expected result
    red. The independent verifier executes all such probes on fresh scratch copies. A non-C2 blocker,
    a missing mapping, a prose-only check, or an unexecutable mutation makes this option ineligible.
-3. **Halt** is always eligible and is the default: preserve the blocker evidence and dispatch no
+3. **assumption-gated dispatch (human delivery override)** on a genuine human delivery-intent turn
+   ("implement now", "stop reviewing", or equivalent) — available at any point after Layer-2
+   findings exist, not only at the cap. Safety-floor blockers are never waivable and stay
+   dispatch-blocking; every other open blocker converts to a recorded assumption plus a required
+   follow-up test in the affected task's contract, and one subsequent genuine human confirmation
+   turn dispatches immediately. Full semantics — the trigger duty, the six-item safety floor,
+   provenance, the audit marker, waived-stays-waived — live in
+   [plan-critique.md](plan-critique.md).
+4. **Halt** is always eligible and is the default: preserve the blocker evidence and dispatch no
    worker.
 
 The menu grants no authority by itself. Extending or dispatching requires the human to choose the

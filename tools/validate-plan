@@ -8,8 +8,9 @@ every deterministic (Layer-1) check from policy/plan-critique.md:
 
   - block parses as valid JSON with NO duplicate object keys at any level
     (a last-wins duplicated key is silently-accepted ambiguity); `version`
-    present and, in DEFAULT mode, "1.1", "1.2", or "1.3" — schema 1.3 is
-    the schema of record; 1.1 and 1.2 remain valid for plans that predate it.
+    present and, in DEFAULT mode, "1.1", "1.2", "1.3", or "1.4" — schema 1.4
+    is the schema of record; 1.1, 1.2, and 1.3 remain valid for plans that
+    predate it.
     A "version": "1" block is rejected as a legacy schema version; unknown
     version strings are rejected naming the version
   - `--legacy` accepts "version": "1" blocks under the ORIGINAL v1 rules —
@@ -86,6 +87,19 @@ Version "1.3" blocks enforce EVERY 1.2 rule above (1.3 is additive) plus:
 `mutation_probes` is NOT defined by schema 1.1 or 1.2. A block carrying it
 must declare schema 1.3; older schemas carrying the field are rejected.
 
+Version "1.4" blocks enforce EVERY 1.3 rule above (1.4 is additive) plus:
+
+  - plan-level `overrides` is EXPLICITLY OPTIONAL — the mechanical ledger of
+    assumption-gated dispatch. When present it must be a JSON array (an
+    EMPTY array is valid: the plan explicitly declares no overrides); each
+    entry must be an object with exactly `blocker`, `assumption`,
+    `followup_test`, and `authorized_turn`, each a non-empty string. A
+    non-array ledger, non-object entry, missing or extra key, or
+    empty/non-string value is its own defect            [keyword: override]
+
+`overrides` is NOT defined by schema 1.1, 1.2, or 1.3. A block carrying it
+must declare schema 1.4; older schemas carrying the field are rejected.
+
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
 defect class keyword (contract / cover / cycl / negative / assurance /
@@ -115,6 +129,8 @@ VALID_REVIEW_TIERS = ("single", "dual")
 REVIEW_RANK = {"single": 0, "dual": 1}
 VALID_FAILURE_SURFACES = ("concurrency", "trust_boundary", "streaming",
                           "clock", "production_only")
+# v1.4 overrides ledger: the exact per-entry field set
+OVERRIDE_KEYS = ("blocker", "assumption", "followup_test", "authorized_turn")
 SHELL_NAMES = ("bash", "dash", "ksh", "sh", "zsh")
 ECHO_SIGNAL_RE = re.compile(
     r"(?<![A-Za-z0-9_$-])echo(?:[ \t]+-[nEe]+)?[ \t]+"
@@ -324,18 +340,20 @@ def main():
     elif version == "1":
         if not legacy:
             errors.append("plan: legacy schema version \"1\" — migrate to "
-                          "\"1.3\" or run with --legacy (version \"1\" is "
+                          "\"1.4\" or run with --legacy (version \"1\" is "
                           "accepted for historical provenance only)")
-    elif version not in ("1.1", "1.2", "1.3"):
+    elif version not in ("1.1", "1.2", "1.3", "1.4"):
         errors.append("plan: unknown schema version %r — known versions are "
                       "\"1\" (legacy, --legacy only), \"1.1\", \"1.2\", "
-                      "and \"1.3\"; "
+                      "\"1.3\", and \"1.4\"; "
                       "assurance rules for an unknown schema version cannot "
                       "be applied" % (version,))
-    # Schemas are additive: 1.3 inherits 1.2, which inherits every 1.1 rule.
-    v11 = version in ("1.1", "1.2", "1.3")
-    v12 = version in ("1.2", "1.3")
-    v13 = version == "1.3"
+    # Schemas are additive: 1.4 inherits 1.3, which inherits 1.2, which
+    # inherits every 1.1 rule.
+    v11 = version in ("1.1", "1.2", "1.3", "1.4")
+    v12 = version in ("1.2", "1.3", "1.4")
+    v13 = version in ("1.3", "1.4")
+    v14 = version == "1.4"
 
     # v1.2-only fields are NOT defined by schema 1.1 — a 1.1 block carrying
     # them is rejected naming the schema version that defines them
@@ -361,6 +379,46 @@ def main():
                           % (rt, "/".join(VALID_REVIEW_TIERS)))
         else:
             review_tier = rt
+
+    # The v1.4-only `overrides` ledger is NOT defined by older schemas — a
+    # 1.1/1.2/1.3 block carrying it is rejected naming the schema version
+    # that defines it
+    if version in ("1.1", "1.2", "1.3") and "overrides" in plan:
+        errors.append("plan: 'overrides' is a schema-1.4 field — schema %s "
+                      "does not define it; declare \"version\": \"1.4\" to "
+                      "use the overrides ledger (wrong schema version)"
+                      % version)
+
+    # v1.4 OPTIONAL plan-level overrides ledger: when present, a JSON array
+    # (an EMPTY array is valid — the plan explicitly declares no overrides)
+    # of objects carrying exactly the four non-empty-string fields
+    if v14 and "overrides" in plan:
+        overrides = plan["overrides"]
+        if not isinstance(overrides, list):
+            errors.append("plan: schema 1.4 field 'overrides' must be a "
+                          "JSON array of {%s} objects — a non-array ledger "
+                          "records nothing (invalid override ledger)"
+                          % ", ".join(OVERRIDE_KEYS))
+        else:
+            for o_idx, entry in enumerate(overrides):
+                if not isinstance(entry, dict):
+                    errors.append("plan: override entry #%d must be an "
+                                  "object containing exactly the keys %s "
+                                  "(invalid override ledger)"
+                                  % (o_idx, ", ".join(OVERRIDE_KEYS)))
+                    continue
+                keys = set(entry)
+                if keys != set(OVERRIDE_KEYS):
+                    errors.append("plan: override entry #%d must contain "
+                                  "exactly the keys %s, got %s (invalid "
+                                  "override ledger)"
+                                  % (o_idx, ", ".join(OVERRIDE_KEYS),
+                                     ", ".join(sorted(keys)) or "no keys"))
+                for field in OVERRIDE_KEYS:
+                    if field in entry and not nonempty_str(entry[field]):
+                        errors.append("plan: override entry #%d field '%s' "
+                                      "must be a non-empty string (invalid "
+                                      "override ledger)" % (o_idx, field))
 
     # assurance
     assurance = plan.get("assurance")

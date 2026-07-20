@@ -122,12 +122,12 @@ each selects the corresponding terminal STATE `verified_producer` / `verified_in
 valid field values, and the validator rejects them; write `independent`, never `verified_independent`,
 in the field.
 
-## Block versioning — `"1.3"` is the schema of record; `"1.1"`/`"1.2"` remain valid; `"1"` is legacy-only
+## Block versioning — `"1.4"` is the schema of record; `"1.1"`/`"1.2"`/`"1.3"` remain valid; `"1"` is legacy-only
 
-The plan's embedded machine-readable block declares a schema `version`. Schema `"1.3"` is the
-**schema of record** — author new plans against it (see the schema 1.3 section below). Schemas
-`"1.1"` and `"1.2"` remain valid for plans that predate 1.3: default validation accepts all three
-and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
+The plan's embedded machine-readable block declares a schema `version`. Schema `"1.4"` is the
+**schema of record** — author new plans against it (see the schema 1.4 section below). Schemas
+`"1.1"`, `"1.2"`, and `"1.3"` remain valid for plans that predate 1.4: default validation accepts
+all four and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
 HISTORICAL PROVENANCE ONLY — re-checking plans authored before the 1.1 schema — and is accepted
 solely under `tools/validate-plan --legacy`, which applies the original v1 rules. Never author a new
 plan against v1. Unknown version strings are rejected naming the version.
@@ -186,7 +186,7 @@ declared-single-on-1.1 dodge, not backward compatibility. Existing 1.1 plans tha
 the fields validate exactly as before. Validators that predate 1.2 fail safely on it: they reject
 `"version": "1.2"` as an unknown schema version rather than fail open on the unknown fields.
 
-## Schema 1.3 — the schema of record: mutation probes + command-shape lint
+## Schema 1.3 — retained: mutation probes + command-shape lint
 
 Schema `"1.3"` is ADDITIVE over 1.2: every 1.1 and 1.2 rule applies unchanged. It adds one
 per-contract field and deterministic lint for three known weak `acceptance_command` shapes:
@@ -206,6 +206,45 @@ without an immediately preceding `&&`; and an expected-signal `echo` followed by
 This lint is deliberately narrower than a shell parser and does not claim that commands passing it
 are semantically strong. Producer red-path execution and independent mutation probing provide that
 evidence.
+
+## Schema 1.4 — the schema of record: override follow-up tests + the `overrides` ledger
+
+Schema `"1.4"` is ADDITIVE over 1.3: every 1.1, 1.2, and 1.3 rule applies unchanged. It adds one
+OPTIONAL plan-level field — the mechanical record of a human delivery override
+(assumption-gated dispatch; full semantics in `policy/plan-critique.md`). A 1.4 block without the
+field validates identically to a 1.3 block.
+
+**The conversion rule — a waiver buys evidence-later, never nothing.** When the human waives an
+open blocker under the override, that blocker converts to a **recorded assumption plus a REQUIRED
+follow-up test attached to the affected task's contract**: a `mutation_probes` entry, a
+`negative_cases` entry, or a golden vector the `acceptance_command` runs. A waived blocker with no
+follow-up test is a silent drop, and a silent drop is invalid — the ledger below is how the
+conversion is recorded so a verifier can mechanically find every debt the waiver created.
+
+| Field (1.4) | Level | Mandatory at | Rule |
+|---|---|---|---|
+| `overrides` | plan | never — **explicitly optional** | a JSON **array**; every entry is an object containing exactly `blocker`, `assumption`, `followup_test`, and `authorized_turn`, each a non-empty string |
+
+Entry field shapes:
+
+```jsonc
+"overrides": [
+  {
+    "blocker": "C2: probe order unproven for the scan seam",   // the Layer-2 finding being waived — non-empty string
+    "assumption": "scan order is stable under the fixture ABI", // the recorded assumption it becomes — non-empty string
+    "followup_test": "T3 mutation probe: reverse the scan order on a scratch copy, expected red", // the required test now attached to the affected task's contract — non-empty string
+    "authorized_turn": "turn 14 — human confirmation of the override offer" // which genuine human turn authorized the waiver — non-empty string
+  }
+]
+```
+
+A malformed ledger — a non-array `overrides`, a non-object entry, a missing or extra field, an
+empty or non-string value — is a Layer-1 defect with stable keyword `override`. The field is not
+defined by schema 1.1, 1.2, or 1.3, so any older schema carrying it is rejected with a diagnostic
+naming schema 1.4 (keyword `version`). Existing 1.1–1.3 plans without the field continue to
+validate exactly as before. The ledger is authored by the model at the override offer — zero human
+burden — and the safety floor is out of its reach: floor blockers never appear as `overrides`
+entries because they cannot be waived at all.
 
 ## Evidence classes — non-code and mixed work
 
