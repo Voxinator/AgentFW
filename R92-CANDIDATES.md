@@ -1,6 +1,7 @@
-# v9.2 candidates — proposed, not implemented
+# v9.2 candidates
 
-Status: **design proposals for maintainer red-team.** Nothing here is policy. Each entry retains
+Status: **D-1 is IMPLEMENTED on main (unreleased); D-2 through D-6 remain design proposals.**
+Proposal entries are not policy until built and released. Each entry retains
 the observed scenario, root cause, and proposed mechanism, following the
 [R9X-CANDIDATES.md](R9X-CANDIDATES.md) format (which documented the *implemented* r9.x set).
 
