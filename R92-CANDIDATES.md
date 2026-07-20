@@ -29,6 +29,23 @@ gives the paying human no priced-in way to say "the edge-case search has stopped
 
 ---
 
+## Maintainer calibration (2026-07-20) — the governing design constraint for v9.2
+
+AgentFW's target domain is **ordinary software work, not life-critical systems**. It is not
+governing medical devices or launch vehicles; it exists to raise the quality of agent output on
+the work people actually do. From the maintainer, verbatim in substance:
+
+> It needs to help improve the quality of agent output but shouldn't create a maze the user has
+> to constantly fight. If it's not economical, it won't get used. The magic is in the middle. A
+> relax lever shouldn't be extremely hard to grab — but it should require the human.
+
+This makes **economy a first-class design constraint with a safety rationale: governance that is
+not economical does not get used, and an unused framework governs nothing.** Every mechanism below
+is to be judged against it. The safety floor stays — nothing is ripped out — but everything above
+the floor is priced in the user's currency, and the user holds the lever.
+
+---
+
 ## D-1 · Human delivery override (assumption-gated dispatch on human authority)
 
 **Status:** proposed · **Priority:** highest · **Effort:** medium (policy + both adapters + eval)
@@ -88,19 +105,25 @@ derivation is *not* overridable at the destructive step — correctly — but it
 (hostile-probe completeness, handoff formalization) was assumption-class once the operation itself
 became non-destructive.
 
-**Open questions for the maintainer to red-team:**
-- Is the safety-floor list exactly right? (It is the field report's P0 list verbatim. Candidate
-  additions: contracts whose acceptance command has never been red-path probed. Candidate
-  removals: none proposed.)
-- Should trigger recognition require an explicit token (e.g. the literal word "override") to
-  eliminate false positives on ambiguous turns, or is natural-language delivery intent + mandatory
-  echo-back confirmation sufficient? Proposal: natural language + confirmation; the confirmation
-  turn is the false-positive guard.
-- Should the assumption ledger land in the plan block mechanically — additive schema 1.4 field
-  `overrides: [{blocker, assumption, followup_test, authorized_turn}]` — so Layer 1 can verify
-  every waived blocker carries a follow-up test? Proposal: yes, additive, 1.3 plans unaffected.
-- Does an override survive a plan *revision*? Proposal: no — any new plan cycle re-opens
-  everything; the override binds to the exact task set it dispatched.
+**Design decisions — resolved by maintainer calibration (2026-07-20):**
+- **Safety floor: the field-report P0 list verbatim, no additions.** The candidate addition
+  (contracts whose acceptance command was never red-path probed) is REJECTED from the floor: an
+  unprobed command is a quality defect, and quality defects are the human's to waive. It remains a
+  normal blocker — surfaced, waivable, converted to a follow-up test on waiver.
+- **Trigger: natural language + echo-back confirmation. No token, no ritual.** Delivery intent in
+  plain words opens the offer; the confirmation turn is the false-positive guard. Explicit
+  anti-pattern, demonstrated in the self-upgrade incident: nonce-gated authorization
+  (`AUTHORIZE-AFW91-…`) for non-destructive work is exactly the maze the calibration forbids.
+  (Nonces remain available to *adapters* for destructive A4 authorization where channel provenance
+  is weak — that is the floor's territory, not the lever's.)
+- **Ledger: additive schema 1.4 field, authored by the model, zero human burden.**
+  `overrides: [{blocker, assumption, followup_test, authorized_turn}]`; Layer 1 verifies every
+  waived blocker carries a follow-up test; 1.3 plans unaffected.
+- **Waived stays waived.** An override binds to the *objective*, not the plan revision. A later
+  cycle for the same objective may raise genuinely new findings, and safety-floor findings always
+  block — but it may NOT re-raise a waived assumption absent new evidence. Rationale: if revision
+  resurrects waivers, one trivial forced revision rebuilds the treadmill; this rule is also the
+  symmetric counterweight to reviewer-driven scope accretion the field report asked for.
 
 ## D-2 · Global liveness budget across plan cycles
 
