@@ -48,7 +48,7 @@ the floor is priced in the user's currency, and the user holds the lever.
 
 ## D-1 · Human delivery override (assumption-gated dispatch on human authority)
 
-**Status:** proposed · **Priority:** highest · **Effort:** medium (policy + both adapters + eval)
+**Status:** IMPLEMENTED on main (unreleased; ships with v9.2) · **Priority:** highest · **Effort:** medium — build provenance: PLAN-v9.2-d1-override.md
 
 **Scenario (demonstrated):** during the livelock, several genuine human turns selected the
 practical outcome — simplify, stay non-destructive, implement now. Under the active policy those
