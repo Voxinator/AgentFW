@@ -39,13 +39,13 @@ matches. If it doesn't, trust the quotes as historical evidence and note the dri
 | D-4 | Fail visibly on install/policy drift (`ACTIVE_POLICY_STALE`) | accepted — issue #10 |
 | D-5 | Governance-cost instrumentation (`PLANNING_LIVELOCK_RISK`) | accepted — issue #11 |
 | D-6 | Reversible-prototype-treadmill regression eval | accepted; gates v9.2.x behavioral claims — issue #12 |
-| D-7 | Plan-mass alarm (growth-under-critique trigger) | proposed |
-| D-8 | Verification-cycle cap (judge/rejudge discipline) | proposed |
-| D-9 | Version-control preflight (`workspace_versioned` probe) | proposed |
-| D-10 | Confidence-class evidence vocabulary for research tasks | proposed |
-| D-11 | Soak/duration probes as a named verifier duty | proposed |
-| D-12 | Contract-prose proportionality (fixtures over criteria prose) | proposed |
-| D-13 | Evidence lifecycle (judge scratch hygiene) | proposed |
+| D-7 | Plan-mass alarm (growth-under-critique trigger) | proposed — issue #13 |
+| D-8 | Verification-cycle cap (judge/rejudge discipline) | proposed — issue #14 |
+| D-9 | Version-control preflight (`workspace_versioned` probe) | proposed — issue #15 |
+| D-10 | Confidence-class evidence vocabulary for research tasks | proposed — issue #16 |
+| D-11 | Soak/duration probes as a named verifier duty | proposed — issue #17 |
+| D-12 | Contract-prose proportionality (fixtures over criteria prose) | proposed — issue #18 |
+| D-13 | Evidence lifecycle (judge scratch hygiene) | proposed — issue #19 |
 
 ---
 
