@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic release gate for AgentFW v9.1.0.
+# Deterministic release gate for the AgentFW v9.1 line (currently v9.1.1).
 #
 # AGENTFW_RELEASE_ROOT may point at a scratch copy for red-path probes.
 # AGENTFW_RELEASE_IDENTITY_ONLY=1 stops after release-document checks; the normal contracted
@@ -40,6 +40,7 @@ for required in \
   CHANGELOG.md \
   DESIGN.md \
   RELEASE-NOTES-v9.1.0.md \
+  RELEASE-NOTES-v9.1.1.md \
   R9X-CANDIDATES.md \
   PLAN-bonksnake-fixture.md \
   PROMPTS-v9-paces.md \
@@ -51,21 +52,21 @@ do
 done
 
 python3 - "$ROOT/metadata.json" <<'PY' \
-  || fail "metadata.json must report version 9.1.0 and revision r9.1"
+  || fail "metadata.json must report version 9.1.1 and revision r9.1"
 import json
 import sys
 
 with open(sys.argv[1], encoding="utf-8") as fh:
     data = json.load(fh)
-assert data.get("version") == "9.1.0", data.get("version")
+assert data.get("version") == "9.1.1", data.get("version")
 assert data.get("revision") == "r9.1", data.get("revision")
 PY
 
-require_contains README.md '**Status: v9.1.0, released 2026-07-15**'
+require_contains README.md '**Status: v9.1.1, released 2026-07-20**'
 require_contains README.md 'deferred to **v9.2** as the designated adapter candidate'
 require_contains README.md 'No new behavioral-evaluation round'
 require_contains README.md '[r9.x improvements](R9X-CANDIDATES.md)'
-require_contains README.md '[the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md)'
+require_contains README.md '[the v9.1.1 release notes](RELEASE-NOTES-v9.1.1.md)'
 require_contains README.md '- **C-1 — acceptance-command red paths and lint.**'
 require_contains README.md '- **C-2 — additive schema 1.3 mutation probes.**'
 require_contains README.md '- **C-3 — fixture leak-channel hygiene.**'
@@ -73,10 +74,10 @@ require_contains README.md '- **C-4 — empirical plan critics.**'
 require_contains README.md '- **C-5 — named cap relaxations.**'
 require_contains README.md '- **C-6 — command-resolution evidence.**'
 require_contains README.md 'schema 1.1 and 1.2 plans retain their existing behavior'
-require_contains profiles/chatgpt-projects.md 'Current release: **AgentFW v9.1.0**'
+require_contains profiles/chatgpt-projects.md 'Current release: **AgentFW v9.1.1**'
 require_contains profiles/chatgpt-projects.md 'designated v9.2 candidate'
-require_contains adapters/claude-code/INSTALL.md 'Current release: **AgentFW v9.1.0**'
-require_contains adapters/codex/INSTALL.md 'Current release: **AgentFW v9.1.0**'
+require_contains adapters/claude-code/INSTALL.md 'Current release: **AgentFW v9.1.1**'
+require_contains adapters/codex/INSTALL.md 'Current release: **AgentFW v9.1.1**'
 require_contains DESIGN.md '**Current-release note (v9.1.0):**'
 
 # These phrases were current-facing in v9.0.0. They are forbidden only in adopter-facing docs;
@@ -113,6 +114,7 @@ for pattern in positive_claims:
     assert not re.search(pattern, section, flags=re.IGNORECASE), pattern
 PY
 
+require_contains CHANGELOG.md '## v9.1.1 (2026-07-20) — RELEASED'
 require_contains CHANGELOG.md '## v9.1.0 (2026-07-15) — RELEASED'
 require_contains CHANGELOG.md 'C-1 — acceptance-command red paths'
 require_contains CHANGELOG.md 'C-2 — first-class mutation probes'
@@ -122,6 +124,20 @@ require_contains CHANGELOG.md 'C-5 — named cap relaxations'
 require_contains CHANGELOG.md 'C-6 — resolved command evidence'
 require_contains CHANGELOG.md 'schema **1.3**'
 require_contains CHANGELOG.md 'no golden task, Bonksnake prompt, or behavioral evaluation was'
+
+# v9.1.1 — the Codex upgrade procedure must restore the COMPLETE INSTALL.md Step 2 inventory,
+# and must carry a mechanical inventory check. A behavioral-only verification cannot detect a
+# partial skill copy, which is the defect this release fixes.
+require_contains adapters/codex/UPGRADE.md 'cp tools/validate-plan ~/.agents/skills/agentfw/tools/validate-plan'
+require_contains adapters/codex/UPGRADE.md 'cp adapters/codex/capability.yaml ~/.agents/skills/agentfw/capability.yaml'
+require_contains adapters/codex/UPGRADE.md 'chmod +x ~/.agents/skills/agentfw/tools/validate-plan'
+require_contains adapters/codex/UPGRADE.md 'INVENTORY_OK'
+require_not_contains adapters/codex/UPGRADE.md 'rm -rf ~/.agents/skills/agentfw'
+
+require_contains RELEASE-NOTES-v9.1.1.md 'Documentation-correctness patch over'
+require_contains RELEASE-NOTES-v9.1.1.md 'No behavioral-evaluation round was run for v9.1.1'
+require_contains RELEASE-NOTES-v9.1.1.md 'one field incident, not a statistical result'
+require_file evaluation/field-report-2026-07-20-noita-planning-livelock.md
 
 require_contains RELEASE-NOTES-v9.1.0.md 'schema 1.3 mutation probes'
 require_contains RELEASE-NOTES-v9.1.0.md 'both capability-validator parser paths'

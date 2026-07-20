@@ -23,10 +23,12 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.1.0, released 2026-07-15** — a backward-compatible minor release that strengthens
-acceptance-command evidence, fixture hygiene, plan-critic behavior, recovery choices, and command
-preflight reporting. The deterministic release gate is green. No new behavioral-evaluation round
-was run for v9.1.0; the bounded v9.0.0 behavioral evidence remains the behavioral record. See
+**Status: v9.1.1, released 2026-07-20** — a documentation-correctness patch over v9.1.0. It fixes a
+Codex upgrade procedure that under-restored the installed skill (dropping the Layer-1 validator and
+the capability contract) and whose documented verification was behavioral-only, so it could not
+detect the loss. The deterministic release gate is green. No new behavioral-evaluation round was
+run for v9.1.0 or v9.1.1; the bounded v9.0.0 behavioral evidence remains the behavioral record. See
+[the v9.1.1 release notes](RELEASE-NOTES-v9.1.1.md),
 [the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md) and
 [Verification & provenance](#verification--provenance).
 
@@ -121,7 +123,7 @@ What r9's quality claims rest on — and what they don't:
 
 ```
 agentfw/
-├── metadata.json                  # Project metadata (version 9.1.0, install routing)
+├── metadata.json                  # Project metadata (version 9.1.1, install routing)
 ├── README.md                      # This file
 ├── CHANGELOG.md                   # Version history with audit trail
 ├── DESIGN.md                      # Historical r8 design spec with a v9.1 current-release banner

@@ -27,19 +27,51 @@ UNINSTALL.md).
    <!-- AGENTFW:END rX -->
    ```
 
-3. Replace the skill wholesale (it has no user-owned content):
+3. Replace the skill wholesale (it has no user-owned content). The replacement MUST restore the
+   **complete** Step 2 inventory from INSTALL.md — SKILL.md, `policy/`, the validator, AND
+   `capability.yaml`. Move the old directory aside rather than deleting it, so a failed copy
+   leaves a rollback:
 
    ```sh
-   rm -rf ~/.agents/skills/agentfw
-   mkdir -p ~/.agents/skills/agentfw
-   cp <new-release>/adapters/codex/skills/agentfw/SKILL.md ~/.agents/skills/agentfw/SKILL.md
-   cp -R <new-release>/policy ~/.agents/skills/agentfw/policy
+   # from the new release's repo root
+   mv ~/.agents/skills/agentfw ~/.agents/skills/agentfw.bak-$(date +%Y%m%d-%H%M%S)
+   mkdir -p ~/.agents/skills/agentfw/tools
+   cp adapters/codex/skills/agentfw/SKILL.md ~/.agents/skills/agentfw/SKILL.md
+   cp -R policy ~/.agents/skills/agentfw/policy
+   cp tools/validate-plan ~/.agents/skills/agentfw/tools/validate-plan
+   chmod +x ~/.agents/skills/agentfw/tools/validate-plan
+   cp adapters/codex/capability.yaml ~/.agents/skills/agentfw/capability.yaml
    ```
+
+   **Why all four:** dropping `tools/validate-plan` leaves the installed skill unable to RUN
+   Layer-1 plan validation, and dropping `capability.yaml` blinds the skill's §0 capability
+   preflight. Both failures are silent — the skill still loads and the gate simply stops firing.
+   An upgrade that restores fewer than four items is a downgrade.
 
 4. Re-merge `config.example.toml` if the new release changed it — again merge, never replace,
    keep the stricter value on conflict.
-5. Re-run INSTALL.md Step 4 (post-install verification). An upgrade without the verification
-   step is unverified by AgentFW's own standard.
+5. Verify — **both** checks. An upgrade without them is unverified by AgentFW's own standard.
+
+   **5a. Inventory check (mechanical).** INSTALL.md Step 4 is behavioral: it confirms the
+   bootloader is loaded and markers are emitted. It CANNOT detect a partial skill copy — the
+   bootloader lives in `AGENTS.md`, which an upgrade may not touch at all, so the model still
+   describes A0–A4 correctly while the validator is missing. Run this from the release's repo
+   root; it goes red on exactly the failure mode above:
+
+   ```sh
+   test -f ~/.agents/skills/agentfw/SKILL.md \
+     && test -d ~/.agents/skills/agentfw/policy \
+     && test -x ~/.agents/skills/agentfw/tools/validate-plan \
+     && test -f ~/.agents/skills/agentfw/capability.yaml \
+     && diff -r policy ~/.agents/skills/agentfw/policy \
+     && python3 ~/.agents/skills/agentfw/tools/validate-plan tools/fixtures/plan-good.md \
+     && echo INVENTORY_OK
+   ```
+
+   Expect a terminal `INVENTORY_OK` with exit 0. Any missing item, drifted policy copy, or a
+   validator that will not execute fails before the signal — the signal is the check.
+
+   **5b. Behavioral check.** Re-run INSTALL.md Step 4.
 
 **Idempotence check:** after the replacement, `grep -c 'AGENTFW:BEGIN' ~/.codex/AGENTS.md`
 MUST print `1`. More than one block means a previous upgrade appended instead of replacing —

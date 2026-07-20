@@ -1,5 +1,47 @@
 # AgentFW Changelog
 
+## v9.1.1 (2026-07-20) — RELEASED
+
+Documentation-correctness patch. No policy, schema, validator, or adapter payload changed; the
+governance surface is byte-identical to v9.1.0. Full detail:
+[RELEASE-NOTES-v9.1.1.md](RELEASE-NOTES-v9.1.1.md).
+
+- **Fixed — Codex upgrade under-restored the installed skill.** `adapters/codex/UPGRADE.md` Case A
+  step 3 deleted the skill directory and copied back only `SKILL.md` and `policy/`, while
+  `INSTALL.md` Step 2 installs **four** items. An upgrade performed by the book therefore dropped
+  `tools/validate-plan` and `capability.yaml`, leaving the installed skill unable to run Layer-1
+  plan validation and blind in its §0 capability preflight. Both losses are silent: the skill still
+  loads and the gate simply stops firing. Step 3 now restores the complete Step 2 inventory and
+  moves the old directory aside instead of deleting it, so a failed copy leaves a rollback.
+- **Fixed — the documented verification could not detect that failure.** Step 5 deferred entirely
+  to INSTALL.md Step 4, which is behavioral: start a session, ask the model to state its framework,
+  confirm markers appear. None of that can go red on a missing validator, because the bootloader
+  lives in `AGENTS.md` and an upgrade may never touch it — the model keeps describing A0–A4
+  correctly while Layer-1 validation is gone. Step 5 now carries a mechanical inventory check that
+  is exit-code gated and emits `INVENTORY_OK` last, verified red against a skill directory built
+  the way the old procedure built it.
+- **Unaffected: Claude Code.** Its installer is manifest-based and `agentfw-install status` already
+  checks the file inventory mechanically. The defect was specific to Codex, which has no installer
+  and so relied entirely on the prose being right.
+
+**Field evidence:** `evaluation/field-report-2026-07-20-noita-planning-livelock.md` is published
+with this release. It is one field incident, not a calibration result. It documents AgentFW
+correctly stopping a real destructive-data mistake and then preventing all implementation through a
+planning livelock, and it independently identifies stale-install drift as a contributing cause —
+the same distribution failure this patch fixes. Its recommendations (global liveness budget,
+separating safety blockers from implementation assumptions, surfacing cap recovery in the adapter,
+and failing visibly on policy drift) are **not implemented in v9.1.1** and are candidates for a
+later release. Three of its four evidence hashes were reproduced during this release; the fourth
+row contained a transcription error and was corrected to the verified value.
+
+**Release evidence:** `tools/tests/release-v9.1.sh` re-pinned to the 9.1.1 identity and green —
+validator fixture harness, installer roundtrip (28/28), relative links, and capability validation
+through both PyYAML and stdlib-fallback parser paths.
+
+**Behavioral evidence boundary:** no golden task, Bonksnake prompt, or behavioral evaluation was
+run for v9.1.1. The bounded n=1 evidence published with v9.0.0 remains the behavioral record and is
+not re-presented as fresh evidence.
+
 ## v9.1.0 (2026-07-15) — RELEASED
 
 Backward-compatible r9.x evidence-strengthening release. Full detail:

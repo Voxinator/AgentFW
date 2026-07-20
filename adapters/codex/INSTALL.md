@@ -1,7 +1,7 @@
 # AgentFW r9 — Codex install (manual)
 
-Current release: **AgentFW v9.1.0**. The `r9` block markers are stable major-version install
-markers. v9.1.0 is deterministically verified; it carries forward v9.0.0's bounded behavioral
+Current release: **AgentFW v9.1.1**. The `r9` block markers are stable major-version install
+markers. v9.1.1 is deterministically verified; it carries forward v9.0.0's bounded behavioral
 evidence and does not claim a new behavioral-evaluation round.
 
 r9 ships **no installer script for Codex** — installation is a short manual procedure. Every
