@@ -1,5 +1,53 @@
 # AgentFW Changelog
 
+## v9.2.0 (2026-07-20) — RELEASED
+
+The delivery-invariant release. Adds **D-1: the human delivery override (assumption-gated
+dispatch)** — the standard, human-invocable relaxation that ends a plan-review spiral in two
+turns without touching the safety floor. Full detail: [RELEASE-NOTES-v9.2.0.md](RELEASE-NOTES-v9.2.0.md);
+design provenance: [R92-CANDIDATES.md](R92-CANDIDATES.md) § D-1 + § Maintainer calibration.
+
+- **Policy** (`policy/plan-critique.md`): the escalation menu becomes four options (extend one
+  pass / mutation-gated dispatch / **assumption-gated dispatch (human delivery override)** /
+  halt, which stays the default); a standalone "Human delivery override" subsection defines the
+  trigger duty (after Layer-2 findings exist, a genuine human delivery-intent turn means the
+  model MUST NOT start a new plan/critique cycle — it presents the override offer or a
+  safety-floor refusal), the six-item never-waivable safety floor, waived-blocker →
+  recorded-assumption-plus-follow-up-test conversion, the one-confirmation-turn flow under
+  `assurance-model.md` provenance (no nonce ritual for non-destructive work), waived-stays-waived
+  per objective, the `[OVERRIDE: …]` audit marker, and the preserved self-clearance prohibition.
+  `policy/recovery.md` §7 carries the same menu; `policy/acceptance-contract.md` documents the
+  conversion and ledger fields.
+- **Schema 1.4** (additive; new schema of record): optional plan-level `overrides` ledger —
+  entries exactly `{blocker, assumption, followup_test, authorized_turn}`, all non-empty strings —
+  enforced by `tools/validate-plan` with new stable defect keyword `override`; a 1.1/1.2/1.3
+  block carrying `overrides` is rejected naming schema 1.4 (fail-safe, keyword `version`).
+  Schema 1.1–1.3 behavior unchanged; 5 new fixtures; harness wired.
+- **Adapters:** both SKILL.md files surface the four-option menu, trigger duty, and safety floor
+  inline — the field report showed the recovery menu living only in an unloaded policy file is a
+  recovery menu that does not exist. The override span is byte-identical across both adapters.
+- **Build provenance (dogfooded, self-referentially):** the build's own plan gate caught a
+  demonstrated-vacuous acceptance command via a null-implementation probe, hit the 2-pass cap
+  with that open blocker, escalated to the maintainer, and dispatched under a recorded
+  probe-verified relaxation — the exact escalation shape D-1 now standardizes. Two Layer-2
+  passes, three workers, independent verifier VERIFIED-WITH-FINDINGS (8/8 contracted mutation
+  probes red, 10 off-contract hostile probes clean; its one finding fixed and re-verified).
+  Full record: `PLAN-v9.2-d1-override.md`.
+- **Deferred (designed, not built):** D-2 global liveness budget, D-3 (delivered for the
+  override path only), D-4 drift visibility, D-5 governance-cost instrumentation, D-6
+  reversible-prototype-treadmill regression eval — tracked as issues #8–#12.
+
+**Release evidence:** `tools/tests/release-v9.2.sh` (the re-pinned deterministic gate) — release
+identity, schema validator fixture harness (incl. the 5 new 1.4 fixtures), installer roundtrip
+(28/28), relative links, capability validation through both parser paths, plus new D-1 policy
+and adapter-sync assertions, each red-path probed.
+
+**Behavioral evidence boundary:** no golden task, Bonksnake prompt, or behavioral evaluation was
+run for v9.2.0. The override's behavioral effectiveness is exactly what D-6 (the
+reversible-prototype treadmill) is designed to measure; until it runs, the bounded v9.0.0
+behavioral evidence remains the record and D-1's guarantees are the deterministic ones: the
+schema, the validator, and the policy/adapter text.
+
 ## v9.1.1 (2026-07-20) — RELEASED
 
 Documentation-correctness patch. No policy, schema, validator, or adapter payload changed; the

@@ -1,6 +1,6 @@
 # AgentFW r9 — guided profile: ChatGPT Projects (standard ChatGPT, web / desktop)
 
-Current release: **AgentFW v9.1.1**. The `r9` marker below is the stable major-version install
+Current release: **AgentFW v9.2.0**. The `r9` marker below is the stable major-version install
 marker, not a stale release identifier.
 
 **This is not an adapter.** This profile covers **standard ChatGPT with Projects** — the
@@ -18,7 +18,7 @@ different runtime with real controls; it gets a real adapter: `../adapters/codex
 > official documentation host the Codex adapter's capability claims were verified against). The
 > no-isolated-agents and no-enforcement claims in this profile apply to standard ChatGPT/Projects
 > only and do **not** apply to Work. A `chatgpt-work` **adapter** (not a profile) is the
-> designated v9.2 candidate — deferred until the two shipped adapters (claude-code, codex) pass
+> designated v9.3 candidate — deferred until the two shipped adapters (claude-code, codex) pass
 > evaluation, per the Adapter Sprawl rule: an adapter you haven't tested is a profile you're
 > lying about.
 

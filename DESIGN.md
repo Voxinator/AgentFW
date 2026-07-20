@@ -1,6 +1,6 @@
 # AgentFW — Design Specification
 
-> **Current-release note (v9.1.0):** This document remains the historical **r8 design spec**; its
+> **Current-release note (v9.2.0):** This document remains the historical **r8 design spec**; its
 > body is retained as-is. The current framework is the v9.1.0 platform-neutral semantic policy plus
 > native adapters — see `policy/core.md`, `policy/assurance-model.md`, the README's v9 sections, and
 > `RELEASE-NOTES-v9.1.0.md`.
@@ -626,3 +626,4 @@ The harness adds overhead that simple tasks don't need. The classification gate 
 | r8 | 2026-05-29 | v8 governance refactor — firmware reframed as a governance layer over Claude Code 2.1 native primitives (Rule 6), Plan-Critique Gate + Acceptance-Contract spine, `references/native-primitives.md`, GT-8; cross-model content dropped (Claude-Code-only); Hermes variant extracted |
 | v9.0.0 | 2026-07-15 | Portable policy, native Claude Code and Codex adapters, guided profiles, deterministic plan/capability gates, and bounded n=1 behavioral evidence |
 | v9.1.0 | 2026-07-15 | Additive schema 1.3, mutation-based acceptance strength, fixture-hygiene guidance, empirical critic duties, standard cap relaxations, and command-resolution preflight evidence |
+| v9.2.0 | 2026-07-20 | Human delivery override (assumption-gated dispatch): four-option escalation menu, six-item non-waivable safety floor, schema 1.4 overrides ledger, inline adapter surfacing of the recovery menu |

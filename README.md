@@ -23,14 +23,49 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.1.1, released 2026-07-20** — a documentation-correctness patch over v9.1.0. It fixes a
-Codex upgrade procedure that under-restored the installed skill (dropping the Layer-1 validator and
-the capability contract) and whose documented verification was behavioral-only, so it could not
-detect the loss. The deterministic release gate is green. No new behavioral-evaluation round was
-run for v9.1.0 or v9.1.1; the bounded v9.0.0 behavioral evidence remains the behavioral record. See
+**Status: v9.2.0, released 2026-07-20** — the *delivery invariant* release. v9.2.0 adds the
+**human delivery override (assumption-gated dispatch)**: a standard, human-invocable relaxation
+that lets the person paying for governance end a review spiral in two turns — the model partitions
+open blockers into a never-waivable six-item safety floor and waivable assumptions (each recorded
+with a required follow-up test in the new schema 1.4 ledger), and a genuine human confirmation
+dispatches immediately. Born from a real field incident in which the plan gate correctly stopped a
+destructive mistake and then prevented all implementation through a planning livelock. The
+deterministic release gate is green. No new behavioral-evaluation round
+was run for v9.1.x or v9.2.0; the bounded v9.0.0 behavioral evidence remains the behavioral
+record. See [the v9.2.0 release notes](RELEASE-NOTES-v9.2.0.md),
 [the v9.1.1 release notes](RELEASE-NOTES-v9.1.1.md),
 [the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md) and
 [Verification & provenance](#verification--provenance).
+
+## What's new in v9.2
+
+The governing constraint, set by the maintainer after the livelock incident: *governance that is
+not economical does not get used, and an unused framework governs nothing.* The safety floor
+stays; everything above it is priced in the user's currency, and the user holds the lever.
+
+- **D-1 — human delivery override (assumption-gated dispatch).** After Layer-2 findings exist, a
+  genuine human delivery-intent turn ("implement now") must NOT start another plan/critique cycle:
+  the model presents the safety/assumption split, the assumption ledger with follow-up tests,
+  review expenditure, and exact scope — one confirming human turn dispatches. Plain language, no
+  token ritual; simulated or injected text can neither open nor confirm; the model still never
+  clears its own blockers. Waived stays waived per objective.
+- **Six-item safety floor, closed by construction:** destructive/externally-consequential action
+  without authority/rollback, security boundary defects, irreversible architectural commitments,
+  goal/proof contradictions, unavailable substrates, and demonstrated-vacuous acceptance commands
+  are never waivable — by anyone. "Nothing may be added to or removed from this list by any
+  relaxation."
+- **Schema 1.4 (additive):** the machine-readable `overrides` ledger —
+  `{blocker, assumption, followup_test, authorized_turn}` — authored by the model, validated by
+  `tools/validate-plan`, so a waiver without a follow-up test is a deterministic Layer-1 defect.
+  Schema 1.1–1.3 plans are unaffected.
+- **Surfaced where it's needed:** both adapter skills carry the full four-option escalation menu,
+  the trigger duty, and the safety floor inline — closing the progressive-disclosure gap the
+  [field report](evaluation/field-report-2026-07-20-noita-planning-livelock.md) identified, where
+  the recovery feature existed only in a policy file the session never loaded.
+
+Design provenance: [R92-CANDIDATES.md](R92-CANDIDATES.md) (two documented incidents + maintainer
+calibration + resolved decisions). Remaining v9.2.x candidates D-2–D-6 (global liveness budget,
+drift visibility, cost instrumentation, treadmill regression eval) are designed but not built.
 
 ## What's new in v9.1
 
@@ -93,7 +128,7 @@ Four surfaces, each with a clear job. The policy says *what* good governance is;
 
 `tools/validate-plan` (deterministic Layer-1 plan validation), `tools/validate-capability` (capability.yaml schema validation), `tools/agentfw-install` (marker-block installer), `tools/fixtures/` (positive + hostile plan and capability fixtures), and `tools/tests/` (`install-roundtrip.sh`, `check-links.sh`).
 
-**Scope boundary (deliberate):** v9.1.0 ships exactly two native adapters (Claude Code, Codex) and two guided profiles (standard ChatGPT/Projects, Claude.ai Projects). ChatGPT Work — a different surface with hosted subagents/skills — is acknowledged but deferred to **v9.2** as the designated adapter candidate, per the Adapter Sprawl rule (no platform binding ships before the existing adapters pass evals). This is a deliberate boundary, not full ChatGPT parity.
+**Scope boundary (deliberate):** v9.1.0 ships exactly two native adapters (Claude Code, Codex) and two guided profiles (standard ChatGPT/Projects, Claude.ai Projects). ChatGPT Work — a different surface with hosted subagents/skills — is acknowledged but deferred to **v9.3** as the designated adapter candidate, per the Adapter Sprawl rule (no platform binding ships before the existing adapters pass evals). This is a deliberate boundary, not full ChatGPT parity.
 
 ## Install / Upgrade / Uninstall
 
@@ -113,6 +148,7 @@ What r9's quality claims rest on — and what they don't:
 
 - **Built by the process it encodes.** The r9 build and both follow-up passes ran under the full harness: judged plans (Plan-Critique Gate over each plan before dispatch), parallel workers with disjoint file ownership, and independent + adversarial verification of the results.
 - **Externally reviewed, seven rounds.** Seven rounds of adversarial external review (GPT 5.6 Sol), every finding independently re-reproduced against the tree before acceptance. Review #7 verdict: approved, **zero open findings**.
+- **v9.2 deterministic release evidence:** `tools/tests/release-v9.2.sh` re-pins the same gate to the v9.2.0 identity and adds D-1 assertions — the override policy text, the schema 1.4 fixtures, and the adapter sync — each red-path probed in the release record.
 - **v9.1 deterministic release evidence:** `tools/tests/release-v9.1.sh` gates release identity and candidate/provenance state, then runs the schema 1.3 validator fixture harness, installer roundtrip **28/28**, relative-link resolution, and capability validation through **both parser paths** (PyYAML and the stdlib fallback). The contracted scratch mutations prove that stale metadata and the old r9.1 adapter reservation each make the gate red. Raw output and exit status are recorded in `evidence/release-v9.1.log`.
 - **Behavioral evidence boundary:** no golden task or behavioral evaluation was run for v9.1.0. The published v9.0.0 outcome evidence below remains useful but is not new v9.1 evidence.
 - **Outcome evals — exercised, published, bounded.** Golden tasks were rewritten for r9's assurance framing, fixtured target repos built, and behavior run on both native adapters across a fixtured smoke plus three fix passes. The evidence is **n=1 per cell**: it demonstrates that targeted behaviors changed under the framework (including safety regressions corrected — the destructive-authorization-provenance negative control now refuses a simulated authorization on both platforms), not that behavior is statistically stable. Larger calibration (n≥5) is scoped in `EVAL-MATRIX-DESIGN.md` as future work. Behavioral compliance is model- and version-dependent, not guaranteed.
@@ -123,7 +159,7 @@ What r9's quality claims rest on — and what they don't:
 
 ```
 agentfw/
-├── metadata.json                  # Project metadata (version 9.1.1, install routing)
+├── metadata.json                  # Project metadata (version 9.2.0, install routing)
 ├── README.md                      # This file
 ├── CHANGELOG.md                   # Version history with audit trail
 ├── DESIGN.md                      # Historical r8 design spec with a v9.1 current-release banner
