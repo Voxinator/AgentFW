@@ -5,13 +5,15 @@ Usage: validate-capability <capability.yaml>
 
 Machine-checks a capability instance against policy/capability-contract.md:
 
-  - EXACTLY the 10 spec keys are present (no missing, no extras):
+  - EXACTLY the spec keys (SPEC_KEYS) are present (no missing, no extras):
     filesystem shell isolated_agents parallel_agents persistent_state
     deterministic_permissions worktree_isolation scheduled_resume
-    independent_review structured_output
+    independent_review structured_output model_selection
   - each key's `available:` is one of true | false | partial
   - each key's `configured:` is one of true | false | partial | unknown | n/a
   - each key carries a non-empty `verified:` annotation
+  - model_selection additionally carries the tiers/flagship/floor sub-fields
+    (the adapter-declared tier ladder; presence-checked)
 
 Parsing: PyYAML when importable; otherwise a line-based fallback that
 handles the instances' regular 2-space-indented mapping style (top-level
@@ -39,7 +41,12 @@ SPEC_KEYS = (
     "filesystem", "shell", "isolated_agents", "parallel_agents",
     "persistent_state", "deterministic_permissions", "worktree_isolation",
     "scheduled_resume", "independent_review", "structured_output",
+    "model_selection",
 )
+# model_selection carries an adapter-declared tier ladder; these sub-fields are
+# presence-checked (the semantic policy reads only "the flagship tier" / "the
+# floor tier", never a concrete model id).
+MODEL_SELECTION_SUBFIELDS = ("tiers", "flagship", "floor")
 AVAILABLE_VALUES = ("true", "false", "partial")
 CONFIGURED_VALUES = ("true", "false", "partial", "unknown", "n/a")
 
@@ -140,11 +147,11 @@ def main():
     for k in SPEC_KEYS:
         if k not in data:
             errors.append("missing key '%s' — the contract requires exactly "
-                          "the 10 capability keys" % k)
+                          "the declared capability keys" % k)
     for k in data:
         if k not in SPEC_KEYS:
-            errors.append("unexpected key '%s' — not one of the 10 spec keys"
-                          % k)
+            errors.append("unexpected key '%s' — not one of the declared "
+                          "spec keys" % k)
 
     for k in SPEC_KEYS:
         entry = data.get(k)
@@ -175,15 +182,27 @@ def main():
                           "key must name its evidence (URL, repo path, or "
                           "the literal 'unverified')" % k)
 
+    # model_selection carries the adapter-declared tier ladder. Presence of the
+    # three sub-fields is required regardless of `available` — an instance that
+    # gates as absent still declares its ladder honestly. This is what makes a
+    # ladder-less model_selection a hard FAIL rather than a silent pass.
+    ms = data.get("model_selection")
+    if isinstance(ms, dict):
+        for sub in MODEL_SELECTION_SUBFIELDS:
+            if sub not in ms:
+                errors.append("key 'model_selection': missing '%s' sub-field — "
+                              "the adapter-declared tier ladder requires "
+                              "tiers/flagship/floor" % sub)
+
     if errors:
         print("FAIL: %s — %d defect(s) [parser: %s]:" % (path, len(errors), parser))
         for e in errors:
             print("  - " + e)
         return 1
 
-    print("PASS: %s — all 10 capability keys present with valid available/"
-          "configured values and verified annotations [parser: %s]"
-          % (path, parser))
+    print("PASS: %s — all declared capability keys present with valid available/"
+          "configured values and verified annotations (%d declared) [parser: %s]"
+          % (path, len(SPEC_KEYS), parser))
     return 0
 
 

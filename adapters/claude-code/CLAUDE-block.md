@@ -45,3 +45,8 @@ single short line. No silent gate-skips: skipping a gate requires naming the rel
 
 Everything else — role separation, acceptance contracts, plan critique (C0–C5), recovery, context
 health — is in the agentfw skill. For A2+ work, load it before planning.
+
+**Model dispatch & sleep (v9.3).** Adaptive dispatch right-sizes each subagent's model; casting the
+flagship tier is a human-gated economic escalation. Sleep (unattended) mode auto-takes the
+recommended option at non-floor forks but halts like headless at the floor (incl. flagship
+escalation). See `policy/model-dispatch.md` and the sleep posture in `policy/assurance-model.md`.

@@ -73,3 +73,6 @@ FINDINGS: numbered list (blockers first), each quoting the offending text and na
 Severity routing (for the planner, restated here so your findings carry it): a C5 goal-vs-proof
 contradiction ⇒ restart; C2/C3 defects ⇒ local revise. Never award CLEAN while any check line
 records a real defect.
+
+**Model tier floor (D-14).** As a judge of record you run at or above the adapter-declared `floor`
+model tier; adaptive dispatch never casts a plan-critic below it (`policy/model-dispatch.md`).

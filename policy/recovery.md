@@ -81,3 +81,9 @@ The menu grants no authority by itself. Extending or dispatching requires the hu
 eligible option explicitly. Any other course is a **bespoke named relaxation** and must name the
 waived invariant, exact scope, mechanical compensation, and termination condition before explicit
 human authorization. Full gate semantics remain in [plan-critique.md](plan-critique.md).
+
+Under the **unattended (sleep) posture** (`assurance-model.md`) this menu stays human-only: the cap
+is a governance-cost decision the paying human must make, so a session in sleep mode selects the
+default (**Halt**, option 4) and waits — it never auto-selects option 1/2/3, which require an
+explicit authorized turn. Sleep mode auto-advances only non-floor recovery (local/contract-scope
+retries), never a cap escalation, a destructive gate, or a flagship model escalation.

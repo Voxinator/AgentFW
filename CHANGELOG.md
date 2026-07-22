@@ -1,5 +1,35 @@
 # AgentFW Changelog
 
+## v9.3.0 (2026-07-21) — RELEASED
+
+The economy-dials release. Adds two independent human-held levers that put the economy calibration
+into the runtime. Full detail: [RELEASE-NOTES-v9.3.0.md](RELEASE-NOTES-v9.3.0.md); design of record:
+[CANDIDATES.md](CANDIDATES.md) § D-14 + § D-15.
+
+- **D-14 — adaptive dispatch** (`policy/model-dispatch.md`, new): the orchestrator right-sizes each
+  subagent's model to its task; casting at or above the adapter-declared **flagship** tier is an
+  economic escalation gated on the authenticated human channel; the judge of record is held at or
+  above a **floor** tier. **Uniform/Mirror** is the opt-out; absent `model_selection` degrades
+  honestly to Uniform. New 11th capability key `model_selection` with validator-enforced
+  `tiers/flagship/floor` sub-fields.
+- **D-15 — sleep mode** (`policy/assurance-model.md`): a third, unattended interaction posture
+  entered by a scoped authenticated human turn; auto-takes the recommended option at non-floor forks
+  and halts like a headless run at the floor. The floor gains the flagship escalation; the
+  plan-critique cap and the D-1 override stay human-only. Floor-halt is machine-checked by
+  `tools/check-posture-invariants.py` over `evaluation/fixtures/sleep-posture.json`.
+- **Surfacing**: both adapter SKILLs carry a byte-identical `AGENTFW-SYNC:v9.3` block, gated by
+  `tools/check-skill-sync.py`; both kernel blocks gain a one-line pointer.
+- **Release gate** `tools/tests/release-v9.3.sh`: 11-key schema on both parser paths, SKILL sync,
+  the posture invariant, ledger completeness (`tools/check-candidates.py`), plus the existing
+  validator/installer/link suites.
+
+**Release evidence:** `tools/tests/release-v9.3.sh` — green; the SKILL-desync, stale-metadata, and
+laundered-posture-fixture scratch mutations each make the gate red.
+
+**Behavioral evidence boundary:** no behavioral-evaluation round was run for v9.3.0. v9.3's
+behavioral tier (the treadmill scenario in `evaluation/eval-v9.3-sleep-adaptive.md`) is specified,
+not run; the machine-checked decision-table invariant is the deterministic proof.
+
 ## v9.2.0 (2026-07-20) — RELEASED
 
 The delivery-invariant release. Adds **D-1: the human delivery override (assumption-gated

@@ -99,6 +99,12 @@ capability contract's degradation rules is a **second, fresh Codex session** giv
 requirements + state + contracts — or **human review**. Never present a voice-switch inside one
 context as independent review.
 
+**Adaptive model dispatch (D-14).** Right-size each subagent's tier with the `model` field in its
+custom agent TOML (`~/.codex/agents/` or `.codex/agents/`); omit it to inherit the parent's model
+(Uniform). Hold the judge-of-record subagent's `model` at or above the `floor` tier; casting the
+`flagship` tier is an economic escalation needing the authenticated-channel lever. Adapter ladder
+(`tiers`/`flagship`/`floor`) is in `capability.yaml` (§0). Full mechanism: §8 and `model-dispatch.md`.
+
 **Judge input-curation (no native analog — you supply it):** the runtime isolates a subagent's
 *output* but does not stop you contaminating a judge's *input*. A judge receives ONLY requirements
 + current state + acceptance criteria/contracts. Never the producer's plan, reasoning, or
@@ -251,3 +257,27 @@ right amount of harness is the minimum that still decomposes and verifies. Anoth
 is not the fix for a messy run — cleaner isolation and roles are. Anti-pattern catalog (Role
 Collapse, Self-Review, Rubber-Stamp Compliance, Prose-API, Adapter Sprawl, …):
 `../../../../policy/anti-patterns.md`.
+
+<!-- AGENTFW-SYNC:v9.3:BEGIN -->
+
+## 8. Model dispatch & the sleep posture (v9.3)
+
+**Adaptive dispatch (default).** Right-size each subagent's model to its task. Casting any tier
+BELOW the adapter-declared flagship is free (including up-escalation); casting AT or ABOVE the
+`flagship` tier is an economic escalation requiring a genuine turn on the authenticated human
+channel — simulated/standing text can't authorize it. Markers: `[DISPATCH: adaptive — T3→<tier>
+(below cap)]`; gated `[DISPATCH: flagship-gated — <task> requests <flagship>; awaiting
+authorization]`. The judge of record (verifier, plan-critic) is never cast below the `floor` tier.
+**Uniform/Mirror** is the opt-out (every subagent runs the orchestrator's model). When
+`model_selection` is unavailable or unconfigured, Adaptive degrades honestly to Uniform (declared,
+never silent). Full mechanism: `model-dispatch.md`.
+
+**Sleep (unattended) posture.** Entered by a genuine authenticated-channel human turn with a scope.
+While asleep, take the recommended option at NON-floor forks (`[AUTO-CHOICE: sleep — <fork> →
+recommended <opt>; turn n]`). At any FLOOR blocker behave like a headless run: halt/degrade, record,
+wait (`[SLEEP-HALT: floor <class> — awaiting human]`). The floor is non-delegable (destructive/A4,
+security, irreversible, C5, unavailable substrate, vacuous command, and flagship escalation); the
+plan-critique cap and the D-1 override are human-only levers sleep never auto-pulls. Adaptive and
+sleep are independent dials. Full posture: `assurance-model.md`.
+
+<!-- AGENTFW-SYNC:v9.3:END -->

@@ -52,3 +52,7 @@ Rules:
 8. **Report format.** Final message: per-contract table of command → exit code → signal matched
    yes/no; negative-case results; per-mutation scratch command → exit code → red yes/no;
    off-contract probe results; findings ranked by severity; verdict.
+
+**Model tier floor (D-14).** You are a judge of record: you are dispatched at or above the
+adapter-declared `floor` model tier and are never right-sized below it. Adaptive dispatch cheapens
+producers, never verifiers — see `policy/model-dispatch.md`.

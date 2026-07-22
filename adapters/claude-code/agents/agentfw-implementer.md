@@ -29,3 +29,7 @@ Rules:
 5. **Report facts.** Final message: files created/modified (absolute paths), the acceptance_command
    as run, its output and exit code, deviations or judgment calls, and anything you noticed that
    is out of scope but material.
+
+**Adaptive dispatch (D-14).** Your model tier is right-sized to the task by the orchestrator
+(Adaptive, the default). You never self-escalate to the flagship tier — a flagship dispatch is a
+human-gated economic escalation (`policy/model-dispatch.md`).

@@ -23,19 +23,41 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.2.0, released 2026-07-20** — the *delivery invariant* release. v9.2.0 adds the
-**human delivery override (assumption-gated dispatch)**: a standard, human-invocable relaxation
-that lets the person paying for governance end a review spiral in two turns — the model partitions
-open blockers into a never-waivable six-item safety floor and waivable assumptions (each recorded
-with a required follow-up test in the new schema 1.4 ledger), and a genuine human confirmation
-dispatches immediately. Born from a real field incident in which the plan gate correctly stopped a
-destructive mistake and then prevented all implementation through a planning livelock. The
-deterministic release gate is green. No new behavioral-evaluation round
-was run for v9.1.x or v9.2.0; the bounded v9.0.0 behavioral evidence remains the behavioral
-record. See [the v9.2.0 release notes](RELEASE-NOTES-v9.2.0.md),
-[the v9.1.1 release notes](RELEASE-NOTES-v9.1.1.md),
-[the v9.1.0 release notes](RELEASE-NOTES-v9.1.0.md) and
+**Status: v9.3.0, released 2026-07-21** — the *economy dials* release. v9.3.0 adds two human-held
+levers that put the economy calibration into the runtime: **adaptive dispatch (D-14)** — the
+orchestrator right-sizes each subagent's model to its task, with a **flagship cap** (casting the top
+tier is a human-gated economic escalation) and a verifier tier floor so economy never cheapens
+verification; and **sleep mode (D-15)** — an unattended posture that auto-takes the recommended
+option at non-floor forks while halting like a headless run at the floor, which it cannot delegate.
+The deterministic release gate is green. No new behavioral-evaluation round was run for v9.3.0; the
+bounded v9.0.0 behavioral evidence remains the behavioral record, and v9.3's behavioral tier is
+specified (a machine-checked decision-table invariant plus a treadmill scenario) but not yet run.
+See [the v9.3.0 release notes](RELEASE-NOTES-v9.3.0.md),
+[the v9.2.0 release notes](RELEASE-NOTES-v9.2.0.md) and
 [Verification & provenance](#verification--provenance).
+
+## What's new in v9.3
+
+The same governing constraint, one turn further: economy is a first-class dial the user holds, not a
+fixed cost. v9.3 adds two independent levers.
+
+- **D-14 — adaptive dispatch.** The orchestrator right-sizes each subagent's model to its task
+  instead of cloning its own tier onto every worker. Any tier below the adapter-declared
+  **flagship** is free (including up-escalation); casting at or above the flagship tier is an
+  **economic escalation** requiring a genuine turn on the authenticated human channel — the same
+  channel D-1 uses, pointed at cost. The **judge of record is held at or above a floor tier**, so
+  right-sizing cheapens producers, never verification. **Uniform/Mirror** is the opt-out; when the
+  runtime can't select models, adaptive degrades honestly to Uniform. The semantic core stays
+  model-agnostic — the adapter declares the concrete ladder (new 11th capability key
+  `model_selection`). Full mechanism: `policy/model-dispatch.md`.
+- **D-15 — sleep mode (unattended posture).** A third interaction posture beside interactive and
+  headless: entered by a scoped, authenticated human turn, it takes the **recommended** option at
+  non-floor forks while the human is away, and at any **floor** blocker behaves exactly like a
+  headless run — halt, record, wait. It cannot supply the authorization the floor reserves
+  (auto-accept would be standing text, which is never authorization), and the plan-critique cap and
+  the D-1 override stay human-only levers it never auto-pulls. The floor-halt invariant is
+  machine-checked by a decision-table fixture, so "sleep halts at the floor" is falsifiable, not
+  prose. Full posture: `policy/assurance-model.md`.
 
 ## What's new in v9.2
 
@@ -148,6 +170,7 @@ What r9's quality claims rest on — and what they don't:
 
 - **Built by the process it encodes.** The r9 build and both follow-up passes ran under the full harness: judged plans (Plan-Critique Gate over each plan before dispatch), parallel workers with disjoint file ownership, and independent + adversarial verification of the results.
 - **Externally reviewed, seven rounds.** Seven rounds of adversarial external review (GPT 5.6 Sol), every finding independently re-reproduced against the tree before acceptance. Review #7 verdict: approved, **zero open findings**.
+- **v9.3 deterministic release evidence:** `tools/tests/release-v9.3.sh` re-pins the gate to the v9.3.0 identity and adds D-14/D-15 assertions — the 11-key capability schema with validator-enforced tier-ladder sub-fields, the byte-identical adapter SKILL sync (`check-skill-sync.py`), and the sleep-posture floor-halt invariant (`check-posture-invariants.py` over `evaluation/fixtures/sleep-posture.json`) — each red-path probed in the release record.
 - **v9.2 deterministic release evidence:** `tools/tests/release-v9.2.sh` re-pins the same gate to the v9.2.0 identity and adds D-1 assertions — the override policy text, the schema 1.4 fixtures, and the adapter sync — each red-path probed in the release record.
 - **v9.1 deterministic release evidence:** `tools/tests/release-v9.1.sh` gates release identity and candidate/provenance state, then runs the schema 1.3 validator fixture harness, installer roundtrip **28/28**, relative-link resolution, and capability validation through **both parser paths** (PyYAML and the stdlib fallback). The contracted scratch mutations prove that stale metadata and the old r9.1 adapter reservation each make the gate red. Raw output and exit status are recorded in `evidence/release-v9.1.log`.
 - **Behavioral evidence boundary:** no golden task or behavioral evaluation was run for v9.1.0. The published v9.0.0 outcome evidence below remains useful but is not new v9.1 evidence.

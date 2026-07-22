@@ -48,3 +48,8 @@ version has no skills support, read the policy directly from
 `~/.agents/skills/agentfw/SKILL.md` and `~/.agents/skills/agentfw/policy/`. Everything else —
 role separation, acceptance contracts, plan critique (C0–C5), recovery, context health — lives
 there.
+
+**Model dispatch & sleep (v9.3).** Adaptive dispatch right-sizes each subagent's model; casting the
+flagship tier is a human-gated economic escalation. Sleep (unattended) mode auto-takes the
+recommended option at non-floor forks but halts like headless at the floor (incl. flagship
+escalation). See `policy/model-dispatch.md` and the sleep posture in `policy/assurance-model.md`.

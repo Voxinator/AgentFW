@@ -1,0 +1,18 @@
+{
+  "posture": "sleep",
+  "description": "Canonical decision table for the unattended (sleep) posture (D-15). Floor forks are non-delegable: sleep HALTS and waits for a genuine human turn. Non-floor, reversible forks: sleep AUTO-selects the recommended option and proceeds. The D-14 flagship-model escalation, the plan-critique cap, and the D-1 delivery override are all floor forks (human-only levers). check-posture-invariants.py enforces this table; policy/assurance-model.md and policy/model-dispatch.md are its prose.",
+  "forks": [
+    {"fork": "destructive_a4", "floor": true, "sleep_action": "HALT"},
+    {"fork": "security_boundary_defect", "floor": true, "sleep_action": "HALT"},
+    {"fork": "irreversible_commitment", "floor": true, "sleep_action": "HALT"},
+    {"fork": "c5_goal_proof_contradiction", "floor": true, "sleep_action": "HALT"},
+    {"fork": "unavailable_required_substrate", "floor": true, "sleep_action": "HALT"},
+    {"fork": "vacuous_acceptance_command", "floor": true, "sleep_action": "HALT"},
+    {"fork": "flagship_model_escalation", "floor": true, "sleep_action": "HALT"},
+    {"fork": "plan_critique_cap", "floor": true, "sleep_action": "HALT"},
+    {"fork": "delivery_override", "floor": true, "sleep_action": "HALT"},
+    {"fork": "ordinary_implementation_ambiguity", "floor": false, "sleep_action": "AUTO"},
+    {"fork": "local_scope_recovery_retry", "floor": false, "sleep_action": "AUTO"},
+    {"fork": "clarifying_question_default", "floor": false, "sleep_action": "AUTO"}
+  ]
+}

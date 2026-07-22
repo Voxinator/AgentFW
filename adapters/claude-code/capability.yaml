@@ -1,5 +1,5 @@
 # AgentFW r9 — capability instance: Claude Code
-# Spec: ../../policy/capability-contract.md — exactly 10 keys. Per key:
+# Spec: ../../policy/capability-contract.md — the capability keys. Per key:
 #   available:  what the PLATFORM offers (true|false|partial) — former `value` semantics; the
 #               `verified:` annotation is evidence for THIS field.
 #   configured: honest per-install ACTIVATION state (true|false|partial|unknown|n/a). This file
@@ -137,3 +137,25 @@ structured_output:
     output across agent boundaries. Typed output exists only on specific surfaces (e.g. a code
     review findings tool); the agentfw-plan-critic VERDICT format is a prompt convention, not
     schema-enforced. Partial: parseable-by-convention, not validated-by-platform.
+
+model_selection:
+  available: true
+  configured: unknown
+  activation_probe: >
+    Confirm the Agent/Task tool exposes a per-dispatch `model` parameter in the live runtime, and
+    that the installed agent definitions do not hard-pin a model that would override adaptive
+    selection.
+  required_for: adaptive dispatch (D-14) — the flagship-cap gate and the verifier/plan-critic tier floor
+  verified: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  tiers: [haiku, sonnet, opus, fable]   # cheapest -> flagship; adapter-declared, model-agnostic core
+  flagship: fable                        # the gated tier; dispatching here needs the authenticated-channel lever
+  floor: sonnet                          # the judge of record (verifier/plan-critic) is never cast below this tier
+  notes: >
+    The Agent/Task tool accepts a per-dispatch model override, so the orchestrator can right-size
+    each worker to the task (Adaptive, the default) instead of cloning its own tier onto every
+    worker (Uniform/Mirror, the opt-out). `tiers` is the adapter-declared ladder cheapest->flagship;
+    the semantic policy stays model-agnostic and reads only "the flagship tier" and "the floor
+    tier", never a concrete model id. Casting at or above `flagship` is an economic escalation
+    requiring the adapter-declared authenticated human channel (the same channel D-1's delivery
+    override uses). When model_selection is unavailable or not configured, adaptive dispatch
+    degrades honestly to Uniform — declared to the user, never silent.

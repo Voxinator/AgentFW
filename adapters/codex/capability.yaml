@@ -1,5 +1,5 @@
 # AgentFW r9 — capability instance: OpenAI Codex (CLI / IDE extension / desktop app)
-# Spec: ../../policy/capability-contract.md — exactly 10 keys. Per key:
+# Spec: ../../policy/capability-contract.md — the capability keys. Per key:
 #   available:  what the PLATFORM offers (true|false|partial) — former `value` semantics; the
 #               `verified:` annotation is evidence for THIS field.
 #   configured: honest per-install ACTIVATION state (true|false|partial|unknown|n/a). This file
@@ -147,3 +147,29 @@ structured_output:
     `codex exec --output-schema <file>` supplies a JSON Schema "describing the expected final
     response shape" that Codex validates output against; --json emits newline-delimited JSON
     events; -o/--output-last-message writes the final message to a file for scripting.
+
+model_selection:
+  available: true
+  configured: unknown
+  activation_probe: >
+    In a live session run /agent to confirm this Codex version ships subagents; a custom agent
+    TOML (~/.codex/agents/ or .codex/agents/) accepts an optional `model` field. Absence of the
+    subagent interface or the model override means fall back per the capability contract
+    (adaptive dispatch degrades to Uniform).
+  required_for: adaptive dispatch (D-14) — the flagship-cap gate and the verifier/plan-critic tier floor
+  verified: https://learn.chatgpt.com/docs/agent-configuration/subagents
+  tiers: [gpt-5.3-codex-spark, gpt-5.6-terra, gpt-5.6]   # cheapest -> flagship; adapter-declared, model-agnostic core
+  flagship: gpt-5.6                       # the gated tier (5.6-class incl. gpt-5.6-sol); dispatching here needs the authenticated-channel lever
+  floor: gpt-5.6-terra                    # the judge of record is never cast below this tier
+  notes: >
+    Codex subagents run in their own threads with separate model and tool execution: a custom
+    agent TOML (`~/.codex/agents/` or `.codex/agents/`) takes an optional `model` field, and a
+    subagent inherits the parent's model when it is omitted — so the orchestrator right-sizes each
+    worker's tier (Adaptive, the default) instead of cloning its own (Uniform/Mirror, the opt-out).
+    Verified against the subagents doc, the same source cited for isolated_agents' "optional model
+    overrides". The ladder is the doc's named tiers cheapest->flagship: gpt-5.3-codex-spark
+    (near-instant, text-only) < gpt-5.6-terra (faster, lower-cost) < gpt-5.6 (demanding agents);
+    gpt-5.4 is a pin-compatible alternative. The semantic policy reads only "the flagship tier" and
+    "the floor tier". Casting at/above flagship is an economic escalation on the authenticated human
+    channel. `configured: unknown` until the live Codex version is probed; if subagents or the model
+    override are absent, adaptive dispatch degrades honestly to Uniform.

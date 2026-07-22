@@ -11,7 +11,7 @@ the policy to a new runtime silently turns enforcement into wishful prose.
 whenever it selects an assurance control — before dispatching isolated work, before trusting a
 review as independent, before treating a permission rule as enforced.
 
-**WHAT.** A capability instance declares exactly the ten keys below. Each key splits platform fact
+**WHAT.** A capability instance declares exactly the capability keys below. Each key splits platform fact
 from installation fact — two declarations plus two optional fields:
 
 - `available` — the **platform** can provide the capability: `true | false | partial`, each carrying
@@ -30,7 +30,7 @@ from installation fact — two declarations plus two optional fields:
   post-install to resolve `configured: unknown` into a real answer.
 - `required_for` *(optional)* — the assurance tiers that need this capability ACTIVE.
 
-## The ten capability keys
+## The capability keys
 
 The value semantics below apply to each key's `available` declaration:
 
@@ -46,6 +46,20 @@ The value semantics below apply to each key's `available` declaration:
 | `scheduled_resume` | work can resume or trigger without a human present (schedules, loops, timers) | nothing runs unless a human sends a message | resumption exists but requires partial human action (a click, an open session) |
 | `independent_review` | a genuinely separate, input-curatable context can judge an artifact it did not produce | the only available reviewer is the producer's own context | a second context exists but cannot be fully input-curated or shares producer state |
 | `structured_output` | a dispatched context can be forced to return schema-conforming output | outputs are free text; structure is a request, not a guarantee | schemas are honored best-effort without platform validation |
+| `model_selection` | the runtime can dispatch a subagent at an orchestrator-chosen model tier | subagents always run one fixed model — right-sizing is impossible | tier selection exists but is partial (limited tiers, or a configured default rather than per-dispatch choice) |
+
+### `model_selection` — the adapter-declared tier ladder
+
+`model_selection` additionally carries three adapter-declared sub-fields, validated for presence
+(`tools/validate-capability`): `tiers` (the ordered ladder, cheapest → flagship), `flagship` (the
+gated tier), and `floor` (the minimum tier for judge-of-record dispatch). The semantic policy is
+**model-agnostic**: it reads only "the flagship tier" and "the floor tier", never a concrete model
+id — the adapter owns the concrete ladder, exactly as the rest of this contract keeps vendor facts
+in the adapter. Casting a subagent at or above `flagship` is an **economic escalation** requiring
+the adapter-declared authenticated human channel (the same channel D-1's delivery override uses);
+everything below is free. When `model_selection` is unavailable or not configured ACTIVE, **adaptive
+dispatch (D-14) degrades honestly to Uniform** — every subagent runs the orchestrator's own model —
+declared to the user, never silent. Full mechanism: `policy/model-dispatch.md`.
 
 ## The `verified:` annotation
 
@@ -114,7 +128,7 @@ These hold on every runtime, at every capability level:
 
 - Adapter instances: `adapters/claude-code/capability.yaml`, `adapters/codex/capability.yaml` —
   one entry per key, each annotated. Instances are **machine-validated** by
-  `tools/validate-capability`, which asserts exactly the ten keys, `available` within its enum,
+  `tools/validate-capability`, which asserts exactly the declared keys, `available` within its enum,
   `configured` within the widened enum above, and a `verified:` annotation per key — shape and enum
   membership only; whether an annotation points at real evidence remains a human/judge question.
 - Guided profiles (`profiles/chatgpt-projects.md`, `profiles/claude-projects.md`) are **not adapters**: they

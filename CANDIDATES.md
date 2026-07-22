@@ -46,6 +46,8 @@ matches. If it doesn't, trust the quotes as historical evidence and note the dri
 | D-11 | Soak/duration probes as a named verifier duty | proposed — issue #17 |
 | D-12 | Contract-prose proportionality (fixtures over criteria prose) | proposed — issue #18 |
 | D-13 | Evidence lifecycle (judge scratch hygiene) | proposed — issue #19 |
+| D-14 | Adaptive dispatch (flagship-cap model right-sizing) | **IMPLEMENTED on main** (ships with v9.3.0) — build [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md) |
+| D-15 | Sleep mode (unattended recommended-choice posture) | **IMPLEMENTED on main** (ships with v9.3.0) — build [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md) |
 
 ---
 
@@ -368,6 +370,50 @@ instructions).
 ```sh
 find /Users/briantaylor/Projects/NoitaMobileSpec/evidence -type f | wc -l
 find /Users/briantaylor/Projects/NoitaMobileSpec/evidence/m0-t1-judge-tmp* -type f 2>/dev/null | wc -l
+```
+
+---
+
+## D-14 · Adaptive dispatch (flagship-cap model right-sizing)
+
+**Status:** IMPLEMENTED on main (unreleased; ships with v9.3.0) · **Priority:** high · **Effort:** medium — build provenance: [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md)
+
+**Origin:** maintainer design session 2026-07-21 (the sleep-mode / adaptive-dispatch conversation), grounded in the standing economy calibration.
+
+**Evidence:** the maintainer calibration (2026-07-20, [R92-CANDIDATES.md](R92-CANDIDATES.md) § Maintainer calibration): economy is "a first-class design constraint … the magic is in the middle." An orchestrator that clones its own premium tier onto every subagent pays flagship rates for mechanical work — the concrete cost this closes. Re-derivable: the v9.2 build fanned parallel workers all at one tier.
+
+**Problem:** nothing let the orchestrator right-size a subagent's model to its task; every dispatch inherited one tier. There was no economic-escalation axis parallel to the effects axis (A0–A4), so buying an expensive model was ungoverned while deleting a file was heavily gated — an asymmetry against the economy calibration.
+
+**Proposed mechanism (built):** **Adaptive** dispatch is the default — the orchestrator casts a per-subagent tier fit to the task; any tier below the adapter-declared flagship is free (incl. up-escalation), and casting **at or above the flagship** tier is an economic escalation requiring a genuine turn on the authenticated human channel (the D-1 channel, pointed at cost). The **judge of record is held at or above a declared floor tier** — economy never cheapens verification. **Uniform/Mirror** is the opt-out. The core stays **model-agnostic**: the adapter declares the concrete ladder in `model_selection.{tiers,flagship,floor}`; absent or unconfigured ⇒ honest degradation to Uniform. New 11th capability key `model_selection`, with validator-enforced sub-fields.
+
+**Anchors:** [policy/model-dispatch.md](policy/model-dispatch.md) (new), [policy/capability-contract.md](policy/capability-contract.md) (11th key + degradation), `tools/validate-capability` (`SPEC_KEYS` + sub-field enforcement + `len()` counts), `adapters/*/capability.yaml` (`model_selection` block), `adapters/claude-code/agents/agentfw-{verifier,plan-critic,implementer}.md` (tier floor / adaptive), both adapter `SKILL.md` AGENTFW-SYNC block, [policy/assurance-model.md](policy/assurance-model.md) (verification-tier binding line).
+
+**Cold-start verification:**
+```sh
+python3 tools/validate-capability adapters/claude-code/capability.yaml   # PASS — 11 declared
+grep -n "model_selection\|MODEL_SELECTION_SUBFIELDS" tools/validate-capability | head
+grep -ni "flagship\|floor tier\|Uniform" policy/model-dispatch.md | head
+```
+
+## D-15 · Sleep mode (unattended recommended-choice posture)
+
+**Status:** IMPLEMENTED on main (unreleased; ships with v9.3.0) · **Priority:** high · **Effort:** medium — build provenance: [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md)
+
+**Origin:** maintainer design session 2026-07-21, as the interaction-axis twin of D-14.
+
+**Evidence:** the same economy calibration plus the reversible-prototype-treadmill lesson (D-6): a human should be able to leave and have the agent keep delivering on recommended choices, without the framework either stalling or over-authorizing. The livelock incidents ([field report](evaluation/field-report-2026-07-20-noita-planning-livelock.md)) show the cost of a human who must babysit every fork.
+
+**Problem:** the framework had two interaction postures (interactive-authenticated, headless) but no way for a present-then-absent human to pre-delegate the *recommended* resolution of ordinary forks while keeping the safety floor non-negotiable. Without it, unattended runs either stall at every fork or an ad-hoc "just proceed" launders authorization the floor reserves.
+
+**Proposed mechanism (built):** a third **unattended (sleep) posture**. Entered by a genuine authenticated-channel human turn with a scope; entry itself is the (non-standing) authorization. While asleep, the agent auto-takes the **recommended** option at NON-floor forks (`[AUTO-CHOICE: sleep …]`) and, at any FLOOR blocker, behaves exactly like a headless run — halt/degrade, record, wait (`[SLEEP-HALT: floor <class> — awaiting human]`) — because auto-accept is standing text, which is never authorization. The floor is non-delegable (the six safety-floor classes **plus** the D-14 flagship escalation); the plan-critique cap and the D-1 override stay **human-only levers** sleep never auto-pulls. The floor-halt invariant is machine-checked by a decision-table fixture + checker (the D-12 fixture-over-prose pattern), so "sleep HALTS at the floor" is falsifiable, not prose. Truly-unattended resumption depends on `scheduled_resume` (partial/unverified on both runtimes ⇒ present-but-AFK is the supported variant).
+
+**Anchors:** [policy/assurance-model.md](policy/assurance-model.md) (the posture, beside headless), [policy/recovery.md](policy/recovery.md) + [policy/plan-critique.md](policy/plan-critique.md) (cap stays human-only under sleep), both adapter `SKILL.md` AGENTFW-SYNC block + kernel blocks, `tools/check-posture-invariants.py` + `evaluation/fixtures/sleep-posture.json` + [evaluation/eval-v9.3-sleep-adaptive.md](evaluation/eval-v9.3-sleep-adaptive.md).
+
+**Cold-start verification:**
+```sh
+python3 tools/check-posture-invariants.py --selftest        # POSTURE_SELFTEST_OK
+python3 tools/check-posture-invariants.py evaluation/fixtures/sleep-posture.json
+grep -n "Unattended (sleep) posture\|SLEEP-HALT" policy/assurance-model.md | head
 ```
 
 ---

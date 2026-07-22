@@ -193,7 +193,9 @@ Each check with its one-line pass test:
 - **Single-judge blocker:** one confirming independent pass before any re-plan — never re-plan off a
   single unconfirmed verdict.
 - **Hard 2-pass cap.** Cap reached with an open blocker ≠ proceed → **escalate to the human**. Never
-  auto-dispatch past an open blocker. The standard, human-selected menu at that escalation is:
+  auto-dispatch past an open blocker. (The **unattended/sleep posture** does not relax this: the cap
+  is a human-only lever, so a sleep-mode session halts here and waits — `assurance-model.md`.) The
+  standard, human-selected menu at that escalation is:
   1. **Extend by exactly one named Layer-2 pass.** Eligible only when the open blockers span more
      than one rubric check or at least one blocker is not C2. The authorization names that one pass;
      it is one complete pass at the already-derived judge count and cannot be chained into another

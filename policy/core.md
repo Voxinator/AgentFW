@@ -124,5 +124,6 @@ degradation before proceeding. A bare OK without evidence is Rubber-Stamp Compli
 - `policy/anti-patterns.md` — the judgment counterweight (incl. Prose-API, Adapter Sprawl)
 - `policy/acceptance-contract.md` — Acceptance Contract v2
 - `policy/plan-critique.md` — two-layer Plan-Critique Gate
-- `policy/capability-contract.md` — the 10 capability keys + degradation rules
+- `policy/capability-contract.md` — the capability keys + degradation rules
+- `policy/model-dispatch.md` — adaptive dispatch (D-14), the flagship cap, the verifier tier floor
 - Native bindings: `adapters/claude-code/`, `adapters/codex/` — compiled, enforced. Guided degradation: `profiles/chatgpt-projects.md`, `profiles/claude-projects.md` — honest, unenforced.
