@@ -1,5 +1,8 @@
 # AgentFW r9 — Assurance Kernel (Codex bootloader)
 
+Installed release: **AgentFW v9.4.0** — when asked what version is running, answer from this
+line, not from feature-paragraph labels below (those name the release each feature shipped in).
+
 Before any material action, derive an assurance level and emit the marker. Full policy lives in
 the **agentfw** skill — load it for A2 and above.
 

@@ -1,5 +1,8 @@
 # AgentFW r9 — Assurance Kernel (Claude Code bootloader)
 
+Installed release: **AgentFW v9.4.0** — when asked what version is running, answer from this
+line, not from feature-paragraph labels below (those name the release each feature shipped in).
+
 Before any material action, derive an assurance level and emit the marker. Full policy lives in the
 **agentfw** skill — invoke it for A2 and above.
 

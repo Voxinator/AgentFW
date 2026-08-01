@@ -64,6 +64,11 @@ assert data.get("revision") == "r9.4", data.get("revision")
 PY
 
 # --- release identity, current-facing docs ---
+# The kernels must self-identify the installed release — a model asked "what version
+# are you running" answers from this line, so shipping without bumping it recreates
+# the v9.3-misreport field bug (2026-07-31).
+require_contains adapters/claude-code/CLAUDE-block.md 'Installed release: **AgentFW v9.4.0**'
+require_contains adapters/codex/AGENTS.md 'Installed release: **AgentFW v9.4.0**'
 require_contains README.md '**Status: v9.4.0, released 2026-07-31**'
 require_contains README.md "## What's new in v9.4"
 require_contains README.md 'tools/tests/release-v9.4.sh'
