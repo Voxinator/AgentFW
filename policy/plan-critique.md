@@ -11,7 +11,7 @@ Layer 2 fires for **A2+ plans, destructive plans, architectural ambiguity, or sh
 plan is Complexity Accumulation; skipping requires naming the relaxation, silence is not one.
 
 **WHAT:** Layer 1 = `tools/validate-plan` over the plan's embedded block; Layer 2 = an independent
-judge context driving the C0–C5 rubric over the plan.
+judge context driving the C0–C6 rubric over the plan.
 
 ## Layer 1 — deterministic validation (`tools/validate-plan`)
 
@@ -20,8 +20,8 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 
 1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
    keys are rejected as silently-accepted ambiguity), and `version` is present and — in default
-   mode — `"1.1"`, `"1.2"`, `"1.3"`, or `"1.4"`: **schema 1.4 is the schema of record** (author
-   new plans against it; 1.1, 1.2, and 1.3 remain valid for plans that predate it). A `"version": "1"`
+   mode — `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`, or `"1.5"`: **schema 1.5 is the schema of record**
+   (author new plans against it; 1.1 through 1.4 remain valid for plans that predate it). A `"version": "1"`
    block is rejected as a legacy schema version; unknown version strings are rejected naming the
    version. The `--legacy` flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules
    (rules 2–10 below; none of rules 11–13's newer fields are required — the task-id precheck still
@@ -89,6 +89,20 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
     with a diagnostic naming schema 1.4 (keyword `version`). A 1.4 block without the field
     validates identically to a 1.3 block. Field semantics and the waiver-conversion rule:
     `policy/acceptance-contract.md`.
+15. **Schema 1.5 necessity tiers (additive over 1.4):** a `"1.5"` block enforces every 1.1–1.4
+    rule above PLUS the requirement-inflation defense (D-19). EVERY requirement carries
+    `necessity` ∈ `must` | `nice-to-have` | `fluff` — the operator's three levels: won't work
+    without it / nice to have / true fluff. A `must` requirement additionally carries a
+    non-empty plain-language `because` naming the concrete failure that occurs without it (an
+    unjustified must-claim is the inflation the tier exists to catch). Coverage (rule 6) becomes
+    **tier-aware**: only `must` requirements demand a covering task; an uncovered
+    `nice-to-have` is VALID deferred scope — the plan block doubles as the next-increment
+    ledger (D-18) — and a task serving a `fluff` requirement is a defect: fluff is recorded and
+    dropped, never built. A task serving ONLY nice-to-have requirements is reported as a
+    non-fatal `scope note:` on PASS (confirm a human pulled that scope into the increment). A
+    1.1–1.4 block carrying `necessity`/`because` is rejected naming schema 1.5 (keyword
+    `version`). The `--digest` flag prints the machine-derived tier counts the operator digest
+    must match (see the Operator digest section below).
 
 **Schema 1.3 red-path execution duty:** Layer 1 validates the declared mutation roster and the
 three known weak command shapes; it does not execute mutation probes. Before Layer 2 dispatch, the
@@ -104,7 +118,7 @@ task/requirement id and defect class. All defects are reported, not just the fir
 **Defect-keyword contract (stable, grep-able):** harness-facing Layer-1 diagnostics carry one or
 more of the stable defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`,
 `empty`, `duplicate`, `tier`, `review`, `failure_surface`, `mutation`, `command`, `version`,
-`override`. A
+`override`, `necessity`. A
 diagnostic may carry a general and a specific keyword together; fixtures should key on the most
 specific stable keyword. `tier` covers every tier-derivation defect — a
 missing/invalid `required_verification_tier`, a missing/invalid `integration_seam` or
@@ -113,7 +127,9 @@ covers every plan-review-tier defect — a missing/invalid `required_plan_review
 declared below its derived floor; `failure_surface` covers `failure_surfaces` shape and enum
 defects; `mutation` covers every schema-1.3 `mutation_probes` presence and shape defect;
 `command` covers the three schema-1.3 weak acceptance-command shapes; `override` covers every
-schema-1.4 `overrides` ledger shape defect; `empty` includes the task-id
+schema-1.4 `overrides` ledger shape defect; `necessity` covers every schema-1.5 necessity-tier
+defect — a missing/invalid `necessity`, a must without `because`, or a task serving fluff
+(requirement inflation); `empty` includes the task-id
 precheck; `version` covers legacy-`"1"`, unknown-version, and
 older-schema-carrying-newer-schema-field rejections, the legacy message also naming `--legacy`.
 Harness code and fixtures key on these words; changing them is a breaking schema change to this
@@ -131,7 +147,7 @@ on a greenfield tree — but schema-1.3 red-path self-probes must run as specifi
 verification time both its green path and every contracted red path must run, and be re-run by the
 verifier at the required tier.
 
-## Layer 2 — semantic judge (C0–C5 rubric)
+## Layer 2 — semantic judge (C0–C6 rubric)
 
 **Input-curation (bright line):** the judge receives the **plan + requirements ONLY** — never the
 planner's exploration reasoning, never a sibling judge's verdict. Contaminated input produces a judge
@@ -167,10 +183,53 @@ Each check with its one-line pass test:
   noun-restatement of the requirement. *Pass:* each task's acceptance asserts the *behavior* the
   requirement specifies; extra scrutiny where the task's own `risk` names an ambiguity. A C5 "concern"
   severity STILL feeds the overall verdict.
-- **Coverage/completeness** — build the requirement→task matrix: map every requirement component to
-  the task + `acceptance_command` that mechanically verifies it. *Pass:* no component is verified
-  nowhere (the mocked-here-skipped-there hole). Plus per task: "can a wrong implementation still pass
-  this acceptance_command?"
+- **C6 necessity audit (D-19) — the anti-coverage check.** Coverage asks "is anything missing?";
+  C6 asks the reverse: **"would the objective demonstrably fail without this?"** For every
+  requirement labeled `must`, the judge attempts to name the concrete failure that occurs
+  without it — independently of the plan's own `because`, then compares. *Pass:* every
+  must-claim survives the attempt. When the judge cannot name a failure (and the `because` does
+  not supply a real one), the requirement is **DEMOTED to nice-to-have, not debated**: a
+  demotion is a scope correction, never a blocker, costs no Layer-2 pass of its own, and routes
+  the requirement to the deferred/next-increment default (D-18). Demote-duty makes cutting
+  someone's job — the structural counterweight to a critique gate that otherwise only adds. A
+  requirement that ENTERED the plan after its first gate entry claiming `must` is additionally
+  surfaced to the operator by the digest (see below): a plan that newly cannot ship without
+  something it didn't know it needed is either a genuine discovery or inflation, and that call
+  is the human's, made on one sentence.
+- **Coverage/completeness** — build the requirement→task matrix: map every `must` requirement
+  component to the task + `acceptance_command` that mechanically verifies it. *Pass:* no
+  component is verified nowhere (the mocked-here-skipped-there hole). Plus per task: "can a
+  wrong implementation still pass this acceptance_command?" Coverage and C6 are deliberate
+  opposites: coverage stops under-building the musts; C6 stops over-claiming them.
+
+## Operator digest — the plain-language gate artifact (D-20)
+
+Markers are for the grep; the digest is for the human. Every gate event — Layer-1 result,
+Layer-2 verdict, every escalation-menu presentation, every override offer — is accompanied by a
+short operator digest with the same standing as the plan block. It is written **for someone who
+has never read this policy**: no candidate numbers, no rubric letters, no marker syntax, no
+framework vocabulary. Fixed shape, a few sentences each:
+
+1. **What this plan builds**, in one sentence.
+2. **Scope by necessity:** how many won't-work-without-it requirements, how many nice-to-haves
+   (and whether each is being built now or deferred to the next increment), how many dropped as
+   fluff. On schema 1.5 these counts MUST match `validate-plan --digest` output — a digest whose
+   numbers differ from the block is fiction, and the mismatch is a defect.
+3. **What changed since the last version:** every ADDED requirement gets one line — its tier,
+   and its plain-language "because" — and every REMOVED or demoted one likewise. This delta is
+   the operator's inflation detector: a new must-have after the first gate pass is called out
+   explicitly ("the plan now says it can't ship without something it didn't know it needed —
+   your call"). No delta section, no digest.
+4. **Cost so far:** review cycles and passes spent, in plain numbers.
+5. **What is needed from the operator now:** approve / pull a deferred item in / decide a
+   flagged must-claim — one line.
+
+**The speak-twice rule.** Any marker or verdict the operator is expected to act on is
+accompanied, in the same message, by one sentence a non-reader of the policy can parse.
+Governance output the operator cannot parse is governance that does not govern — the economy
+calibration applied to language. The digest never replaces the machine-readable artifacts; it
+rides beside them, and where prose and block disagree, the block is authoritative and the
+disagreement is itself a defect to fix before dispatch.
 
 ## Compose / stop policy
 
@@ -239,6 +298,47 @@ Each check with its one-line pass test:
   does not clear a blocker; only a fresh independent Layer-2 pass, re-run after the revision, can.
   The cap is a ceiling on Layer-2 passes, not a license to dispatch without one: reaching the cap
   with an open blocker still means escalate (see "Hard 2-pass cap" above) — it never means dispatch.
+
+## Global liveness budget — per objective (D-2)
+
+The 2-pass cap bounds a *cycle*; nothing above bounds the *objective* — and empirically the
+treadmill lives exactly there: successively revised plans each hit the cap with novel blockers,
+each fresh cycle resetting the only counter that existed. *"Bounded locally and unbounded
+operationally"* (NoitaMobileSpec M2→M2A; the drydock failure-routing sessions,
+`evaluation/field-report-2026-07-31-drydock-scope-accretion.md`). Review expenditure is therefore
+tracked per **objective** — the user's goal, not the plan artifact — across every fresh plan,
+rename, and revision:
+
+- **Counters.** `cycles` (each pass of a plan or revision through the gate) and `layer2_passes`
+  (each Layer-2 pass, at whatever judge count it ran), cumulative for the objective. After each
+  gate cycle emit `[LIVENESS: objective <slug> — cycle n/2, layer2 passes m/4]`.
+- **Budget.** 2 cycles / 4 Layer-2 passes for reversible A2 work; A3/A4 work may extend by
+  exactly one named cycle via explicit human authorization on the authenticated channel — once,
+  not chained.
+- **No reset.** A fresh plan for the same objective inherits the counters. The model declares
+  objective identity honestly — a renamed, renarrowed, or restructured plan chasing the same goal
+  is the *same objective* — and the marker trail records the declaration. (Mechanical objective
+  identity is not attempted; the honesty obligation is auditable through the markers.)
+- **At exhaustion** emit `[LIVENESS-EXCEEDED: objective <slug>]` and STOP planning: further
+  plan/critique cycles for this objective are forbidden. The forced fork — machine-checked as a
+  decision table (`evaluation/fixtures/liveness-budget.json`,
+  `tools/check-liveness-invariants.py`):
+  1. open safety-floor blocker → **halt**, preserving the blocker record;
+  2. C5 goal/proof contradiction or unavailable required substrate → **explicit rescope
+     proposal**: a smaller or different objective, with the evidence that forced it;
+  3. otherwise → **proactively offer the delivery override** — the model presents the full D-1
+     offer (safety/assumption split, assumption ledger with follow-up tests, expenditure to
+     date, exact dispatch scope) without waiting for a delivery-intent turn — and **halts** if
+     the human declines.
+  Exhaustion is a human fork: a sleep-mode session halts here exactly as at the 2-pass cap.
+- **Scope freeze after Layer 1 — the accretion valve (D-18).** Requirements discovered AFTER a
+  plan's Layer-1 PASS — in review, conversation, or design exploration — default to a recorded
+  **next-increment ledger** beside the plan, never silently into the gated plan. Folding a
+  discovery in is a human choice that reopens the gate and spends a cycle from this budget; the
+  default is to ship the gated increment and plan the discoveries against the next one.
+  Post-gate scope growth is the leading indicator of livelock — a critique gate functioning as
+  a scope generator — and the ledger converts it from plan mass into forward work, the same
+  conversion discipline the delivery override applies to waived blockers.
 
 ## Human delivery override (assumption-gated dispatch)
 

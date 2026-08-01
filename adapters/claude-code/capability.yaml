@@ -73,12 +73,26 @@ deterministic_permissions:
   activation_probe: >
     agentfw-install status checks the live settings for the suggested deny rules
     (settings.example.json in this adapter is a shipped example, not proof it was merged).
-  required_for: the enforcement floor at A2+; mandatory for A3+ autonomy
+    Additionally read the session's active permission mode: bypassPermissions active ⇒
+    OPERATOR-RELAXED, not unconfigured — apply the capability contract's operator-relaxation
+    rule (recommend once, declare [FLOOR-RELAXED: operator — bypassPermissions], behavioral
+    compensation, proceed), never tier-unreachability.
+  required_for: the enforcement floor at A2+; unattended (sleep/headless) A3+ autonomy still
+    prefers it ACTIVE — under an operator-relaxed floor, destructive/irreversible/outward
+    effects gate on a genuine human turn instead
   verified: https://code.claude.com/docs/en/settings
   notes: >
     settings.json permissions.allow/ask/deny rules plus Pre/PostToolUse hooks are enforced by
     the harness independent of model compliance — this is the enforcement floor the effects
-    taxonomy compiles into (see settings.example.json in this adapter).
+    taxonomy compiles into (see settings.example.json in this adapter). bypassPermissions mode
+    skips permission prompts; its DOCUMENTED residuals are explicit ask rules, org connector
+    ask settings, requiresUserInteraction MCP tools, and the root/home rm circuit breaker
+    (https://code.claude.com/docs/en/permissions — "Skips permission prompts" plus its listed
+    exceptions). Whether deny rules and PreToolUse hooks still evaluate under bypass is NOT
+    stated in official docs — per the honesty rule, treat them as unenforced while bypass is
+    active and rely on the declared residuals plus behavioral compensation. Orgs can forbid
+    the mode entirely via permissions.disableBypassPermissionsMode = "disable" in managed
+    settings — the deterministic anti-lever where the relaxation itself is unacceptable.
 
 worktree_isolation:
   available: partial

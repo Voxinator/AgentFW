@@ -34,6 +34,15 @@ A capability that the derived assurance tier requires but that is unavailable or
 means you degrade per the policy's degradation rules (`./policy/capability-contract.md`) —
 reduced autonomy or human participation, DECLARED in the plan, never silent.
 
+**Unconfigured ≠ operator-relaxed.** An active `bypassPermissions` mode is a deliberate human
+choice — a standing relaxation lever, not missing substrate. Handle it per the contract's
+operator-relaxation rule: recommend the floor configuration ONCE at plan time, declare
+`[FLOOR-RELAXED: operator — bypassPermissions]` naming only the platform's documented residuals
+(explicit ask rules, connector ask settings, `requiresUserInteraction` MCP tools, the root/home
+rm circuit breaker), gate destructive/irreversible/outward-facing effects on a genuine human
+turn (behavioral ask-tier), and PROCEED. It is never Layer-2 material, never safety-floor item
+5, and never re-raised per task or cycle.
+
 ## 1. Assurance derivation (full table)
 
 **Classify effects first — before the three questions.** Destructive by operation type: deletion,
@@ -132,16 +141,22 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-Schema `"1.4"` is the schema of record; `"1.1"`, `"1.2"`, and `"1.3"` remain valid for older
+Schema `"1.5"` is the schema of record; `"1.1"` through `"1.4"` remain valid for older
 plans. A `"version": "1"` block is rejected by default and accepted only via `validate-plan
 --legacy` for historical provenance; never author a new plan against v1. Schema 1.1 still defines
 the structured verification-tier fields, 1.2 adds plan-review tier and failure surfaces, and 1.3
 adds mutation probes — non-empty `mutation_probes` for every integration seam and every A3/A4
 contract, each entry exactly a non-empty `mutation` plus `"expected": "red"` — plus deterministic
-rejection of known weak acceptance-command shapes. The current tier, schema 1.4, is additive over
+rejection of known weak acceptance-command shapes. Schema 1.4 is additive over
 1.3 and adds an OPTIONAL plan-level `overrides` ledger recording human-waived Layer-2 blockers
 under the delivery override (Layer 2 below): entries exactly
-`{blocker, assumption, followup_test, authorized_turn}`, each a non-empty string.
+`{blocker, assumption, followup_test, authorized_turn}`, each a non-empty string. The current
+tier, schema 1.5 (D-19), adds necessity tiers: EVERY requirement carries `necessity`
+(`must` | `nice-to-have` | `fluff`), and a `must` also carries a plain-language `because`
+naming the concrete failure without it. Coverage becomes tier-aware: an uncovered
+nice-to-have is valid deferred scope (the block doubles as the next-increment ledger), and a
+task serving a fluff requirement is a defect. `validate-plan --digest` emits the machine
+tier counts the operator digest (below) must match.
 
 **Producer red-path gate (before Layer 2):** the planner, as producer of each contract, executes
 its `acceptance_command` against at least one deliberately broken scratch copy and records the
@@ -164,10 +179,12 @@ step before dispatch — read Layer 1's `review tier` line (schema 1.2/1.3: `rev
 `review tier: single`; schema 1.1: the advisory `review floor (advisory, 1.1): ...` line) and
 dispatch exactly the judge count it states — two disjoint-input judges for dual, one for single —
 the validator's own output, not memory of the policy, is the source of the count. Then dispatch
-`agentfw-plan-critic` with the plan + requirements ONLY. It runs the C0–C5 rubric
+`agentfw-plan-critic` with the plan + requirements ONLY. It runs the C0–C6 rubric
 (`./policy/plan-critique.md`): C0 substrate-grounding, C1 independence, C2 prose-vs-mechanical
 reachability (core check), C3 deps + cross-task consistency, C4 risk/role + irreversible-op
-pre-mortem, C5 approach-fit, plus requirement→task coverage. Hard 2-pass cap; a single-judge
+pre-mortem, C5 approach-fit, C6 necessity audit (every must-claim survives "name the failure
+without it" or is DEMOTED to nice-to-have — a scope correction, never a blocker), plus
+requirement→task coverage. Hard 2-pass cap; a single-judge
 BLOCKER gets one confirming independent pass before any re-plan; cap-with-open-blocker never
 proceeds — escalate to the human, who selects from the fixed four-option menu: **(1)** extend by
 exactly one named Layer-2 pass — eligible only when the open blockers span multiple rubric checks
@@ -198,6 +215,29 @@ plus the planner's own confirmation does not clear a blocker. Honest limit: Laye
 command STRENGTH; Layer 2's clean verdict raises the floor, it does not verify correctness —
 downstream judges own that.
 
+**Global liveness budget (D-2).** Review expenditure accrues per OBJECTIVE across fresh plans,
+renames, and revisions — budget 2 cycles / 4 Layer-2 passes (reversible A2; A3/A4 may extend by
+one named human-authorized cycle, once). Emit `[LIVENESS: objective <slug> — cycle n/2, layer2
+passes m/4]` after each gate cycle; a fresh plan for the same objective NEVER resets the counters
+(declare identity honestly — same goal = same objective). At exhaustion emit
+`[LIVENESS-EXCEEDED: objective <slug>]` and stop planning: the only moves are the forced fork —
+halt (open floor blocker) / rescope proposal (C5 or unavailable substrate) / proactive
+delivery-override offer, halting if declined. Scope freeze after Layer-1 PASS (D-18):
+later-discovered requirements default to a next-increment ledger beside the plan, never silently
+into the gated plan — folding one in is a human choice that spends a cycle. Full rule:
+`policy/plan-critique.md`.
+
+**Operator digest & speak-twice (D-20).** Every gate event — Layer-1 result, Layer-2 verdict,
+escalation menu, override offer — is accompanied by a short plain-language digest written for
+someone who has never read this policy: what the plan builds; how many won't-work-without-it /
+nice-to-have (built vs deferred) / dropped requirements (counts MUST match `validate-plan
+--digest`); what was ADDED or REMOVED since the last version, one line each with its tier and
+plain-language "because" — a new must-have after the first gate pass is called out explicitly;
+review cycles spent; and the one-line ask of the operator. No candidate numbers, rubric letters,
+or marker syntax in the digest. Speak twice: any marker the operator must act on gets one plain
+sentence beside it — governance the operator cannot parse is governance that does not govern.
+Full rule: `policy/plan-critique.md` § Operator digest.
+
 ## 4. Effects → native controls
 
 Prompt instructions never count as enforcement when the platform offers deterministic controls.
@@ -215,7 +255,10 @@ merge, don't replace):
 
 Two judgments have no native expression and stay yours: (1) every dispatched worker gets an
 explicit scope + side-effect budget in its prompt; (2) novel operations no rule anticipates default
-to ask. Workers escalate (STOP and report), never ask forgiveness.
+to ask. Workers escalate (STOP and report), never ask forgiveness. When the operator runs under
+`bypassPermissions`, the prompting layer of these controls is off by human choice — apply the §0
+operator-relaxation rule (recommend once, `[FLOOR-RELAXED]`, behavioral gates on
+destructive/irreversible/outward effects), never a block.
 
 ## 5. Context health
 

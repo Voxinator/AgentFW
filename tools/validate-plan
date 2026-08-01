@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """AgentFW Layer-1 plan validator.
 
-Usage: validate-plan [--legacy] <plan.md>
+Usage: validate-plan [--legacy] [--digest] <plan.md>
 
 Extracts the single fenced block opening with ```json agentfw-plan and runs
 every deterministic (Layer-1) check from policy/plan-critique.md:
 
   - block parses as valid JSON with NO duplicate object keys at any level
     (a last-wins duplicated key is silently-accepted ambiguity); `version`
-    present and, in DEFAULT mode, "1.1", "1.2", "1.3", or "1.4" — schema 1.4
-    is the schema of record; 1.1, 1.2, and 1.3 remain valid for plans that
-    predate it.
+    present and, in DEFAULT mode, "1.1", "1.2", "1.3", "1.4", or "1.5" —
+    schema 1.5 is the schema of record; 1.1 through 1.4 remain valid for
+    plans that predate it.
     A "version": "1" block is rejected as a legacy schema version; unknown
     version strings are rejected naming the version
   - `--legacy` accepts "version": "1" blocks under the ORIGINAL v1 rules —
@@ -100,6 +100,33 @@ Version "1.4" blocks enforce EVERY 1.3 rule above (1.4 is additive) plus:
 `overrides` is NOT defined by schema 1.1, 1.2, or 1.3. A block carrying it
 must declare schema 1.4; older schemas carrying the field are rejected.
 
+Version "1.5" blocks enforce EVERY 1.4 rule above (1.5 is additive) plus
+necessity tiers (D-19 — requirement-inflation defense):
+
+  - EVERY requirement carries `necessity`, one of must / nice-to-have /
+    fluff — unlabeled scope cannot be audited for inflation
+                                                          [keyword: necessity]
+  - necessity "must" => a non-empty plain-language `because` naming the
+    concrete failure that occurs without the requirement  [keyword: necessity]
+  - COVERAGE becomes tier-aware: only "must" requirements must be covered
+    by a task. An uncovered nice-to-have is VALID — it is deferred scope,
+    recorded in the plan as the next-increment ledger. A task serving a
+    fluff requirement is a defect: fluff is recorded and dropped, never
+    built                                                 [keyword: necessity]
+  - a task whose requirement_ids serve ONLY nice-to-have requirements is
+    reported as a non-fatal `scope note:` line on PASS — confirm a human
+    pulled that scope into this increment
+
+`necessity`/`because` are NOT defined by schemas 1.1-1.4. A block carrying
+them must declare schema 1.5; older schemas carrying them are rejected.
+
+`--digest` (D-20 operator-digest support): after a PASS, prints one
+machine-derived tier-count line, e.g.
+  digest: must=3 nice-to-have=2 (deferred 1) fluff=1 tasks=4
+The operator digest's counts MUST match this line — a digest whose numbers
+differ from the block is fiction. On pre-1.5 schemas the flag reports that
+no necessity tiers exist and to migrate.
+
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
 defect class keyword (contract / cover / cycl / negative / assurance /
@@ -131,6 +158,9 @@ VALID_FAILURE_SURFACES = ("concurrency", "trust_boundary", "streaming",
                           "clock", "production_only")
 # v1.4 overrides ledger: the exact per-entry field set
 OVERRIDE_KEYS = ("blocker", "assumption", "followup_test", "authorized_turn")
+# v1.5 necessity tiers (D-19): must is built now; nice-to-have may be built
+# (covered) or deferred (uncovered); fluff is recorded and dropped
+VALID_NECESSITY = ("must", "nice-to-have", "fluff")
 SHELL_NAMES = ("bash", "dash", "ksh", "sh", "zsh")
 ECHO_SIGNAL_RE = re.compile(
     r"(?<![A-Za-z0-9_$-])echo(?:[ \t]+-[nEe]+)?[ \t]+"
@@ -296,13 +326,18 @@ def main():
         print(__doc__)
         return 0
     legacy = "--legacy" in argv
-    paths = [a for a in argv if a != "--legacy"]
+    digest = "--digest" in argv
+    paths = [a for a in argv if a not in ("--legacy", "--digest")]
     if len(paths) != 1 or any(p.startswith("-") for p in paths):
-        print("usage: validate-plan [--legacy] <plan.md>\n"
+        print("usage: validate-plan [--legacy] [--digest] <plan.md>\n"
               "  --legacy  accept \"version\": \"1\" blocks under the "
               "original v1 rules\n"
               "            (historical provenance only — never author new "
-              "plans against v1)", file=sys.stderr)
+              "plans against v1)\n"
+              "  --digest  after PASS, print the machine-derived necessity "
+              "tier counts\n"
+              "            (schema 1.5) that the operator digest must match",
+              file=sys.stderr)
         return 2
     path = paths[0]
     try:
@@ -340,20 +375,21 @@ def main():
     elif version == "1":
         if not legacy:
             errors.append("plan: legacy schema version \"1\" — migrate to "
-                          "\"1.4\" or run with --legacy (version \"1\" is "
+                          "\"1.5\" or run with --legacy (version \"1\" is "
                           "accepted for historical provenance only)")
-    elif version not in ("1.1", "1.2", "1.3", "1.4"):
+    elif version not in ("1.1", "1.2", "1.3", "1.4", "1.5"):
         errors.append("plan: unknown schema version %r — known versions are "
                       "\"1\" (legacy, --legacy only), \"1.1\", \"1.2\", "
-                      "\"1.3\", and \"1.4\"; "
+                      "\"1.3\", \"1.4\", and \"1.5\"; "
                       "assurance rules for an unknown schema version cannot "
                       "be applied" % (version,))
-    # Schemas are additive: 1.4 inherits 1.3, which inherits 1.2, which
-    # inherits every 1.1 rule.
-    v11 = version in ("1.1", "1.2", "1.3", "1.4")
-    v12 = version in ("1.2", "1.3", "1.4")
-    v13 = version in ("1.3", "1.4")
-    v14 = version == "1.4"
+    # Schemas are additive: 1.5 inherits 1.4, which inherits 1.3, which
+    # inherits 1.2, which inherits every 1.1 rule.
+    v11 = version in ("1.1", "1.2", "1.3", "1.4", "1.5")
+    v12 = version in ("1.2", "1.3", "1.4", "1.5")
+    v13 = version in ("1.3", "1.4", "1.5")
+    v14 = version in ("1.4", "1.5")
+    v15 = version == "1.5"
 
     # v1.2-only fields are NOT defined by schema 1.1 — a 1.1 block carrying
     # them is rejected naming the schema version that defines them
@@ -449,6 +485,7 @@ def main():
                           "list — the tasks list is empty" % assurance)
 
     # requirement record shape: every record needs a non-empty id and text
+    req_tier = {}  # v1.5: requirement id -> declared necessity tier
     for idx, r in enumerate(reqs):
         if not isinstance(r, dict):
             errors.append("requirement record #%d: not an object — id and "
@@ -460,6 +497,40 @@ def main():
                 errors.append("requirement record #%d: field '%s' missing or "
                               "empty (malformed requirement record)"
                               % (idx, field))
+        rlabel = r.get("id") if nonempty_str(r.get("id")) else "#%d" % idx
+        # v1.5-only requirement fields are NOT defined by older schemas
+        if version in ("1.1", "1.2", "1.3", "1.4") and (
+                "necessity" in r or "because" in r):
+            errors.append("requirement %s: 'necessity'/'because' are "
+                          "schema-1.5 requirement fields — schema %s does "
+                          "not define them; declare \"version\": \"1.5\" to "
+                          "use necessity tiers (wrong schema version)"
+                          % (rlabel, version))
+        if v15:
+            tier = r.get("necessity")
+            if not nonempty_str(tier):
+                errors.append("requirement %s: schema 1.5 requires "
+                              "'necessity' (one of %s) on every requirement "
+                              "— unlabeled scope cannot be audited for "
+                              "inflation (missing necessity)"
+                              % (rlabel, "/".join(VALID_NECESSITY)))
+            elif tier not in VALID_NECESSITY:
+                errors.append("requirement %s: invalid necessity %r — must "
+                              "be one of %s (necessity tier)"
+                              % (rlabel, tier, "/".join(VALID_NECESSITY)))
+            else:
+                if nonempty_str(r.get("id")):
+                    req_tier[r["id"]] = tier
+                if tier == "must" and not nonempty_str(r.get("because")):
+                    errors.append("requirement %s: necessity 'must' requires "
+                                  "a non-empty plain-language 'because' "
+                                  "naming the concrete failure without it "
+                                  "(necessity justification missing)"
+                                  % rlabel)
+            if "because" in r and not nonempty_str(r.get("because")):
+                errors.append("requirement %s: field 'because' must be a "
+                              "non-empty string when present (necessity "
+                              "justification)" % rlabel)
 
     # TASK-ID PRECHECK — runs BEFORE coverage/dependency/cycle validation so
     # a missing id is its own named defect, never a downstream error or a
@@ -483,6 +554,7 @@ def main():
     covered = set()
     risky_tasks = []     # v1.2 review-floor input: (tid, risk_class)
     surfaced_tasks = []  # v1.2 review-floor input: tids w/ non-empty surfaces
+    scope_notes = []     # v1.5: non-fatal nice-to-have-only task notes
     for idx, t in enumerate(tasks):
         if not isinstance(t, dict):
             continue  # already reported by the task-id precheck
@@ -498,6 +570,7 @@ def main():
                                   "empty (incomplete contract)" % (tid, field))
         rids = c.get("requirement_ids")
         if isinstance(rids, list):
+            served_tiers = set()
             for x in rids:
                 if not nonempty_str(x):
                     continue
@@ -506,6 +579,19 @@ def main():
                     errors.append("task %s references unknown requirement %s "
                                   "— not covered by any declared requirement"
                                   % (tid, x))
+                elif v15 and x in req_tier:
+                    served_tiers.add(req_tier[x])
+                    if req_tier[x] == "fluff":
+                        errors.append("task %s serves fluff requirement %s — "
+                                      "fluff is recorded and dropped, never "
+                                      "built (necessity: requirement "
+                                      "inflation)" % (tid, x))
+            if v15 and served_tiers and served_tiers <= {"nice-to-have"}:
+                scope_notes.append(
+                    "scope note: task %s serves only nice-to-have "
+                    "requirements (%s) — confirm a human pulled this scope "
+                    "into the current increment"
+                    % (tid, ", ".join(x for x in rids if nonempty_str(x))))
         if assurance in A2_PLUS and isinstance(c, dict) and c \
                 and "rerunnable" not in c:
             errors.append("task %s: assurance %s requires the 'rerunnable' "
@@ -763,9 +849,19 @@ def main():
                       "mapping ambiguous — a single covering task cannot "
                       "prove both declarations)" % d)
 
-    # coverage: every requirement covered by >=1 task
+    # coverage: every requirement covered by >=1 task. Under schema 1.5 the
+    # rule is TIER-AWARE: only "must" requirements demand coverage; an
+    # uncovered nice-to-have is valid deferred scope (the plan block doubles
+    # as the next-increment ledger), and fluff is expected to stay uncovered
+    # (a task serving it errored above).
+    deferred = []
     for rid in req_ids:
         if rid not in covered:
+            if v15 and req_tier.get(rid) == "nice-to-have":
+                deferred.append(rid)
+                continue
+            if v15 and req_tier.get(rid) == "fluff":
+                continue
             errors.append("requirement %s: not covered by any task's "
                           "requirement_ids (uncovered requirement)" % rid)
 
@@ -810,6 +906,23 @@ def main():
           "is a Layer-2 judge question)"
           % (path, len(req_ids), len(tasks), assurance, mode,
              "/known-command-shape lint" if v13 else ""))
+
+    # schema 1.5: non-fatal scope notes (nice-to-have-only tasks) and, on
+    # request, the machine-derived necessity tier counts the operator digest
+    # (D-20) must match — a digest whose numbers differ from the block is
+    # fiction.
+    if v15:
+        for note in scope_notes:
+            print(note)
+        if digest:
+            tiers = list(req_tier.values())
+            print("digest: must=%d nice-to-have=%d (deferred %d) fluff=%d "
+                  "tasks=%d"
+                  % (tiers.count("must"), tiers.count("nice-to-have"),
+                     len(deferred), tiers.count("fluff"), len(task_ids)))
+    elif digest:
+        print("digest: schema %s carries no necessity tiers — migrate to "
+              "schema 1.5 for machine-derived digest counts" % version)
 
     # schema 1.2+: state the DERIVED plan-review tier and its dispatch
     # consequence — machine-consumed, not policy-prose-recalled (issue #4).

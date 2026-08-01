@@ -12,16 +12,23 @@
 # ---------------------------------------------------------------------------
 # Ask-tier enforcement (deterministic_permissions).
 # Pauses for approval before commands outside the trusted set — the platform-enforced
-# analog of AgentFW's ask tier. "untrusted" is stricter; "never" removes the human gate
-# and is only defensible below A2 with a sandbox that cannot reach anything irreversible.
+# analog of AgentFW's ask tier. "untrusted" is stricter. "never" removes the human gate:
+# choosing it is the operator-relaxation lever (policy/capability-contract.md § Operator
+# relaxation) — AgentFW recommends this gate once, then proceeds under the declared
+# [FLOOR-RELAXED] posture with destructive/irreversible/outward effects gated on a human
+# turn, instead of blocking the plan.
 approval_policy = "on-request"
 
 # ---------------------------------------------------------------------------
 # Filesystem effects (filesystem write/delete scope).
 # workspace-write confines writes to the workspace: the platform-enforced side-effect
-# budget for filesystem effects. Use "read-only" for review/judge-only sessions.
-# NEVER default to "danger-full-access" — that abandons the enforcement floor the
-# AgentFW effects taxonomy routes through this key.
+# budget for filesystem effects, and the recommended floor. Use "read-only" for
+# review/judge-only sessions. "danger-full-access" abandons this platform floor — never
+# ship it as a default — but an operator who knowingly selects it has pulled the
+# human-held relaxation lever (policy/capability-contract.md § Operator relaxation):
+# AgentFW recommends workspace-write once, declares [FLOOR-RELAXED: operator —
+# danger-full-access], compensates behaviorally, and proceeds. It never blocks a plan
+# on the operator's choice.
 sandbox_mode = "workspace-write"
 
 [sandbox_workspace_write]

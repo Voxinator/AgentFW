@@ -34,7 +34,7 @@ matches. If it doesn't, trust the quotes as historical evidence and note the dri
 | id | Title | Status |
 |---|---|---|
 | D-1 | Human delivery override (assumption-gated dispatch) | **SHIPPED in v9.2.0** @ `e59d6dc`/`3148554` — [notes](RELEASE-NOTES-v9.2.0.md), issue #7 closed |
-| D-2 | Global liveness budget across plan cycles | accepted (design in [R92-CANDIDATES.md](R92-CANDIDATES.md)) — issue #8 |
+| D-2 | Global liveness budget across plan cycles | **IMPLEMENTED on main** (unreleased) — build record below; issue #8 |
 | D-3 | Inline recovery-menu surfacing in adapter skills | partially shipped in v9.2.0 (override path only); remainder accepted — issue #9 |
 | D-4 | Fail visibly on install/policy drift (`ACTIVE_POLICY_STALE`) | accepted — issue #10 |
 | D-5 | Governance-cost instrumentation (`PLANNING_LIVELOCK_RISK`) | accepted — issue #11 |
@@ -48,6 +48,11 @@ matches. If it doesn't, trust the quotes as historical evidence and note the dri
 | D-13 | Evidence lifecycle (judge scratch hygiene) | proposed — issue #19 |
 | D-14 | Adaptive dispatch (flagship-cap model right-sizing) | **IMPLEMENTED on main** (ships with v9.3.0) — build [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md) |
 | D-15 | Sleep mode (unattended recommended-choice posture) | **IMPLEMENTED on main** (ships with v9.3.0) — build [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md) |
+| D-16 | Operator-relaxed enforcement (full-access / bypass as a declared lever) | **IMPLEMENTED on main** (unreleased) |
+| D-17 | Cross-substrate consult (uncorrelated blocker-resolution lane) | proposed |
+| D-18 | Post-gate scope freeze (next-increment ledger for late discoveries) | **IMPLEMENTED on main** (unreleased) — maintainer-approved 2026-07-31 |
+| D-19 | Necessity tiers + C6 demote-duty (requirement-inflation defense) | **IMPLEMENTED on main** (unreleased) — maintainer-approved 2026-07-31 |
+| D-20 | Operator digest (plain-language gate artifact + speak-twice rule) | **IMPLEMENTED on main** (unreleased) — maintainer-approved 2026-07-31 |
 
 ---
 
@@ -133,6 +138,13 @@ followed one plan-generation later. Contrast the healthy baseline: M0's 15,198 B
 **Problem:** a revision that GROWS the plan is a critique gate functioning as a scope generator —
 the leading indicator of livelock, visible a full cycle before D-2's pass/cycle budget would
 trip. Nothing in current policy measures plan mass across revisions.
+
+**Evidence update (2026-07-31):** the drydock failure-routing session
+([field report](evaluation/field-report-2026-07-31-drydock-scope-accretion.md)) showed the same
+accretion happening in *conversation before revision* — four requirement-births in ~35 minutes
+on a Layer-1-PASSED plan, each ending "should be added to the plan." The default-route valve for
+that case shipped as D-18 (post-gate scope freeze, 2026-07-31); D-7 remains the revision-time
+mass alarm and is still worth building as the leading indicator.
 
 **Proposed mechanism:** after each Layer-2-driven revision, compare the machine-readable block's
 byte size and task count to the prior revision. Growth beyond a threshold (proposal: >25% bytes
@@ -374,6 +386,223 @@ find /Users/briantaylor/Projects/NoitaMobileSpec/evidence/m0-t1-judge-tmp* -type
 
 ---
 
+## D-2 · Global liveness budget across plan cycles (build record)
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-07-31 · design of record:
+[R92-CANDIDATES.md](R92-CANDIDATES.md) § D-2 · issue #8
+
+**Origin:** maintainer field report 2026-07-31 — *"I can hit the two pass limit over and over
+again"* on Codex; the needle only moved when Claude Code analyzed failures and drafted responses.
+
+**Evidence:**
+[field-report-2026-07-31-drydock-scope-accretion.md](evaluation/field-report-2026-07-31-drydock-scope-accretion.md)
+(verbatim maintainer summary + drydock transcript quotes), plus the original NoitaMobileSpec
+M2→M2A demonstration in [R92-CANDIDATES.md](R92-CANDIDATES.md) § D-2.
+
+**Problem:** the 2-pass cap bounds each cycle but a fresh cycle resets it — *"bounded locally
+and unbounded operationally"* — so the treadmill recurs at the objective level.
+
+**Proposed mechanism (as built — matches the accepted design exactly):** review expenditure
+accrues per OBJECTIVE — `cycles` and `layer2_passes`, budget **2 cycles / 4 Layer-2 passes** for
+reversible A2 (A3/A4 may extend by exactly one named human-authorized cycle, once). A fresh plan
+for the same objective never resets the counters; objective identity is declared honestly and
+recorded in the `[LIVENESS: objective <slug> — cycle n/2, layer2 passes m/4]` marker trail. At
+exhaustion, `[LIVENESS-EXCEEDED: …]` forbids further plan/critique cycles; the forced fork is
+halt (open floor blocker, or human declines) / rescope proposal (C5 or unavailable substrate) /
+**proactive** delivery-override offer. Sleep halts at exhaustion exactly as at the 2-pass cap.
+**Build-scope note (recorded for the precedent):** the initial build folded a "scope freeze
+after Layer 1" corollary into D-2 beyond the accepted design. During maintainer review it was
+extracted to its own candidate, **D-18** — briefly on a misread of the maintainer's *"That
+sounds like scope creep to me!"* (which described the drydock transcript's plan, not the
+corollary) — and the maintainer then approved the mechanism explicitly ("I like your
+suggestions"). Net result, kept deliberately: D-2 ships exactly as accepted, and the corollary
+ships as D-18 with its own identity, evidence, and verification. New mechanisms get their own
+ledger entries even when they ship the same day.
+
+**Anchors:** [policy/plan-critique.md](policy/plan-critique.md) (§ Global liveness budget),
+both adapter `SKILL.md` §3 (identical D-2 paragraph),
+`evaluation/fixtures/liveness-budget.json` + `tools/check-liveness-invariants.py` (the D-12
+fixture-over-prose pattern: exhausted ⇒ only halt/rescope/override-offer; same-objective never
+resets; floor blocker at exhaustion ⇒ halt).
+
+**Cold-start verification:**
+```sh
+python3 tools/check-liveness-invariants.py --selftest                       # LIVENESS_SELFTEST_OK
+python3 tools/check-liveness-invariants.py evaluation/fixtures/liveness-budget.json  # LIVENESS_OK
+grep -n "Global liveness budget" policy/plan-critique.md adapters/*/skills/agentfw/SKILL.md
+```
+
+## D-17 · Cross-substrate consult (uncorrelated blocker-resolution lane)
+
+**Status:** proposed · **Priority:** medium · **Effort:** medium
+
+**Origin:** maintainer field report 2026-07-31 (drydock) — the needle on Codex gate outcomes
+moved only when the maintainer hand-carried blockers to Claude Code and pasted back its analysis.
+
+**Evidence:** two independent signals in the
+[field report](evaluation/field-report-2026-07-31-drydock-scope-accretion.md). (1) The
+call-site-deletion mutation blind spot *"shipped twice in this repo and neither time was caught
+by the verifiers, because the briefs told them to attack the helper"* — same-family producer and
+verifiers share blind spots, so their failures are correlated. (2) The cross-substrate handoff
+(Claude → GPT-5.6) is what carried the corrective lesson; the maintainer is currently the
+transport layer.
+
+**Problem:** when a producer fails the same rubric check across consecutive cycles, the
+framework's only escalations are more same-family passes (correlated, empirically non-converging)
+or human levers. The one empirically working remedy — consulting a different model family — has
+no named step, so it costs manual ferrying and is invisible to the audit trail.
+
+**Proposed mechanism (sketch, for maintainer review):** a named recovery escalation between
+"another cycle" and "human override": when the same rubric check blocks across two cycles for one
+objective, or at D-2 liveness exhaustion when the human extends, blocker-resolution routes to a
+**consult context on a different substrate/model family** before any further same-family cycle.
+The consult is input-curated like a judge (requirements + blockers + contracts, never the
+producer's reasoning), produces a resolution draft the producer must adopt-or-rebut on the
+record, and is marked `[CONSULT: cross-substrate — <blocker ids> → <substrate>]`. Adapter-side:
+each capability instance declares whether a second substrate is reachable (e.g. Claude Code CLI
+from Codex, `codex exec` from Claude Code) — degraded honestly to "human ferries the consult"
+when absent, which is today's behavior made explicit. Open questions: does the consult count
+against the D-2 budget (proposal: no — it resolves blockers, it doesn't re-review the plan);
+tier/cost governance for the consult context (flagship-cap rules apply unchanged).
+
+**Anchors (if accepted):** `policy/recovery.md` (the escalation), `policy/plan-critique.md`
+(post-blocker protocol cross-reference), both adapter `capability.yaml` (consult-lane
+declaration) + `SKILL.md`, `policy/capability-contract.md` (degradation rule).
+
+**Cold-start verification:**
+```sh
+grep -n "shipped twice" evaluation/field-report-2026-07-31-drydock-scope-accretion.md
+git -C /Users/briantaylor/Projects/drydock log --oneline -1 a191587   # transcript's cited fix exists
+```
+
+## D-18 · Post-gate scope freeze (next-increment ledger for late discoveries)
+
+**Status:** IMPLEMENTED on main (unreleased) · maintainer-approved 2026-07-31 · **Effort:** small
+
+**Origin:** extracted from the D-2 build, 2026-07-31, so the mechanism would carry its own
+ledger identity rather than ride an accepted design; approved by the maintainer the same day
+("I like your suggestions") after the drydock transcript showed the exact infestation it
+prevents.
+
+**Evidence:** drydock finding 1
+([field report](evaluation/field-report-2026-07-31-drydock-scope-accretion.md)): four
+requirement-births in ~35 minutes of post-Layer-1-PASS conversation, each ending "should be
+added to the plan" — plus the Noita v1→v2 revision growing +61% bytes / +80% tasks under
+critique (D-7's numbers). Every discovery defaulted INTO the gated plan; nothing in policy names
+a different destination for it.
+
+**Problem:** a gated plan has no scope boundary. Good design conversation after Layer-1 PASS
+generates requirements faster than cycles close them, so the gate re-opens ever larger — the
+accretion side of the treadmill, which D-2's budget bounds but does not prevent.
+
+**Proposed mechanism (built):** requirements discovered AFTER a plan's Layer-1 PASS — in review,
+conversation, or design exploration — default to a recorded **next-increment ledger** beside the
+plan, never silently into the gated plan. Folding a discovery in is an explicit human choice
+that reopens the gate and spends a cycle from the D-2 budget; the default is to ship the gated
+increment and plan the discoveries against the next one. Same conversion discipline the D-1
+override applies to waived blockers: growth becomes forward work, not plan mass. Interacts with
+D-7 (the alarm) and D-2 (the budget); this is the valve.
+
+**Anchors:** [policy/plan-critique.md](policy/plan-critique.md) (the "Scope freeze after
+Layer 1" bullet in the D-2 liveness-budget section), both adapter `SKILL.md` §3 D-2 paragraphs,
+`evaluation/fixtures/liveness-budget.json` (case `scope_reopened_after_layer1_pass`: reopening
+is a NEW_CYCLE spend, counters never reset).
+
+**Cold-start verification:**
+```sh
+grep -n "Scope freeze after Layer 1" policy/plan-critique.md
+grep -n "next-increment ledger" adapters/claude-code/skills/agentfw/SKILL.md adapters/codex/skills/agentfw/SKILL.md
+grep -n "scope_reopened_after_layer1_pass" evaluation/fixtures/liveness-budget.json
+```
+
+## D-19 · Necessity tiers + C6 demote-duty (requirement-inflation defense)
+
+**Status:** IMPLEMENTED on main (unreleased) · maintainer-approved 2026-07-31 ("Yes absolutely")
+· **Effort:** medium
+
+**Origin:** maintainer design conversation 2026-07-31, immediately after the D-2/D-18 build:
+*"there's probably different levels of justification.. like the feature wont pass or work
+without this addition.. and then there's nice to haves.. and then there true fluff.. It seems
+like AgentFW doesn't do anything to prevent from this kind of invention."*
+
+**Evidence:** the drydock field report
+([field-report-2026-07-31-drydock-scope-accretion.md](evaluation/field-report-2026-07-31-drydock-scope-accretion.md)):
+four post-gate requirement-births, all defaulting inward, none carrying a necessity claim a
+judge could attack. Structural cause: every gate check asks "what's missing?" (coverage);
+nothing ever asks "would the objective fail without this?" — adding reads as diligence, cutting
+is nobody's job, so the critique gate is a scope generator by construction.
+
+**Problem:** requirements carry no necessity classification, so a judge cannot distinguish
+load-bearing scope from invention, and no mechanism ever prunes.
+
+**Proposed mechanism (built):** plan schema **1.5** (additive over 1.4; new schema of record).
+Every requirement carries `necessity` ∈ `must` | `nice-to-have` | `fluff` (the maintainer's
+three levels: won't work without it / nice to have / true fluff); a `must` also carries a
+plain-language `because` naming the concrete failure without it. `validate-plan` enforces the
+labels deterministically (new stable defect keyword `necessity`): unlabeled requirement,
+unjustified must, and any task serving fluff are defects; coverage becomes tier-aware (an
+uncovered nice-to-have is valid deferred scope — the block doubles as the D-18 next-increment
+ledger); a task serving only nice-to-haves emits a non-fatal `scope note:`. Layer 2 gains **C6,
+the anti-coverage check**: the judge independently attempts to name the failure behind every
+must-claim; a claim that fails the attempt is **DEMOTED, not debated** — a scope correction,
+never a blocker, never a re-plan trigger. Coverage stops under-building the musts; C6 stops
+over-claiming them.
+
+**Anchors:** `tools/validate-plan` (schema 1.5 + `--digest`), `tools/fixtures/plan-good-15-*` +
+`plan-bad-15-*` + `plan-bad-14-carrying-15-field.md`, `tools/tests/validate-plan.sh`,
+[policy/plan-critique.md](policy/plan-critique.md) (rule 15, C6, keyword contract), both adapter
+`SKILL.md` §3, `adapters/claude-code/agents/agentfw-plan-critic.md` (C6 duty + verdict line),
+both kernel bootloaders (C0–C6).
+
+**Cold-start verification:**
+```sh
+bash tools/tests/validate-plan.sh                                    # ALL CHECKS PASSED
+python3 tools/validate-plan tools/fixtures/plan-bad-15-must-no-because.md   # FAIL, necessity keyword
+python3 tools/validate-plan --digest tools/fixtures/plan-good-15-necessity.md  # digest: must=2 ...
+grep -n "C6 necessity audit" policy/plan-critique.md adapters/claude-code/agents/agentfw-plan-critic.md
+```
+
+## D-20 · Operator digest (plain-language gate artifact + speak-twice rule)
+
+**Status:** IMPLEMENTED on main (unreleased) · maintainer-approved 2026-07-31 ("Yes absolutely")
+· **Effort:** small (policy + adapter SKILL paragraphs; validator support ships with D-19)
+
+**Origin:** the same 2026-07-31 conversation: *"the models don't always do a good job of
+communicating what's going on IN ENGLISH.. it reads like internal chatter of the model to
+itself - and much of it is not really easily parsed by the operator... even if I do read it -
+I can't always clearly identify requirement inflation."*
+
+**Evidence:** the framework's own output register — markers, rubric letters, candidate numbers
+— is audit-speak addressed to a future grep, and nothing ever required an operator-readable
+rendering. The one human lever the whole gate depends on (the maintainer spotting inflation and
+deciding) was being fed machine-facing text.
+
+**Problem:** governance output the operator cannot parse is governance that does not govern —
+the economy calibration applied to language.
+
+**Proposed mechanism (built):** every gate event (Layer-1 result, Layer-2 verdict, escalation
+menu, override offer) is accompanied by a fixed-shape **operator digest** written for someone
+who has never read the policy — no candidate numbers, rubric letters, or marker syntax: what
+the plan builds; scope counts by necessity (musts / nice-to-haves built-vs-deferred / dropped),
+which on schema 1.5 MUST match `validate-plan --digest` (a digest whose numbers differ from the
+block is fiction); an ADDED/REMOVED delta since the last version, one plain line per change
+with tier and "because" — the operator's inflation detector, with a new post-gate must-have
+called out explicitly; review cost in plain numbers; and a one-line ask. Plus the
+**speak-twice rule**: any marker the operator is expected to act on carries one plain sentence
+beside it. Prose never overrides the block: where they disagree, the block is authoritative and
+the mismatch is itself a defect.
+
+**Anchors:** [policy/plan-critique.md](policy/plan-critique.md) (§ Operator digest),
+`tools/validate-plan --digest` (the count oracle), both adapter `SKILL.md` §3 (identical
+D-20 paragraph).
+
+**Cold-start verification:**
+```sh
+grep -n "## Operator digest" policy/plan-critique.md
+grep -n "speak-twice\|Speak twice" policy/plan-critique.md adapters/*/skills/agentfw/SKILL.md
+python3 tools/validate-plan --digest tools/fixtures/plan-good-15-necessity.md  # the count oracle
+```
+
 ## D-14 · Adaptive dispatch (flagship-cap model right-sizing)
 
 **Status:** IMPLEMENTED on main (unreleased; ships with v9.3.0) · **Priority:** high · **Effort:** medium — build provenance: [PLAN-v9.3-sleep-adaptive.md](PLAN-v9.3-sleep-adaptive.md)
@@ -414,6 +643,57 @@ grep -ni "flagship\|floor tier\|Uniform" policy/model-dispatch.md | head
 python3 tools/check-posture-invariants.py --selftest        # POSTURE_SELFTEST_OK
 python3 tools/check-posture-invariants.py evaluation/fixtures/sleep-posture.json
 grep -n "Unattended (sleep) posture\|SLEEP-HALT" policy/assurance-model.md | head
+```
+
+## D-16 · Operator-relaxed enforcement (full-access / bypass as a declared lever)
+
+**Status:** IMPLEMENTED on main (unreleased) · **Priority:** high · **Effort:** small
+
+**Origin:** maintainer field report 2026-07-31 — a Codex install with `sandbox_mode =
+"danger-full-access"` could not get any AgentFW plan past the gate, while the Claude Code
+runtime under `bypassPermissions` continued fine. The maintainer's stated intent: recommend the
+floor, then move on; the framework must never pester an operator who chose relaxation for a
+long-running project.
+
+**Evidence:** `adapters/codex/capability.yaml` (pre-fix) probed `sandbox_mode present and not
+"danger-full-access"` for both `filesystem` and `deterministic_permissions`, each `required_for`
+A2+/A3+; the capability contract's gating rule made those tiers "unreachable" when not ACTIVE;
+plan-critics then mapped the condition to safety-floor item 5 ("unavailable required substrate"),
+which is never waivable — a hard block with no human lever. The Claude Code adapter escaped only
+by omission: its probe checked deny-rule *presence* in settings and never read the active
+permission mode. Grounding for the bypass residuals: https://code.claude.com/docs/en/permissions
+("Skips permission prompts" + its listed exceptions); deny-rule/hook behavior under bypass is
+undocumented and therefore never claimed.
+
+**Problem:** a deliberate operator relaxation (full access / bypass permissions) was classified
+as *missing substrate*, converting a human-held economic choice into an unwaivable blocker on
+one runtime and an unexamined silence on the other. Both violate the calibration: minimal safety
+floor, cheap human-held levers, recommend-then-move-on.
+
+**Proposed mechanism (built):** the capability contract now distinguishes **unconfigured** (never
+activated ⇒ gates as absent, unchanged) from **operator-relaxed** (an explicit relaxed mode in
+live config ⇒ a standing human lever). Operator-relaxed handling is fixed at four steps:
+recommend the floor ONCE at plan time; declare `[FLOOR-RELAXED: operator — <mode>]` citing
+documented residuals only; compensate behaviorally (destructive/irreversible/outward effects
+gate on a genuine human turn — already A3/A4 policy — and workers keep explicit side-effect
+budgets); PROCEED — never Layer-2 material, never safety-floor item 5, never re-raised per task.
+Sleep/headless posture is unchanged: floor blockers still halt; relaxation never widens what an
+unattended run may auto-take. Both adapters' probes now resolve relaxed modes to this rule
+symmetrically.
+
+**Anchors:** [policy/capability-contract.md](policy/capability-contract.md) (§ Operator
+relaxation), `adapters/codex/capability.yaml` (`filesystem` + `deterministic_permissions`
+probes), [adapters/codex/config.example.toml](adapters/codex/config.example.toml),
+[adapters/codex/AGENTS.md](adapters/codex/AGENTS.md) + both adapter `SKILL.md` §0/§4,
+`adapters/claude-code/capability.yaml` (bypass residuals, honestly bounded),
+[adapters/claude-code/CLAUDE-block.md](adapters/claude-code/CLAUDE-block.md).
+
+**Cold-start verification:**
+```sh
+python3 tools/validate-capability adapters/codex/capability.yaml          # PASS
+python3 tools/validate-capability adapters/claude-code/capability.yaml    # PASS
+grep -n "Operator relaxation is a lever" policy/capability-contract.md
+grep -rn "FLOOR-RELAXED" adapters/ | wc -l                                # ≥ 6 sites
 ```
 
 ---

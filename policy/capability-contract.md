@@ -84,6 +84,46 @@ but not configured, the degradation is **declared to the user, never silent** �
 capability were absent — and any `required_for` tiers are unreachable until the capability is probed
 or configured ACTIVE.
 
+## Operator relaxation is a lever, not missing substrate
+
+`configured` not-ACTIVE covers two different worlds, and the policy must never conflate them:
+
+- **Unconfigured** — the enforcement was never activated (fresh install, unprobed `unknown`).
+  Gates as absent, exactly as above.
+- **Operator-relaxed** — a genuine human deliberately selected a platform mode that removes
+  prompting or enforcement for the session (Claude Code `bypassPermissions`; Codex
+  `sandbox_mode = "danger-full-access"` or `approval_policy = "never"`). This is a standing,
+  human-held **economic lever** — the same family as the flagship-cap gate and the D-1 delivery
+  override — pulled precisely so long-running work is not interrupted per action. The maintainer
+  calibration applies: governance that is not economical does not get used.
+
+An activation probe can tell the two apart: an explicit relaxed mode value present in live
+configuration is operator-relaxed; an absent or unprobed state is unconfigured. When a probe
+finds an operator-relaxed mode:
+
+1. **Recommend once.** One line at plan time naming the recommended floor configuration and what
+   the relaxation forfeits. Never re-raise it per task, per cycle, or as a Layer-2 blocker — a
+   repeated recommendation is pestering, not governance.
+2. **Declare.** The plan records `[FLOOR-RELAXED: operator — <mode>]` plus what the platform
+   still enforces under that mode, citing **documented residuals only** — claiming undocumented
+   enforcement is the same optimism the `verified:` rule exists to block.
+3. **Compensate behaviorally.** Effects that would have routed through the relaxed control route
+   through the behavioral ask-tier: destructive, irreversible, or outward-facing operations pause
+   for a genuine human turn — which A3/A4 policy requires regardless of permission configuration
+   — and every dispatched worker still carries an explicit scope + side-effect budget in its
+   prompt. Behavioral controls are model compliance, not platform enforcement; the plan says so
+   plainly rather than dressing prose up as a floor.
+4. **Proceed.** A plan is never blocked, and a `required_for` tier is never declared unreachable,
+   *solely because* the operator relaxed the enforcement floor. Operator relaxation is NOT
+   safety-floor item 5 ("unavailable required substrate"): that item covers substrate the work
+   needs to execute or prove itself (a missing test runner, no isolatable judge) — not
+   enforcement a human knowingly traded away.
+
+What the relaxation does not buy: the sleep/headless posture is unchanged — floor blockers still
+halt for a genuine human turn, and an unattended run does not widen what it may auto-take just
+because prompting is off. Relaxing the floor removes interruptions while a human is reachable;
+it never substitutes for one.
+
 ## Binding strengths: requires / prefers / fallback
 
 Policy statements bind to capabilities at one of three strengths:

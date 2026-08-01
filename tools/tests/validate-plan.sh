@@ -99,8 +99,8 @@ expect_policy_text "$ACCEPTANCE_POLICY" 'success signal is emitted'
 # Regression guards for policy/plan-critique.md: reverting the schema of
 # record, dropping mutation contracts, or dropping any known weak command
 # shape must make this harness fail even when all fixtures still pass.
-expect_policy_text "$PLAN_POLICY" 'mode — `"1.1"`, `"1.2"`, `"1.3"`, or `"1.4"`'
-expect_policy_text "$PLAN_POLICY" '**schema 1.4 is the schema of record**'
+expect_policy_text "$PLAN_POLICY" 'mode — `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`, or `"1.5"`'
+expect_policy_text "$PLAN_POLICY" '**schema 1.5 is the schema of record**'
 expect_policy_text "$PLAN_POLICY" \
   '**Schema 1.3 mutation probes + known command-shape lint (additive over 1.2):**'
 expect_policy_text "$PLAN_POLICY" \
@@ -141,5 +141,26 @@ expect_fail "$FIXTURES/plan-bad-14-override-shape.md" override
 expect_fail "$FIXTURES/plan-bad-14-override-nonarray.md" override
 expect_fail "$FIXTURES/plan-bad-13-carrying-14-field.md" version
 expect_policy_text "$PLAN_POLICY" '**Schema 1.4 overrides ledger (additive over 1.3):**'
+
+# Schema 1.5 necessity tiers (D-19): positives, scope note, digest counts,
+# and hostile shapes.
+expect_pass "$FIXTURES/plan-good-15-necessity.md" "known-command-shape lint"
+expect_pass "$FIXTURES/plan-good-15-necessity.md" \
+  "scope note: task T2 serves only nice-to-have requirements"
+expect_fail "$FIXTURES/plan-bad-15-missing-necessity.md" "missing necessity"
+expect_fail "$FIXTURES/plan-bad-15-must-no-because.md" \
+  "necessity justification missing"
+expect_fail "$FIXTURES/plan-bad-15-task-serves-fluff.md" \
+  "requirement inflation"
+expect_fail "$FIXTURES/plan-bad-14-carrying-15-field.md" "schema-1.5"
+digest_output=$(python3 "$VALIDATOR" --digest \
+  "$FIXTURES/plan-good-15-necessity.md" 2>&1) \
+  || fail "--digest rejected the good 1.5 fixture: $digest_output"
+[[ $digest_output == *"digest: must=2 nice-to-have=2 (deferred 1) fluff=1 tasks=2"* ]] \
+  || fail "--digest counts did not match the 1.5 fixture; got: $digest_output"
+expect_policy_text "$PLAN_POLICY" \
+  '**Schema 1.5 necessity tiers (additive over 1.4):**'
+expect_policy_text "$PLAN_POLICY" 'C6 necessity audit'
+expect_policy_text "$PLAN_POLICY" '## Operator digest'
 
 printf 'validate-plan.sh: ALL CHECKS PASSED\n'

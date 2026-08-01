@@ -22,15 +22,23 @@ filesystem:
   available: true
   configured: unknown
   activation_probe: >
-    Inspect ~/.codex/config.toml: sandbox_mode present and not "danger-full-access"; check
-    [sandbox_workspace_write].writable_roots against the intended scope.
+    Inspect ~/.codex/config.toml and read sandbox_mode. Absent key ⇒ unconfigured (gates as
+    inactive). "read-only" or "workspace-write" ⇒ configured true (then check
+    [sandbox_workspace_write].writable_roots against the intended
+    scope). An explicit "danger-full-access" ⇒ OPERATOR-RELAXED, not unconfigured: handle per
+    the capability contract's operator-relaxation rule (recommend the floor once, declare
+    [FLOOR-RELAXED: operator — danger-full-access], compensate behaviorally, proceed) — never
+    as tier-unreachability or a plan blocker.
   required_for: side-effect budgets at A2+; the enforcement floor for A3+
   verified: https://learn.chatgpt.com/docs/config-file/config-reference
   notes: >
     Platform-enforced sandbox scopes file access: sandbox_mode = "read-only" |
     "workspace-write" | "danger-full-access"; [sandbox_workspace_write].writable_roots adds
     roots; exclude_slash_tmp / exclude_tmpdir_env_var narrow them. Which mode is active is
-    per-install config, not a platform given.
+    per-install config, not a platform given. "workspace-write" stays the recommended floor;
+    an operator who selects "danger-full-access" has pulled the human-held relaxation lever
+    (policy/capability-contract.md § Operator relaxation) — the framework recommends once and
+    then works under the declared relaxed posture instead of blocking.
 
 shell:
   available: true
@@ -87,8 +95,13 @@ deterministic_permissions:
   activation_probe: >
     Inspect ~/.codex/config.toml for approval_policy and sandbox_mode — confirm the
     config.example.toml keys from this adapter were actually merged (shipped example is not
-    proof of activation).
-  required_for: the enforcement floor at A2+; mandatory for A3+ autonomy
+    proof of activation). Absent keys ⇒ unconfigured (gates as inactive). Explicit
+    approval_policy = "never" or sandbox_mode = "danger-full-access" ⇒ OPERATOR-RELAXED:
+    apply the capability contract's operator-relaxation rule (recommend once, declare
+    [FLOOR-RELAXED], behavioral compensation, proceed) — never tier-unreachability.
+  required_for: the enforcement floor at A2+; unattended (sleep/headless) A3+ autonomy still
+    prefers it ACTIVE — under an operator-relaxed floor, destructive/irreversible/outward
+    effects gate on a genuine human turn instead
   verified: https://learn.chatgpt.com/docs/config-file/config-reference
   notes: >
     approval_policy ("untrusted" | "on-request" | "never" | granular table) and sandbox_mode

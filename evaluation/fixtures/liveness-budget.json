@@ -1,0 +1,16 @@
+{
+  "budget": {"cycles": 2, "layer2_passes": 4},
+  "description": "Canonical decision table for the global liveness budget (D-2). Review expenditure accrues per objective across fresh plans, renames, and revisions; a fresh plan for the same objective never resets the counters. At exhaustion, new plan/critique cycles are forbidden: the only lawful actions are HALT (open floor blocker, or human declines), RESCOPE (C5 goal/proof contradiction or unavailable required substrate), or OVERRIDE_OFFER (proactive D-1 offer). check-liveness-invariants.py enforces this table; policy/plan-critique.md is its prose.",
+  "cases": [
+    {"case": "under_budget_clean_verdict", "budget_exhausted": false, "open_floor_blocker": false, "same_objective": false, "counters_reset": false, "action": "CONTINUE"},
+    {"case": "under_budget_blocker_revision", "budget_exhausted": false, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "NEW_CYCLE"},
+    {"case": "fresh_plan_same_objective", "budget_exhausted": false, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "NEW_CYCLE"},
+    {"case": "renamed_plan_same_objective", "budget_exhausted": false, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "NEW_CYCLE"},
+    {"case": "scope_reopened_after_layer1_pass", "budget_exhausted": false, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "NEW_CYCLE"},
+    {"case": "exhausted_open_floor_blocker", "budget_exhausted": true, "open_floor_blocker": true, "same_objective": true, "counters_reset": false, "action": "HALT"},
+    {"case": "exhausted_c5_goal_proof_contradiction", "budget_exhausted": true, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "RESCOPE"},
+    {"case": "exhausted_unavailable_required_substrate", "budget_exhausted": true, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "RESCOPE"},
+    {"case": "exhausted_quality_blockers_only", "budget_exhausted": true, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "OVERRIDE_OFFER"},
+    {"case": "exhausted_human_declines_override", "budget_exhausted": true, "open_floor_blocker": false, "same_objective": true, "counters_reset": false, "action": "HALT"}
+  ]
+}

@@ -40,10 +40,13 @@ single short line. No silent gate-skips: skipping a gate requires naming the rel
 - **Input curation.** A judge receives only requirements + current state + acceptance criteria —
   never the producer's reasoning or self-assessment.
 - **Side effects flow through native controls** — `settings.json` permissions (allow/ask/deny) and
-  hooks — never through prose promises.
+  hooks — never through prose promises. An operator-selected relaxed mode (`bypassPermissions`)
+  is a standing human lever, not missing substrate: recommend the floor once, emit
+  `[FLOOR-RELAXED: operator — <mode>]`, gate destructive/irreversible/outward effects on a
+  genuine human turn, and proceed — never block a plan on the relaxation itself.
 - Never name or simulate a capability the current runtime does not expose.
 
-Everything else — role separation, acceptance contracts, plan critique (C0–C5), recovery, context
+Everything else — role separation, acceptance contracts, plan critique (C0–C6), recovery, context
 health — is in the agentfw skill. For A2+ work, load it before planning.
 
 **Model dispatch & sleep (v9.3).** Adaptive dispatch right-sizes each subagent's model; casting the

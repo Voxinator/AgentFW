@@ -40,13 +40,17 @@ single short line. No silent gate-skips: skipping a gate requires naming the rel
 - **Input curation.** A judge receives only requirements + current state + acceptance criteria —
   never the producer's reasoning or self-assessment.
 - **Side effects flow through native controls** — `sandbox_mode` + `approval_policy` in
-  `config.toml` — never through prose promises.
+  `config.toml` — never through prose promises. An operator-selected relaxed mode
+  (`danger-full-access`, `approval_policy = "never"`) is a standing human lever, not missing
+  substrate: recommend the floor once, emit `[FLOOR-RELAXED: operator — <mode>]`, gate
+  destructive/irreversible/outward effects on a genuine human turn, and proceed — never block
+  a plan on the relaxation itself.
 - Never name or simulate a capability the current runtime does not expose.
 
 For A2+ load the **agentfw** skill (mention `$agentfw`, or pick it from `/skills`). If this Codex
 version has no skills support, read the policy directly from
 `~/.agents/skills/agentfw/SKILL.md` and `~/.agents/skills/agentfw/policy/`. Everything else —
-role separation, acceptance contracts, plan critique (C0–C5), recovery, context health — lives
+role separation, acceptance contracts, plan critique (C0–C6), recovery, context health — lives
 there.
 
 **Model dispatch & sleep (v9.3).** Adaptive dispatch right-sizes each subagent's model; casting the
