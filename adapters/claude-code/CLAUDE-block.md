@@ -1,6 +1,6 @@
 # AgentFW r9 — Assurance Kernel (Claude Code bootloader)
 
-Installed release: **AgentFW v9.5.0** — when asked what version is running, answer from this
+Installed release: **AgentFW v9.6.0** — when asked what version is running, answer from this
 line, not from feature-paragraph labels below (those name the release each feature shipped in).
 
 Before any material action, derive an assurance level and emit the marker. Full policy lives in the
@@ -62,3 +62,8 @@ carries recorded proof it can FAIL **and** PASS — red on a broken scratch (the
 unchanged) and green on a planner-authored witness tree. Whole-command-only evidence: each leg
 is one end-to-end run of the entire command string, digest-matched to the contract. A command
 never shown able to pass is rejected at plan time (defect keyword `witness`).
+
+**Delivery scoreboard (v9.6).** Every gate event emits `[SCOREBOARD: objective <slug> — musts built
+b/t · workers dispatched w · verified v · cycle n/2 · passes m/4]` from the objective's durable
+`<plan>.ledger.json`; two completed cycles with zero workers dispatched force the delivery fork, and
+a resumed objective reconciles that ledger before its next cycle. Full mechanism: the agentfw skill.

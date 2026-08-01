@@ -1,5 +1,59 @@
 # AgentFW Changelog
 
+## v9.6.0 (2026-08-01)
+
+The operator compass. Field driver: the drydock failure-routing workstream ran **five review
+rounds on one clause of 1 of 13 requirements, dispatched 0 of 12 sibling tasks, produced ~15
+commits that were all governance artifacts and zero product behavior, and did it across BOTH
+runtimes over roughly two days — each runtime restarting the counters** — while the operator
+learned the delivered-feature count was zero only by asking three escalating times. Evidence:
+[evaluation/field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md)
+(execution half; the
+[2026-07-31 report](evaluation/field-report-2026-07-31-drydock-scope-accretion.md) is the planning
+half). Build plan: [PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md).
+
+- **D-21 — delivery ledger, scoreboard & zero-dispatch tripwire** (`policy/plan-critique.md`
+  § Delivery ledger): the framework finally counts what an objective DELIVERS, not just what
+  review spends. A durable `<plan>.ledger.json` beside every A2+ plan (`objective`,
+  `root_objective`, `cycles`, `layer2_passes`, `workers_dispatched`, `tasks_verified`, and
+  append-only `gate_events` each naming the runtime that wrote it); a
+  `[SCOREBOARD: objective <slug> — musts built b/t · workers dispatched w · verified v · cycle n/2
+  · passes m/4]` marker at EVERY gate event with a plain-language rendering in every D-20 operator
+  digest; and a **zero-dispatch tripwire** — two or more completed gate cycles with zero workers
+  dispatched immediately force the D-2 exhaustion fork even when budget remains, latching until
+  work is actually dispatched. Decision table + ledger-shape record in
+  `evaluation/fixtures/delivery-ledger.json`, machine-checked by
+  `tools/check-delivery-invariants.py`. **D-24 (proof-cost inversion)** is recorded as folded into
+  D-21's rationale — no mechanical rendering exists for the general case; the tripwire is its
+  enforceable shadow.
+- **D-22 — budget & ledger inheritance** (`policy/plan-critique.md` § Global liveness budget):
+  counters are not session state. They live in the durable ledger keyed by **`root_objective`**,
+  and every derived objective — decomposed, renamed, re-planned, or resumed in another runtime —
+  spends from the ROOT ledger; liveness markers name the root slug. Decomposition, rename, and
+  runtime hop were the three cheap ways to buy a fresh budget; all three are closed. New
+  `sub_objective_inherits_root_counters` case in `evaluation/fixtures/liveness-budget.json`, with
+  `tools/check-liveness-invariants.py` rejecting any case that names a `root_objective` while
+  declaring `counters_reset: true`.
+- **D-25 — session-start reconciliation** (`policy/recovery.md` § 8, cross-referenced at gate
+  entry in `policy/plan-critique.md`): a resumed A2+ objective's first act is a blocking
+  four-step duty — read the ledger at its root, re-derive observed state with mechanical probes
+  (validator run, evidence-file presence, repo greps for claimed deliverables), emit
+  `[RECONCILE: objective <slug> — ledger claims X, observed Y — MATCH|MISMATCH]`, and on MISMATCH
+  correct the ledger BEFORE planning continues. A claimed-verified task whose evidence is absent
+  reverts to unverified; corrections may only move toward observed reality, never spend down
+  counters. The duty's decision rules are machine-checked
+  (`evaluation/fixtures/reconcile.json` + `tools/check-reconcile-invariants.py`, added
+  pre-release to close the T3 verifier's finding that D-25 was the only new duty without a
+  decision table).
+- **Adapter & kernel sync**: the scoreboard/ledger duty and the RECONCILE resume duty land inside
+  the AGENTFW-SYNC block of both adapter `SKILL.md` files (byte-identity enforced by
+  `tools/check-skill-sync.py`), with a SCOREBOARD line in both kernel bootloaders.
+- **Proposed, not built:** D-23 (increment-shape check + dependency-edge audit + partial
+  dispatch), D-26 (stranded-implementation disposition), D-27 (blocker re-validation on age) —
+  all registered in [CANDIDATES.md](CANDIDATES.md) from the same field report.
+- **Provenance:** CANDIDATES.md gains D-21–D-27; the stale repo-root `active-capabilities.yaml`
+  snapshot is refreshed.
+
 ## v9.5.0 (2026-07-31) — RELEASED
 
 The witness-pair release. Field driver: in the drydock failure-routing workstream an

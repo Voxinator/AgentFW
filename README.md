@@ -23,20 +23,57 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.5.0, released 2026-07-31** — the *witness-pair* release. One field incident, one
-structural fix: an **impossible-to-pass acceptance command** survived every layer of the gate in
-the drydock failure-routing workstream, because red-path calibration only proves a command can
-FAIL — and an impossible command aces every red probe. Plan schema **1.6** now requires every
-`acceptance_command` at A2+ to carry a recorded **witness pair** before Layer-2 dispatch: RED on
-a broken scratch (the existing duty, unchanged) and GREEN on a planner-authored witness tree
-proving the command *can* pass. Witness evidence is **whole-command-only** — each leg is one
-end-to-end run of the entire command string, sha256-matched to the contract, so a single-leg run
-mechanically cannot masquerade as the whole. A command never shown able to pass is rejected at
-plan time (new defect keyword `witness`). The deterministic release gate is green; pre-1.6
-plans validate byte-identically; no new behavioral-evaluation round was run for v9.5.0. See
-[the v9.5.0 release notes](RELEASE-NOTES-v9.5.0.md),
-[the v9.4.0 release notes](RELEASE-NOTES-v9.4.0.md) and
+**Status: v9.6.0, released 2026-08-01** — the *operator-compass* release. One field incident,
+one theme: a governance gate that counts only what review SPENDS can treadmill forever without
+anyone noticing that nothing has SHIPPED. The drydock failure-routing workstream ran five review
+rounds on one clause of 1 of 13 requirements, dispatched 0 of 12 sibling tasks, and did it
+across BOTH runtimes over roughly two days — each runtime restarting the counters — while the
+operator learned the delivered-feature count was zero only by asking three escalating times.
+v9.6.0 gives every objective a **durable delivery ledger** (`<plan>.ledger.json`, shared across
+sessions, renames, and runtimes), a **`[SCOREBOARD:]` marker at every gate event** whose counts
+come from the ledger rather than narration, a **zero-dispatch tripwire** that forces the
+escalation fork after two cycles with no workers dispatched, **root-objective budget
+inheritance** (D-22) so decomposition can never mint a fresh budget, and a **blocking
+`[RECONCILE:]` resume duty** (D-25) so no session plans on top of fictional progress — each
+machine-checked by its own decision table. The deterministic release gate is green
+(`tools/tests/release-v9.6.sh`); no new behavioral-evaluation round was run for v9.6.0. See
+[the v9.6.0 release notes](RELEASE-NOTES-v9.6.0.md),
+[the v9.5.0 release notes](RELEASE-NOTES-v9.5.0.md) and
 [Verification & provenance](#verification--provenance).
+
+## What's new in v9.6
+
+One field incident, one theme: review spend was counted; delivery was not.
+
+- **The delivery ledger & scoreboard (D-21).** Every A2+ objective carries a durable
+  `<plan>.ledger.json` — cycles, Layer-2 passes, workers dispatched, tasks verified, and an
+  append-only `gate_events` trail naming the runtime that wrote each entry. Both runtimes read
+  and update the same file: a counter that dies with the session cannot bound anything. Every
+  gate event emits `[SCOREBOARD: objective <slug> — musts built b/t · workers dispatched w ·
+  verified v · cycle n/2 · passes m/4]`, rendered in plain language in the operator digest, with
+  every count derived from the ledger and `validate-plan --digest` — never narration.
+- **The zero-dispatch tripwire (D-21).** Two or more completed gate cycles with zero workers
+  dispatched immediately force the D-2 exhaustion fork — proactive delivery-override offer,
+  rescope, or halt — even when liveness budget remains, and the tripwire latches until work
+  actually dispatches. An advisory gauge loses to locally-sensible per-turn reasoning; only a
+  forced fork ends a treadmill. D-24 (proof-cost inversion) is folded into D-21's rationale as
+  its unenforceable general case; the tripwire is its enforceable shadow.
+- **Budget & ledger inheritance (D-22).** Liveness counters live in the ledger keyed by
+  `root_objective`; sub-objectives, renamed or re-planned objectives, and cross-runtime resumes
+  all spend from the ROOT ledger, and counters never reset on decomposition. The checker rejects
+  any fixture row that resets a rooted objective's counters.
+- **Session-start reconciliation (D-25).** Resuming a gated objective is gated by a blocking
+  four-step duty: read the ledger, re-derive observed state with mechanical probes, emit
+  `[RECONCILE: … MATCH|MISMATCH]`, and on MISMATCH correct the ledger BEFORE any new gate cycle.
+  Claimed-verified work without evidence reverts to unverified; corrections never refund spent
+  budget.
+- **Three new machine-checked decision tables** (`delivery-ledger.json`, extended
+  `liveness-budget.json`, `reconcile.json`) with stdlib checkers, each selftest-gated by exact
+  output signal so a zero-byte or signal-less checker fails the acceptance command itself.
+- **Dogfood provenance.** The release was built under its own mechanism: the build plan's ledger
+  ([PLAN-v9.6-operator-compass.ledger.json](PLAN-v9.6-operator-compass.ledger.json)) records
+  every gate event of the v9.6.0 build, and the T5 verifier's rejection of a weak acceptance
+  command — caught and strengthened inside one build cycle — is preserved in the evidence trail.
 
 ## What's new in v9.5
 
