@@ -1,5 +1,48 @@
 # AgentFW Changelog
 
+## v9.4.0 (2026-07-31) — RELEASED
+
+The operator release. Five field-driven candidates that make the framework answer to the
+operator: respected permission-mode choices, a bounded review budget, frozen post-gate scope,
+justified requirements with a judge paid to cut, and plain-language gate output. Full detail:
+[RELEASE-NOTES-v9.4.0.md](RELEASE-NOTES-v9.4.0.md); field evidence:
+[evaluation/field-report-2026-07-31-drydock-scope-accretion.md](evaluation/field-report-2026-07-31-drydock-scope-accretion.md).
+
+- **D-16 — operator-relaxed enforcement** (`policy/capability-contract.md`): an explicit
+  full-access/bypass mode is a standing human lever, not missing substrate — recommend the floor
+  once, declare `[FLOOR-RELAXED: operator — <mode>]` (documented residuals only), gate
+  destructive/irreversible/outward effects on a genuine human turn, and proceed. Both adapter
+  probes rewired; never safety-floor item 5.
+- **D-2 — global liveness budget** (`policy/plan-critique.md`): per-objective review budget
+  (2 cycles / 4 Layer-2 passes; one named human-authorized extension at A3/A4), no reset on
+  renamed same-objective plans, forced fork at exhaustion (halt / rescope / proactive D-1
+  offer). Decision table machine-checked by `tools/check-liveness-invariants.py` over
+  `evaluation/fixtures/liveness-budget.json`.
+- **D-18 — post-gate scope freeze**: requirements discovered after Layer-1 PASS default to a
+  next-increment ledger beside the plan; folding one in is a human choice that spends a D-2
+  cycle.
+- **D-19 — necessity tiers + C6 demote-duty**: plan schema **1.5** (new schema of record) —
+  every requirement labeled `must`/`nice-to-have`/`fluff`, musts justified by a plain-language
+  `because`, tier-aware coverage, fluff never built (new defect keyword `necessity`); Layer 2
+  becomes **C0–C6** with C6 the anti-coverage check (unjustifiable must-claims demoted, not
+  debated).
+- **D-20 — operator digest**: every gate event carries a plain-language digest (no candidate
+  numbers, rubric letters, or marker syntax) whose scope counts must match the new
+  `validate-plan --digest` count oracle, with an ADDED/REMOVED delta as the inflation detector;
+  plus the speak-twice rule for actionable markers.
+- **Proposed, not built:** D-17 cross-substrate consult (field-evidenced); D-7 evidence updated.
+- **Release gate** `tools/tests/release-v9.4.sh`: v9.4.0 identity, D-16/D-2/D-18/D-19/D-20
+  policy + surfacing facts, schema-1.5 fixture harness incl. the digest oracle, both invariant
+  checkers, ledger completeness D-2 + D-14–D-20, plus the existing suites.
+
+**Release evidence:** `tools/tests/release-v9.4.sh` — green. Three input-curated
+`agentfw-verifier` passes during the build (D-16; D-2; D-19/D-20), each re-executing acceptance
+commands and mutation probes on scratch copies — all PASS.
+
+**Behavioral evidence boundary:** no behavioral-evaluation round was run for v9.4.0; the
+machine-checked invariants are the deterministic proof, and field compliance (liveness markers,
+C6 demote-duty, digest duty) remains to be measured.
+
 ## v9.3.0 (2026-07-21) — RELEASED
 
 The economy-dials release. Adds two independent human-held levers that put the economy calibration

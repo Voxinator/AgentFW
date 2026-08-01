@@ -23,18 +23,46 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.3.0, released 2026-07-21** — the *economy dials* release. v9.3.0 adds two human-held
-levers that put the economy calibration into the runtime: **adaptive dispatch (D-14)** — the
-orchestrator right-sizes each subagent's model to its task, with a **flagship cap** (casting the top
-tier is a human-gated economic escalation) and a verifier tier floor so economy never cheapens
-verification; and **sleep mode (D-15)** — an unattended posture that auto-takes the recommended
-option at non-floor forks while halting like a headless run at the floor, which it cannot delegate.
-The deterministic release gate is green. No new behavioral-evaluation round was run for v9.3.0; the
-bounded v9.0.0 behavioral evidence remains the behavioral record, and v9.3's behavioral tier is
-specified (a machine-checked decision-table invariant plus a treadmill scenario) but not yet run.
-See [the v9.3.0 release notes](RELEASE-NOTES-v9.3.0.md),
-[the v9.2.0 release notes](RELEASE-NOTES-v9.2.0.md) and
+**Status: v9.4.0, released 2026-07-31** — the *operator* release. Five field-driven candidates
+that make the framework answer to the operator: an operator's deliberate full-access/bypass
+choice is a **declared lever, never a plan blocker** (D-16); a plan objective gets a hard
+**review budget** so the 2-pass cap can't be reset by replanning forever (D-2); scope discovered
+after the gate **defers by default** instead of growing the plan (D-18); every requirement
+declares **must / nice-to-have / fluff** with a plain-language justification, and a judge is now
+paid to *cut* unjustified musts, not just find missing ones (D-19, plan schema 1.5, rubric
+C0–C6); and every gate outcome ships with a **plain-language operator digest** whose scope
+counts are machine-checked against the plan block (D-20). The deterministic release gate is
+green; no new behavioral-evaluation round was run for v9.4.0. See
+[the v9.4.0 release notes](RELEASE-NOTES-v9.4.0.md),
+[the v9.3.0 release notes](RELEASE-NOTES-v9.3.0.md) and
 [Verification & provenance](#verification--provenance).
+
+## What's new in v9.4
+
+One day of field reports, one theme: govern for the human, in the human's language.
+
+- **D-16 — operator-relaxed enforcement.** Full access / bypass permissions selected by the
+  operator is a standing human lever, not missing substrate: the framework recommends the
+  enforcement floor once, declares `[FLOOR-RELAXED: operator — <mode>]` citing only documented
+  residuals, gates destructive/irreversible/outward effects on a genuine human turn, and
+  proceeds. It never blocks a plan on the operator's own choice, and genuinely unconfigured
+  installs still gate as absent.
+- **D-2 — global liveness budget.** Review expenditure accrues per *objective* — 2 cycles / 4
+  Layer-2 passes for reversible A2 — and a renamed or renarrowed plan for the same goal never
+  resets it. At exhaustion, planning stops: halt, rescope, or a *proactive* delivery-override
+  offer. The invariants are a machine-checked decision table, not prose.
+- **D-18 — post-gate scope freeze.** Requirements discovered after Layer-1 PASS default to a
+  next-increment ledger beside the plan; folding one in is a human choice that spends a budget
+  cycle. Ends the "every good conversation grows the gated plan" treadmill.
+- **D-19 — necessity tiers.** Plan schema 1.5: every requirement labeled `must` /
+  `nice-to-have` / `fluff`, musts justified in one plain sentence, coverage tier-aware, fluff
+  never built — all validator-enforced. New Layer-2 check **C6** is coverage's opposite: a
+  must-claim the judge cannot ground in a concrete failure is demoted, not debated.
+- **D-20 — operator digest.** Every gate event carries a fixed-shape plain-language digest —
+  what the plan builds, scope counts by necessity (matching the `validate-plan --digest` count
+  oracle), an ADDED/REMOVED delta as the inflation detector, cost so far, and a one-line ask —
+  with a jargon ban and a speak-twice rule for actionable markers. Governance the operator
+  cannot parse is governance that does not govern.
 
 ## What's new in v9.3
 
@@ -131,7 +159,7 @@ Four surfaces, each with a clear job. The policy says *what* good governance is;
 
 - **Assurance model A0–A4** (`policy/assurance-model.md`) — how much independent evidence a change needs before it is believed, derived from three questions (blast radius/reversibility, defect-escape probability, autonomy/irreversibility). Replaces r8's task classification as the primary framing.
 - **Acceptance Contract v2** (`policy/acceptance-contract.md`) — requirement ids, environment, negative cases, evidence freshness, evidence classes for non-shell work, tiered verified states (`verified_producer` / `verified_independent` / `verified_adversarial`). Plan blocks use additive, machine-enforced schemas; **schema 1.3 is current**, with first-class mutation probes, while historical schema 1.1 and 1.2 plans retain their defined rules.
-- **Two-layer Plan-Critique Gate** (`policy/plan-critique.md`) — Layer 1 is a real, runnable deterministic validator (`tools/validate-plan`, with positive and hostile fixtures); Layer 2 is the C0–C5 semantic judge inherited from r8.
+- **Two-layer Plan-Critique Gate** (`policy/plan-critique.md`) — Layer 1 is a real, runnable deterministic validator (`tools/validate-plan`, with positive and hostile fixtures); Layer 2 is the C0–C6 semantic judge (C0–C5 inherited from r8; C6 necessity audit added in v9.4).
 - **Capability contracts** (`policy/capability-contract.md` + per-adapter `capability.yaml`) — every platform claim carries a `verified:` annotation (an unverified true gates as false), and each entry splits what the platform makes **available** from what a given install has **configured**, with an `activation_probe` to check locally. Assurance gating consults the active install, not the platform brochure.
 - **Recovery** (`policy/recovery.md`) — failure scope, contamination analysis, retry budget, evidence invalidation, lesson-not-state carry-forward.
 - **Anti-patterns** (`policy/anti-patterns.md`) — the r8 catalog plus **Prose-API** and **Adapter Sprawl**.
@@ -170,6 +198,7 @@ What r9's quality claims rest on — and what they don't:
 
 - **Built by the process it encodes.** The r9 build and both follow-up passes ran under the full harness: judged plans (Plan-Critique Gate over each plan before dispatch), parallel workers with disjoint file ownership, and independent + adversarial verification of the results.
 - **Externally reviewed, seven rounds.** Seven rounds of adversarial external review (GPT 5.6 Sol), every finding independently re-reproduced against the tree before acceptance. Review #7 verdict: approved, **zero open findings**.
+- **v9.4 deterministic release evidence:** `tools/tests/release-v9.4.sh` re-pins the gate to the v9.4.0 identity and adds D-16/D-2/D-18/D-19/D-20 assertions — the operator-relaxation rule, the liveness decision-table invariant (`check-liveness-invariants.py` over `evaluation/fixtures/liveness-budget.json`), the schema-1.5 fixture harness with the `--digest` count oracle, the C0–C6 rubric surfacing, and ledger completeness for D-2 + D-14–D-20 — on top of every prior suite.
 - **v9.3 deterministic release evidence:** `tools/tests/release-v9.3.sh` re-pins the gate to the v9.3.0 identity and adds D-14/D-15 assertions — the 11-key capability schema with validator-enforced tier-ladder sub-fields, the byte-identical adapter SKILL sync (`check-skill-sync.py`), and the sleep-posture floor-halt invariant (`check-posture-invariants.py` over `evaluation/fixtures/sleep-posture.json`) — each red-path probed in the release record.
 - **v9.2 deterministic release evidence:** `tools/tests/release-v9.2.sh` re-pins the same gate to the v9.2.0 identity and adds D-1 assertions — the override policy text, the schema 1.4 fixtures, and the adapter sync — each red-path probed in the release record.
 - **v9.1 deterministic release evidence:** `tools/tests/release-v9.1.sh` gates release identity and candidate/provenance state, then runs the schema 1.3 validator fixture harness, installer roundtrip **28/28**, relative-link resolution, and capability validation through **both parser paths** (PyYAML and the stdlib fallback). The contracted scratch mutations prove that stale metadata and the old r9.1 adapter reservation each make the gate red. Raw output and exit status are recorded in `evidence/release-v9.1.log`.
@@ -182,7 +211,7 @@ What r9's quality claims rest on — and what they don't:
 
 ```
 agentfw/
-├── metadata.json                  # Project metadata (version 9.2.0, install routing)
+├── metadata.json                  # Project metadata (version 9.4.0, install routing)
 ├── README.md                      # This file
 ├── CHANGELOG.md                   # Version history with audit trail
 ├── DESIGN.md                      # Historical r8 design spec with a v9.1 current-release banner
