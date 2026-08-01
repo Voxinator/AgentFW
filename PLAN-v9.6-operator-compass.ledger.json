@@ -65,6 +65,21 @@
       "event": "T5_verified_rev2_all_tasks_verified",
       "runtime": "claude-code",
       "date": "2026-08-01"
+    },
+    {
+      "event": "released_v9.6.0_github_latest_gate_green",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "installed_claude_code_runtime_v9.6.0",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "installed_codex_runtime_v9.6.0_inventory_ok",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
     }
   ]
 }
