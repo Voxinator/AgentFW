@@ -350,6 +350,23 @@ rename, and revision:
   objective identity honestly — a renamed, renarrowed, or restructured plan chasing the same goal
   is the *same objective* — and the marker trail records the declaration. (Mechanical objective
   identity is not attempted; the honesty obligation is auditable through the markers.)
+- **Budget & ledger inheritance — one ledger per root objective (D-22).** These counters are not
+  session state: they live in the durable `<plan>.ledger.json` (D-21 below), keyed by
+  **`root_objective`** — the root the work rolls up to, equal to `objective` when the objective
+  *is* the root. Every derived objective spends from the **root's** ledger, never a fresh one:
+  a sub-objective produced by decomposing the goal, a renamed or re-planned objective, and a
+  **cross-runtime resume** (Claude Code ↔ Codex, or a new session of either) all read the root
+  ledger, add to it, and write it back. Counters therefore **never reset on decomposition**,
+  rename, or a runtime hop — those are exactly the three cheap ways to buy a fresh budget, and
+  buying one is treadmill laundering.
+  Liveness markers name the **root** slug: `[LIVENESS: objective <root-slug> — cycle n/2, layer2
+  passes m/4]`, with the sub-objective named alongside if it differs
+  (`<root-slug> (sub: <sub-slug>)`), so the marker trail cannot show a rooted budget under two
+  names. A resumed session reads the ledger before emitting its first marker; if the ledger is
+  missing or unreadable, say so and re-derive it rather than restarting the count at zero.
+  Machine-checked: `evaluation/fixtures/liveness-budget.json` carries a
+  `sub_objective_inherits_root_counters` case, and `tools/check-liveness-invariants.py` rejects
+  any case that names a `root_objective` while declaring `counters_reset: true`.
 - **At exhaustion** emit `[LIVENESS-EXCEEDED: objective <slug>]` and STOP planning: further
   plan/critique cycles for this objective are forbidden. The forced fork — machine-checked as a
   decision table (`evaluation/fixtures/liveness-budget.json`,
@@ -362,6 +379,12 @@ rename, and revision:
      date, exact dispatch scope) without waiting for a delivery-intent turn — and **halts** if
      the human declines.
   Exhaustion is a human fork: a sleep-mode session halts here exactly as at the 2-pass cap.
+- **Gate entry on a resumed objective — reconcile first (D-25).** A resumed A2+ objective's FIRST
+  gate event is preceded by the reconciliation duty of
+  [recovery.md](recovery.md) § 8: read the ledger, re-derive observed state with mechanical
+  probes, and emit `[RECONCILE: objective <slug> — ledger claims X, observed Y — MATCH|MISMATCH]`.
+  A MISMATCH is corrected in the ledger before the cycle begins — the counters and
+  `tasks_verified` this section reads must be the reconciled ones, not the inherited claims.
 - **Scope freeze after Layer 1 — the accretion valve (D-18).** Requirements discovered AFTER a
   plan's Layer-1 PASS — in review, conversation, or design exploration — default to a recorded
   **next-increment ledger** beside the plan, never silently into the gated plan. Folding a
@@ -370,6 +393,50 @@ rename, and revision:
   Post-gate scope growth is the leading indicator of livelock — a critique gate functioning as
   a scope generator — and the ledger converts it from plan mass into forward work, the same
   conversion discipline the delivery override applies to waived blockers.
+
+## Delivery ledger, scoreboard & zero-dispatch tripwire (D-21)
+
+The liveness budget counts what review *spends*; nothing above counts what the objective
+*delivers*. That asymmetry is the treadmill's hiding place: every cycle is individually lawful,
+the budget markers all read in-range, and the objective can burn its entire allowance with zero
+workers dispatched and zero tasks verified — because no counter of delivered work exists to
+contradict the review counters. D-21 supplies the missing counter, forces it into every gate
+message, and trips on the failure mode directly.
+
+- **The durable ledger.** Each objective keeps a JSON record beside its plan named
+  `<plan>.ledger.json` (for `PLAN-foo.md`, `PLAN-foo.ledger.json`). It survives replans, renames,
+  and runtime switches — it belongs to the objective, not the plan file — and carries exactly:
+  `objective` (slug), `root_objective` (the root this rolls up to; equal to `objective` when the
+  objective *is* the root, so a renarrowed sub-objective cannot buy fresh counters),
+  `cycles`, `layer2_passes`, `workers_dispatched`, `tasks_verified`, and `gate_events` — an
+  append-only list with **one entry per gate event, each naming the runtime that wrote it**
+  (`{"event": ..., "runtime": ..., "date": ...}`). Both runtimes read and update the same file;
+  an entry that does not name its writer makes the trail unauditable. `cycles` and
+  `layer2_passes` are the same numbers D-2 tracks — one ledger, not two. Shape reference:
+  the `ledger_example` record in `evaluation/fixtures/delivery-ledger.json`.
+- **Scoreboard marker duty — at EVERY gate event.** Layer-1 result, Layer-2 verdict, every
+  escalation-menu presentation, every override offer, every dispatch decision emits, alongside the
+  existing markers:
+  `[SCOREBOARD: objective <slug> — musts built b/t · workers dispatched w · verified v · cycle n/2 · passes m/4]`
+  Counts come from the ledger, which is appended to in the same breath. A gate event without this
+  marker is a defect, not an omission: an uncounted ledger cannot fire the tripwire below.
+- **Digest rendering duty.** The D-20 operator digest must render the scoreboard in plain
+  language, with every count derived from the ledger and from `validate-plan --digest` — never
+  from narration. "Two review cycles so far; nothing has been built yet" is the rendering; "good
+  progress on the plan" is not. Where the rendered prose and the ledger disagree, the ledger is
+  authoritative and the disagreement is itself a defect to fix before dispatch.
+- **The zero-dispatch tripwire.** **Two or more completed gate cycles with `workers_dispatched`
+  still 0 immediately force the D-2 exhaustion fork — even when liveness budget remains.** The
+  fork is the same three-way one: proactive delivery-override offer, explicit rescope proposal, or
+  halt; and it is a human fork, so a sleep-mode session halts here exactly as at the 2-pass cap.
+  The tripwire latches: additional cycles never clear it, only dispatched work does. Below the
+  threshold, or once any worker has been dispatched, it must not fire — a tripwire that fires on
+  healthy delivery would be its own treadmill.
+- **Machine-checked.** The decision table lives in `evaluation/fixtures/delivery-ledger.json` and
+  is validated by `tools/check-delivery-invariants.py` (stdlib only; `--selftest` proves red/green
+  discrimination). A table mapping zero-dispatch-at-threshold to CONTINUE, firing the fork below
+  the threshold or after dispatch, treating a missing scoreboard as anything but a defect, or
+  carrying a ledger record missing a key or an unattributed gate event, is rejected.
 
 ## Human delivery override (assumption-gated dispatch)
 

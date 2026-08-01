@@ -1,0 +1,41 @@
+=== T5 MUTATION PROBES + NEGATIVE CASE — 2026-08-01T07:02:43Z ===
+acceptance command (verbatim): bash -c 'grep -q "D-21" CANDIDATES.md && grep -q "D-22" CANDIDATES.md && grep -q "D-23" CANDIDATES.md && grep -q "D-24" CANDIDATES.md && grep -q "D-25" CANDIDATES.md && grep -q "D-26" CANDIDATES.md && grep -q "D-27" CANDIDATES.md && test -s evaluation/field-report-2026-08-01-drydock-zero-delivery.md && grep -q "D-21" CHANGELOG.md && grep -q "D-22" CHANGELOG.md && grep -q "D-25" CHANGELOG.md && echo T5_DOCS_OK'
+
+--- BASELINE on unmutated scratch copy (must be green) ---
+T5_DOCS_OK
+exit=0  scratch=/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.v3T8Z38Vv7
+
+--- PROBE 1a (contract wording, literal): delete the '## D-22 ...' ENTRY SECTION from CANDIDATES.md ---
+sections removed: 1
+remaining "D-22" occurrences in CANDIDATES.md: 4
+57:| D-22 | Budget & ledger inheritance (`root_objective`) | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
+681:python3 tools/check-candidates.py D-21 D-22 D-23 D-24 D-25 D-26 D-27            # CANDIDATES_OK
+788:run, Layer-2 dispatch, or worker dispatch. (1) Read the ledger at its `root_objective` (D-22); a
+797:`layer2_passes` (that would make a resume a way to buy budget, the laundering D-22 closes).
+T5_DOCS_OK
+exit=0  scratch=/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.hAh9fZdyc7
+
+--- PROBE 1b (full deletion): remove the D-22 entry, its status-board row, and every D-22 cross-reference ---
+remaining "D-22" occurrences in CANDIDATES.md: 0
+exit=1  scratch=/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.eGVQKq0bY3
+
+--- PROBE 2: truncate the field report to zero bytes (test -s leg) ---
+report bytes:        0
+exit=1  scratch=/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.lndzSj2FKj
+
+--- NEGATIVE CASE 1: remove the CHANGELOG v9.6.0 (UNRELEASED) entry ---
+v9.6.0 sections removed: 1
+remaining D-21/D-22/D-25 lines in CHANGELOG.md: 0
+exit=1  scratch=/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.OJXgiIH4NL
+
+--- PROBE SUMMARY (honest) ---
+PROBE 1a (literal contract wording: delete the '## D-22' entry section only) -> exit 0, GREEN.
+   FINDING (check strength): the D-22 leg is a token grep; the status-board row and the
+   D-21/D-25 cross-references keep it satisfied after the entry is gone. Recorded as
+   next-increment note 5 in the field report. tools/check-candidates.py is the
+   discriminating check (it requires the section heading, all seven schema labels, and the
+   board row) and passes on the delivered file: CANDIDATES_OK D-21..D-27.
+PROBE 1b (remove the entry + board row + every D-22 cross-reference) -> exit 1, RED as contracted.
+PROBE 2  (zero-byte field report, test -s leg) -> exit 1, RED as contracted.
+NEGATIVE CASE 1 (remove the CHANGELOG v9.6.0 entry) -> exit 1, RED as contracted.
+All mutations ran on mktemp -d scratch copies; the live tree was never mutated.

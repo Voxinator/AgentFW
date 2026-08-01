@@ -327,4 +327,49 @@ security, irreversible, C5, unavailable substrate, vacuous command, and flagship
 plan-critique cap and the D-1 override are human-only levers sleep never auto-pulls. Adaptive and
 sleep are independent dials. Full posture: `assurance-model.md`.
 
+## 9. Delivery scoreboard, one ledger per root, reconcile-on-resume (v9.6)
+
+These are ORCHESTRATOR duties — the main session that runs the gate owns them; subagents do not
+keep the ledger.
+
+**Durable ledger + scoreboard marker.** Each objective keeps `<plan>.ledger.json` beside its plan
+carrying `objective`, `root_objective`, `cycles`, `layer2_passes`, `workers_dispatched`,
+`tasks_verified`, and an append-only `gate_events` list in which every entry names the runtime that
+wrote it. At EVERY gate event — Layer-1 result, Layer-2 verdict, escalation menu, override offer,
+dispatch decision — append to the ledger and emit, alongside the existing markers:
+`[SCOREBOARD: objective <slug> — musts built b/t · workers dispatched w · verified v · cycle n/2 · passes m/4]`
+A gate event without this marker is a defect, not an omission. The D-20 operator digest renders
+these counts in plain language derived from the ledger and from `validate-plan --digest`, never
+from narration; where prose and ledger disagree the ledger is authoritative and the disagreement
+is itself a defect to fix before dispatch.
+
+**Zero-dispatch tripwire.** Two or more completed gate cycles with `workers_dispatched` still 0
+immediately force the D-2 exhaustion fork — proactive delivery-override offer, explicit rescope
+proposal, or halt — even when liveness budget remains. It latches: further cycles never clear it,
+only dispatched work does. It is a human fork, so a sleep-mode session halts here exactly as at
+the 2-pass cap. Below the threshold, or once any worker has been dispatched, it must not fire.
+
+**One ledger per root objective.** The ledger is keyed by `root_objective` (equal to `objective`
+when the objective *is* the root). Sub-objectives from decomposition, renamed or re-planned
+objectives, and cross-runtime resumes (Claude Code ↔ Codex, or a new session of either) all read
+the ROOT's ledger, add to it, and write it back — counters never reset on decomposition, rename,
+or a runtime hop. Markers name the root slug, with the sub-objective alongside when it differs
+(`<root-slug> (sub: <sub-slug>)`).
+
+**Reconcile on resume — blocking.** Resuming a gated A2+ objective in a context that did not
+itself record the ledger's latest state (new session, post-compaction recovery, runtime hop) must,
+BEFORE any new gate cycle: read the root ledger; re-derive observed state with mechanical probes
+(re-run the plan validator, confirm the evidence file each claimed-verified task names exists and
+is non-empty, grep for the claimed deliverables); then emit
+`[RECONCILE: objective <slug> — ledger claims X, observed Y — MATCH|MISMATCH]`
+with one plain sentence beside it. A missing or unreadable ledger is itself a MISMATCH — say so
+and re-derive, never restart the counts at zero. On MISMATCH correct the ledger FIRST: a
+claimed-verified task whose evidence is absent reverts to unverified and decrements
+`tasks_verified`; corrections may only move toward observed reality and never spend down `cycles`
+or `layer2_passes`. Append the correction as a `gate_events` entry naming this runtime, re-emit
+the marker, and begin the cycle only once it reads MATCH.
+
+Full rule: `plan-critique.md` § Delivery ledger, scoreboard & zero-dispatch tripwire (D-21) plus
+its budget & ledger inheritance bullet (D-22), and `recovery.md` § 8 (D-25).
+
 <!-- AGENTFW-SYNC:v9.3:END -->

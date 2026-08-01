@@ -1,0 +1,88 @@
+=== T3 (D-25 session-start reconciliation) — INDEPENDENT VERIFIER LOG ===
+verifier run: 2026-08-01T06:53Z–07:00Z  cwd=/Users/briantaylor/Projects/AgentFW
+deliverable sha256 at verification time:
+  policy/recovery.md      af7be9033d4fd29de347d9df3017140285c34306ed85d513d33e79fb4b8850a8
+  policy/plan-critique.md 584c38a80ea8b6e23569f7e50ca7d542b02628b8c534700a9839c371796b2c1d
+  recovery.md lines 91-138 (section 8) 5bf7fc7ed0f6cd86099e0952607b4a50d47ceaa3ebcb855d6c02c704f01d9f7a
+
+--- 1. ACCEPTANCE COMMAND (whole command, verbatim, repo root) ---
+bash -c 'grep -q "RECONCILE" policy/recovery.md && grep -q "MISMATCH" policy/recovery.md && grep -q "RECONCILE" policy/plan-critique.md && echo T3_D25_OK'
+output: T3_D25_OK
+exit=0     signal matched: YES (terminal line exactly T3_D25_OK, exit 0)
+re-run x3 (idempotent): exit 0,0,0
+matches producer log evaluation/evidence/v9.6-build/T3-producer.log (T3_D25_OK / exit 0)
+
+--- 1b. WITNESS PAIR DIGEST CHECK (schema 1.6) ---
+sha256(exact acceptance_command, no trailing newline) = 952a6dd2e76386693cb33479f653ae86fc12ae30efdc1aa3e75c60e19ee3e1d8
+witness_pair.red.command_sha256   = 952a6dd2...e3e1d8  MATCH   (exit 2, evaluation/evidence/v9.6-witness/T3-red.log)
+witness_pair.green.command_sha256 = 952a6dd2...e3e1d8  MATCH   (exit 0, evaluation/evidence/v9.6-witness/T3-green.log)
+NOTE: the red leg's tree is "no policy files" -> grep exit 2 (file absent), not content absent. Weak red;
+      compensated by the verifier-executed content-deletion mutation below.
+
+--- 2. MUTATION PROBE (fresh scratch, mktemp -d; real tree never touched) ---
+scratch /var/folders/.../tmp.sxCwOQHdVi  mutation: delete "## 8. Session-start reconciliation..." section from policy/recovery.md
+post-mutation counts RECONCILE=0 MISMATCH=0 ; no T3_D25_OK emitted ; exit=1  -> RED as contracted
+control (unmutated scratch tmp.3vH4dJpbgk): T3_D25_OK exit=0 -> green, so the red is caused by the mutation
+
+--- 3. NEGATIVE CASE 1 (fresh scratch) ---
+scratch tmp.HjxB8PyW7L : delete all 3 lines containing MISMATCH (110/119/123) -> RECONCILE=0 MISMATCH=0 exit=1 RED
+isolating variant tmp.KnHPaMW5Bs : substitute MISMATCH->DIVERGED only, RECONCILE kept
+   -> RECONCILE=1 MISMATCH=0 exit=1 RED  (proves the 2nd grep leg is independently load-bearing)
+third-leg probe (own): delete RECONCILE from policy/plan-critique.md -> exit=1 RED (3rd leg load-bearing)
+
+--- 4. OFF-CONTRACT PROBES ---
+A. prescribed mechanical probe executable? python3 tools/validate-plan PLAN-v9.6-operator-compass.md -> PASS (Layer-1),
+   `--digest` flag exists. The duty names no capability the runtime lacks. OK
+B. COMMAND STRENGTH (hostile): scratch with the whole section deleted and replaced by the single line
+   "<!-- RECONCILE MISMATCH -->" -> T3_D25_OK exit=0 GREEN. The command is a token-presence check; it cannot
+   distinguish a blocking duty from a comment. FINDING (medium) - mitigated by contracted negative case 2.
+C. DOGFOOD: applied D-25 to this build's own live PLAN-v9.6-operator-compass.ledger.json.
+   ledger claims tasks_verified=2, workers_dispatched=5; observed T1-verifier.log (5901B), T2-verifier.log (8839B),
+   both non-empty; no verifier log for T3/T4/T5 and none claimed -> MATCH. Ledger carries every field section 8
+   tells a resumed session to load. Duty is executable against the live artifact.
+D. MARKER-INVENTORY / BYPASS: no second copy of recovery.md in-repo; tools/check-skill-sync.py -> SKILL_SYNC_OK.
+   adapters/*/SKILL.md acquired the RECONCILE marker at 01:55 local (mid-verification, by a concurrent T4/T5
+   producer) - the T3 policy files were last written 01:48/01:49 and were byte-stable across my whole run.
+E. MACHINE-CHECK COVERAGE: grep -il reconcile evaluation/fixtures/*.json -> none. D-25 is the only new duty in this
+   build with no decision-table fixture (D-2 has liveness-budget.json, D-21/D-22 have delivery-ledger.json).
+   check-liveness-invariants.py --selftest -> LIVENESS_SELFTEST_OK; check-delivery-invariants.py --selftest ->
+   DELIVERY_SELFTEST_OK; neither exercises reconciliation. FINDING (medium, off-contract).
+F. SIGNAL ANCHORING: T3_D25_OK sits after a 3-term && chain; it cannot be emitted on any failure path
+   (confirmed empirically - every red probe produced no stdout).
+G. cwd dependence: run from /tmp -> exit 2, no signal. Contract declares "repo checkout"; documented, not a defect.
+
+--- 5. NEGATIVE CASE 2 (semantic ruling, independent reviewer) ---
+(a) BEFORE, precondition: UPHELD  - "and BEFORE any new gate cycle for that objective. It is the first gate
+    event's precondition, not a step inside it. No new plan, no Layer-1 run, no Layer-2 dispatch, and no worker
+    dispatch precedes it." + "Why blocking" paragraph.
+(b) MISMATCH corrected before planning: UPHELD - "Planning may not continue until the ledger reflects observed
+    reality; the correction is never made alongside a new cycle, in parallel with planning, or deferred to the
+    next gate event." + "the cycle begins only once it reads MATCH."
+(c) absent evidence -> unverified: UPHELD - "a claimed-verified task whose acceptance evidence is absent reverts
+    to unverified in the ledger, and `tasks_verified` is decremented to match."
+(d) mechanical probes named: UPHELD - validator run (`tools/validate-plan` over the plan's block), evidence-file
+    exists and is non-empty, repo grep for claimed deliverables; "a ledger claim confirmed by reasoning is not
+    confirmed."
+(e) uses the D-21 artifact: UPHELD - `<plan>.ledger.json` at its `root_objective` (D-22); fields cycles,
+    layer2_passes, workers_dispatched, tasks_verified, gate_events - exactly D-21's record. No new artifact.
+(f) cross-ref at gate entry: UPHELD - plan-critique.md bullet "Gate entry on a resumed objective - reconcile
+    first (D-25)" in the D-2 liveness-budget section, adjacent to the D-22 resume rule it depends on.
+    Advisory: it is ~370 lines below the "Layer 1" heading a resumed session usually enters at (finding, low).
+(g) contradictions with D-2/D-18/D-21/D-22: none material. Two seams noted (low):
+    - a reconciliation correction is appended to `gate_events`, a list D-21 defines as "one entry per gate event"
+      whose enumeration (Layer-1 result, Layer-2 verdict, escalation menu, override offer, dispatch decision)
+      does not include reconciliation; if it counts as a gate event, D-21's SCOREBOARD-marker duty applies and
+      section 8 does not require it. No tripwire distortion (tripwire keys on cycles, not gate_events length).
+    - no named degradation path if the mandated probes themselves cannot run (validator missing / tree
+      unavailable); section 8 is inside recovery.md so section 6 "escalate" applies contextually, but it is not
+      named.
+RULING ON THE PRODUCER'S ADDED ONE-WAY RULE ("corrections may only move the ledger toward observed reality -
+reconciliation never spends down cycles or layer2_passes"): ACCEPTED. D-22's anti-laundering intent is that no
+cheap manoeuvre buys fresh budget (decomposition, rename, runtime hop). D-25 legitimises editing the ledger at
+resume, which without a ratchet would be a fourth laundering route - "reconcile" as budget refund. The rule closes
+it, and the asymmetry is principled: decrementing tasks_verified is conservative (claims less delivered work),
+decrementing cycles is not (claims less spend). Residual wording defect (low): in a genuine OVER-count the two
+clauses conflict - "move toward observed reality" would decrement while "never spends down cycles" forbids it.
+The safe direction wins by default (spurious exhaustion -> human fork), but precedence should be stated.
+
+VERDICT: VERIFIED (findings recorded, none dispatch-blocking)

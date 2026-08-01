@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """check-liveness-invariants.py — machine-check the liveness-budget decision table (D-2).
 
-The global liveness budget bounds review expenditure per OBJECTIVE across plan cycles. Its two
+The global liveness budget bounds review expenditure per OBJECTIVE across plan cycles. Its three
 safety-relevant claims must be falsifiable rather than prose: (1) once the budget is exhausted,
 no new plan/critique cycle may run — the only lawful actions are HALT, RESCOPE, or a proactive
 OVERRIDE_OFFER (and exhausted + open floor blocker is always HALT); (2) a fresh plan for the same
-objective never resets the counters — a table that resets on rename is treadmill laundering.
-This checker reads a decision-table fixture and asserts those invariants; a fixture mapping an
-exhausted budget to NEW_CYCLE/CONTINUE, or resetting counters on a same-objective plan, is
-rejected.
+objective never resets the counters — a table that resets on rename is treadmill laundering;
+(3) budget & ledger inheritance (D-22) — a case naming a `root_objective` spends from that root's
+durable ledger, so decomposing into a sub-objective, renaming, or resuming in another runtime
+never resets the counters. This checker reads a decision-table fixture and asserts those
+invariants; a fixture mapping an exhausted budget to NEW_CYCLE/CONTINUE, resetting counters on a
+same-objective plan, or resetting them on a rooted sub-objective, is rejected.
 
 Usage:
   check-liveness-invariants.py <fixture.json>   validate a decision-table fixture (exit 0 if sound)
@@ -27,6 +29,7 @@ REQUIRED_CASES = (
     "exhausted_human_declines_override",
     "fresh_plan_same_objective",
     "renamed_plan_same_objective",
+    "sub_objective_inherits_root_counters",
 )
 BOOL_FIELDS = ("budget_exhausted", "open_floor_blocker", "same_objective", "counters_reset")
 
@@ -75,6 +78,17 @@ def check(table):
                     % (name, action))
         if c.get("budget_exhausted") is False:
             under_seen = True
+        if "root_objective" in c:
+            root = c.get("root_objective")
+            if not isinstance(root, str) or not root:
+                errors.append(
+                    "case '%s': 'root_objective' must be a non-empty string naming the root "
+                    "objective whose ledger this case spends from" % name)
+            if c.get("counters_reset") is True:
+                errors.append(
+                    "case '%s': a case naming a root_objective spends from that root's ledger — "
+                    "resetting counters on decomposition, rename, or a cross-runtime resume is "
+                    "treadmill laundering" % name)
         if c.get("same_objective") is True and c.get("counters_reset") is True:
             errors.append(
                 "case '%s': a same-objective plan must never reset the counters — a rename or "
@@ -103,6 +117,9 @@ def selftest():
             for r in REQUIRED_CASES
         ],
     }
+    # the inheritance case (D-22) is a sub-objective spending from its root's ledger
+    green["cases"][-1]["root_objective"] = "root-objective-slug"
+    green["cases"][-1]["same_objective"] = False
     if check(green):
         return ["selftest GREEN table was rejected: %s" % check(green)]
     reds = []
@@ -123,6 +140,18 @@ def selftest():
     flagged["cases"][1]["action"] = "NEW_CYCLE"
     if not check(flagged):
         reds.append("selftest RED table (exhausted_* flag laundering) was accepted")
+    inherited = json.loads(json.dumps(green))
+    inherited["cases"][-1]["counters_reset"] = True  # sub_objective_inherits_root_counters
+    if not check(inherited):
+        reds.append("selftest RED table (rooted sub-objective resets counters) was accepted")
+    rootless = json.loads(json.dumps(green))
+    rootless["cases"][-1]["root_objective"] = ""
+    if not check(rootless):
+        reds.append("selftest RED table (empty root_objective) was accepted")
+    dropped = json.loads(json.dumps(green))
+    del dropped["cases"][-1]
+    if not check(dropped):
+        reds.append("selftest RED table (missing inheritance case) was accepted")
     return reds
 
 

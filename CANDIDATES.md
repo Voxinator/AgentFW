@@ -53,6 +53,13 @@ matches. If it doesn't, trust the quotes as historical evidence and note the dri
 | D-18 | Post-gate scope freeze (next-increment ledger for late discoveries) | **IMPLEMENTED on main** (unreleased) — maintainer-approved 2026-07-31 |
 | D-19 | Necessity tiers + C6 demote-duty (requirement-inflation defense) | **IMPLEMENTED on main** (unreleased) — maintainer-approved 2026-07-31 |
 | D-20 | Operator digest (plain-language gate artifact + speak-twice rule) | **IMPLEMENTED on main** (unreleased) — maintainer-approved 2026-07-31 |
+| D-21 | Delivery ledger, scoreboard & zero-dispatch tripwire | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
+| D-22 | Budget & ledger inheritance (`root_objective`) | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
+| D-23 | Increment-shape check + dependency-edge audit + partial dispatch | proposed |
+| D-24 | Proof-cost inversion | **folded into D-21's rationale** — no standalone mechanism (see D-21) |
+| D-25 | Session-start reconciliation (`RECONCILE` marker) | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
+| D-26 | Stranded-implementation disposition | proposed |
+| D-27 | Blocker re-validation on age | proposed |
 
 ---
 
@@ -601,6 +608,327 @@ D-20 paragraph).
 grep -n "## Operator digest" policy/plan-critique.md
 grep -n "speak-twice\|Speak twice" policy/plan-critique.md adapters/*/skills/agentfw/SKILL.md
 python3 tools/validate-plan --digest tools/fixtures/plan-good-15-necessity.md  # the count oracle
+```
+
+## D-21 · Delivery ledger, scoreboard & zero-dispatch tripwire
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-08-01 · **Priority:** high ·
+**Effort:** medium — build provenance:
+[PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md)
+
+**Origin:** maintainer field report 2026-08-01 — the **execution half** of the drydock
+failure-routing workstream (the 2026-07-31 report covered the planning half). The operator spent
+roughly two days, across BOTH runtimes, on one objective and did not know that zero features had
+shipped.
+
+**Evidence:**
+[field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md).
+Five review rounds on the receipt-authority sub-objective — one clause of 1 of 13 requirements;
+**zero of 12 sibling tasks dispatched**; ~15 failure-routing commits, every one a governance
+artifact (plans, authorizations, verdicts, handoffs) and none product behavior; the treadmill ran
+across Claude Code AND Codex, each runtime restarting the counters. Maintainer's verbatim summary:
+*"I've been on this treadmill with BOTH Claude code and yesterday and most of today with Codex..
+on the same problem.. and not even aware that it hadn't produced a single fucking feature from the
+plan"* — the delivered-feature count surfaced only after the operator asked three escalating times.
+
+**Problem:** D-2 counts what review **spends**; nothing counted what the objective **delivers**.
+That asymmetry is the treadmill's hiding place: every cycle is individually lawful, the budget
+markers all read in-range, and an objective can burn its entire allowance with zero workers
+dispatched and zero tasks verified, because no counter of delivered work exists to contradict the
+review counters. Worse, the counters that did exist lived in the session — so a compaction, a new
+session, or a runtime hop reset them to zero for free.
+
+**Proposed mechanism (built):** three parts, one file. (1) **The durable ledger** —
+`<plan>.ledger.json` beside the plan, belonging to the objective rather than the plan file:
+`objective`, `root_objective`, `cycles`, `layer2_passes`, `workers_dispatched`, `tasks_verified`,
+and an append-only `gate_events` list with **one entry per gate event, each naming the runtime
+that wrote it**. Both runtimes read and update the same file; `cycles`/`layer2_passes` are D-2's
+numbers — one ledger, not two. (2) **The scoreboard marker at EVERY gate event** —
+`[SCOREBOARD: objective <slug> — musts built b/t · workers dispatched w · verified v · cycle n/2 ·
+passes m/4]`, counts taken from the ledger and from `validate-plan --digest`, never from
+narration; the D-20 operator digest must render it in plain language ("two review cycles so far;
+nothing has been built yet"), and a gate event without the marker is a defect, not an omission.
+(3) **The zero-dispatch tripwire** — two or more completed gate cycles with `workers_dispatched`
+still 0 immediately force the D-2 exhaustion fork (proactive override offer / rescope / halt)
+**even when liveness budget remains**; it latches (only dispatched work clears it), and it must
+not fire below the threshold or after dispatch. Machine-checked as a decision table plus a ledger
+shape record, the D-12 fixture-over-prose pattern.
+
+**Rationale note — D-24 (proof-cost inversion) is FOLDED in here, not built separately.** The
+observation from the same session: when the verification apparatus for an increment costs more
+than directly reviewing the artifact it verifies, the correct move is to stop building apparatus.
+It is a true diagnosis with **no mechanical rendering** — any cost threshold is a judgment about
+the operator's currency, and a framework that guesses it would be inventing a velocity opinion
+(explicitly out of scope, `PLAN-v9.6-operator-compass.md` § Deliberately out of scope). So D-24
+keeps its ledger id for provenance but ships no standalone mechanism; the **zero-dispatch tripwire
+is its enforceable shadow** — the one case where proof cost has provably overtaken delivery (two
+complete review cycles of apparatus, zero dispatched work) is detected mechanically and forced to
+a human fork.
+
+**Anchors:** [policy/plan-critique.md](policy/plan-critique.md) (§ Delivery ledger, scoreboard &
+zero-dispatch tripwire (D-21)), `evaluation/fixtures/delivery-ledger.json` (decision table +
+`ledger_example` shape record), `tools/check-delivery-invariants.py` (stdlib;
+`--selftest` proves red/green discrimination),
+[PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md) +
+`PLAN-v9.6-operator-compass.ledger.json` (the first ledger in the wild), both adapter
+`SKILL.md` AGENTFW-SYNC blocks and both kernel bootloaders.
+
+**Cold-start verification:**
+```sh
+python3 tools/check-delivery-invariants.py --selftest                                  # DELIVERY_SELFTEST_OK
+python3 tools/check-delivery-invariants.py evaluation/fixtures/delivery-ledger.json
+grep -n "SCOREBOARD\|zero-dispatch\|ledger.json" policy/plan-critique.md | head
+python3 tools/check-candidates.py D-21 D-22 D-23 D-24 D-25 D-26 D-27            # CANDIDATES_OK
+```
+
+## D-22 · Budget & ledger inheritance (one ledger per root objective)
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-08-01 · **Priority:** high ·
+**Effort:** small — build provenance:
+[PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md)
+
+**Origin:** the same 2026-08-01 field report — the drydock objective was decomposed into a
+`receipt-authority` sub-objective that reviewed itself for five rounds while the 13 parent
+requirements starved, and the same objective was then resumed in a second runtime that started
+counting at cycle 1.
+
+**Evidence:**
+[field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md):
+the treadmill ran across BOTH runtimes over ~2 days, **each restarting the counters**, on one
+sub-clause of one requirement. D-2 shipped the no-reset rule as an honesty obligation on the
+model's objective-identity declaration; decomposition, rename, and runtime hop were the three
+cheap ways to satisfy the letter of it and still buy a fresh budget.
+
+**Problem:** a per-objective budget that any decomposition, rename, or runtime hop can re-mint is
+not a budget. The failure is not dishonesty — a sub-objective genuinely *is* a different
+objective by name — it is that no rule said which ledger a derived objective spends from.
+
+**Proposed mechanism (built):** the counters live in the durable D-21 ledger keyed by
+**`root_objective`** — the root the work rolls up to, equal to `objective` when the objective *is*
+the root. Every derived objective spends from the **root's** ledger, never a fresh one: a
+sub-objective produced by decomposing the goal, a renamed or re-planned objective, and a
+**cross-runtime resume** (Claude Code ↔ Codex, or a new session of either) all read the root
+ledger, add to it, and write it back. Counters never reset on decomposition, rename, or a runtime
+hop — those are exactly treadmill laundering. Liveness markers name the **root** slug, with the
+sub-objective alongside if it differs (`<root-slug> (sub: <sub-slug>)`), so the marker trail
+cannot show one rooted budget under two names; a resumed session reads the ledger before emitting
+its first marker, and a missing/unreadable ledger is said out loud and re-derived, never restarted
+at zero.
+
+**Anchors:** [policy/plan-critique.md](policy/plan-critique.md) (§ Global liveness budget — the
+"Budget & ledger inheritance — one ledger per root objective (D-22)" bullet),
+`evaluation/fixtures/liveness-budget.json` (case `sub_objective_inherits_root_counters`),
+`tools/check-liveness-invariants.py` (`REQUIRED_CASES` + rejection of any case naming a
+`root_objective` while declaring `counters_reset: true`), both adapter `SKILL.md` §3.
+
+**Cold-start verification:**
+```sh
+python3 tools/check-liveness-invariants.py --selftest                                    # LIVENESS_SELFTEST_OK
+python3 tools/check-liveness-invariants.py evaluation/fixtures/liveness-budget.json      # LIVENESS_OK
+grep -n "root_objective" policy/plan-critique.md evaluation/fixtures/liveness-budget.json | head
+```
+
+## D-23 · Increment-shape check + dependency-edge audit + partial dispatch
+
+**Status:** proposed · **Priority:** high · **Effort:** medium (two critique checks + one
+escalation option)
+
+**Origin:** the 2026-08-01 drydock analysis — the shape of the plan, not the review of it, is what
+guaranteed zero delivery.
+
+**Evidence:** the drydock failure-routing plan serialized **all 12 sibling tasks behind one
+sub-clause** of 1 of its 13 requirements; the receipt-authority sub-objective then absorbed five
+review rounds, and because everything depended on it, nothing else could be dispatched. No check
+in C0–C6 attacks dependency edges or the shape of the first increment — the gate can pass a plan
+whose entire first wave is blocked behind a single contested node and never say so.
+([field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md)).
+
+**Problem:** the critique gate reviews requirement coverage, contract strength, and necessity, but
+never asks *"what does the first dispatch wave actually deliver, and what is it hostage to?"* A
+fully-serialized plan is indistinguishable at the gate from a deliverable one, so a single stuck
+task starves the whole objective while every marker stays lawful.
+
+**Proposed mechanism:** three related pieces, sized to be built together. (1) **Increment-shape
+check** — the first dispatch wave must land at least one requirement END-TO-END; a plan whose
+first wave delivers no complete requirement is flagged (concern, not floor) with the reshape named.
+(2) **Dependency-edge audit** — a new Layer-2 duty (or a `validate-plan` metric) that reports the
+dependency fan-in of the plan's most-depended-upon task and flags a wave where every task shares
+one blocking ancestor. (3) **Partial dispatch as a named escalation option** — when one task is
+blocked at the gate, the recovery menu offers dispatching the tasks NOT downstream of it, instead
+of the current all-or-nothing hold. Interacts with D-21: partial dispatch is exactly what clears
+the zero-dispatch tripwire honestly.
+
+**Anchors (if accepted):** `policy/plan-critique.md` (new check + menu option),
+`tools/validate-plan` (dependency-edge metric; `deps` are already parsed),
+`policy/recovery.md` (partial-dispatch option in the blocked-task menu), both adapter
+`SKILL.md` §3, `adapters/claude-code/agents/agentfw-plan-critic.md`.
+
+**Cold-start verification:**
+```sh
+grep -n '"deps"' tools/validate-plan | head            # dependency edges are already parsed
+grep -n "C6 necessity audit" policy/plan-critique.md   # the rubric this would extend
+grep -n "12 sibling tasks\|serialized" evaluation/field-report-2026-08-01-drydock-zero-delivery.md
+```
+
+## D-24 · Proof-cost inversion (folded into D-21)
+
+**Status:** **folded into D-21's rationale, 2026-08-01** — id retained for provenance; no
+standalone mechanism will be built under this number.
+
+**Origin:** the 2026-08-01 maintenance conversation, alongside D-21 — the observation that in the
+drydock rounds the apparatus built to PROVE an increment repeatedly cost more than reading the
+increment would have.
+
+**Evidence:** the same execution-half record
+([field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md)):
+~15 commits of plans, authorizations, verdicts, and handoffs against zero product behavior. The
+verification apparatus for one sub-clause outweighed the sub-clause by every available measure.
+
+**Problem:** there is a real inversion point — beyond it, building more proof machinery is
+strictly worse than direct human review of the artifact — and the framework has no way to notice
+crossing it.
+
+**Proposed mechanism (none — deliberately folded):** every rendering attempted required a cost
+threshold, and any threshold the framework picks is a velocity/economics opinion it has no
+standing to hold (the framework reports; it never optimizes — see
+`PLAN-v9.6-operator-compass.md` § Deliberately out of scope). Rather than ship an unenforceable
+SHOULD, the diagnosis is recorded inside **D-21's rationale**, and D-21's **zero-dispatch
+tripwire is its enforceable shadow**: the single case where proof cost has provably overtaken
+delivery — two complete review cycles, zero workers dispatched — is detected mechanically and
+forced to a human fork. If a future session finds a mechanical rendering of the general case, it
+gets a NEW id; this one stays closed so the ledger records the judgment, not a silent drop.
+
+**Anchors:** [CANDIDATES.md](CANDIDATES.md) § D-21 (rationale note),
+[policy/plan-critique.md](policy/plan-critique.md) (§ Delivery ledger — the tripwire),
+[PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md) (§ Deliberately out of scope).
+
+**Cold-start verification:**
+```sh
+grep -n "D-24" CANDIDATES.md                             # rationale note inside D-21 + this entry
+grep -n "zero-dispatch tripwire" policy/plan-critique.md
+```
+
+## D-25 · Session-start reconciliation (`RECONCILE` marker)
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-08-01 · **Priority:** high ·
+**Effort:** small (policy) — build provenance:
+[PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md)
+
+**Origin:** the 2026-08-01 field report — fresh drydock sessions inherited plan headers and
+handoffs claiming progress while the repository contained zero implementation of the objective.
+
+**Evidence:**
+[field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md):
+the two-day treadmill spanned multiple sessions and both runtimes; each new context started from
+the previous context's CLAIMS. The operator's own count of delivered features could not be
+recovered from any artifact — it had to be extracted by asking three escalating times.
+
+**Problem:** a resumed context inherits the ledger's claims, not the world. A session that ended
+mid-cycle, a compaction that dropped the last verdict, or a runtime hop that never saw the failing
+run each leaves a ledger asserting counters and verified tasks the tree may no longer support.
+Planning on top of a stale ledger is a late discovery waiting to happen, one gate cycle later and
+with the evidence gone — and D-21's ledger, once durable, becomes exactly the artifact worth
+lying to yourself with.
+
+**Proposed mechanism (built):** a blocking four-step duty on resuming a gated **A2+** objective in
+a context that did not itself record the ledger's latest state — before any new gate cycle, Layer-1
+run, Layer-2 dispatch, or worker dispatch. (1) Read the ledger at its `root_objective` (D-22); a
+missing or unreadable ledger is itself a MISMATCH, said out loud and re-derived, never restarted at
+zero. (2) Re-derive observed state with **mechanical probes** — re-run the plan validator, check
+that the evidence file each claimed-verified task names exists and is non-empty, grep the repo for
+the claimed deliverables; a claim confirmed by reasoning is not confirmed. (3) Emit
+`[RECONCILE: objective <slug> — ledger claims X, observed Y — MATCH|MISMATCH]` with the D-20
+speak-twice plain sentence beside it. (4) On MISMATCH, correct the ledger FIRST — a claimed-verified
+task whose acceptance evidence is absent reverts to unverified and `tasks_verified` decrements;
+corrections may only move the ledger toward observed reality, never spend down `cycles` or
+`layer2_passes` (that would make a resume a way to buy budget, the laundering D-22 closes).
+
+**Anchors:** [policy/recovery.md](policy/recovery.md) (§ 8 Session-start reconciliation),
+[policy/plan-critique.md](policy/plan-critique.md) (gate-entry cross-reference in the liveness
+section: "Gate entry on a resumed objective — reconcile first (D-25)"), both adapter `SKILL.md`
+AGENTFW-SYNC blocks, `evaluation/fixtures/reconcile.json` +
+`tools/check-reconcile-invariants.py` (decision table added pre-release, closing the T3
+verifier's "only new duty with no machine check" finding).
+
+**Cold-start verification:**
+```sh
+grep -n "RECONCILE" policy/recovery.md policy/plan-critique.md | head
+grep -n "MISMATCH" policy/recovery.md | head
+grep -n "reconcile first" policy/plan-critique.md
+python3 tools/check-reconcile-invariants.py --selftest
+python3 tools/check-reconcile-invariants.py evaluation/fixtures/reconcile.json
+```
+
+## D-26 · Stranded-implementation disposition
+
+**Status:** proposed · **Priority:** medium · **Effort:** small (policy rule)
+
+**Origin:** the 2026-08-01 drydock analysis — working code built to satisfy a proof obligation,
+reviewed twice, and then left where nothing could ship it.
+
+**Evidence:** **1,300 working, twice-adversarially-reviewed lines** left in a fixtures directory
+and never landed
+([field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md)).
+The lines existed, passed review, and contributed nothing to the delivered-feature count that
+stayed at zero.
+
+**Problem:** the framework has rules for code that fails review and rules for code that passes and
+lands, but none for code that passes review in a location that is not the product — prototypes,
+witness trees, fixture implementations, spike branches. Such work is invisible to every counter
+(it is not `tasks_verified`, it is not delivery) and decays silently. D-21's scoreboard makes the
+gap measurable; it does not say what to DO with the stranded work.
+
+**Proposed mechanism:** a disposition rule — any implementation produced in a non-product location
+that survives review carries an explicit, recorded disposition at the next gate event: **land** it
+(with the task that will), **fold** it into the next-increment ledger (D-18) with the location, or
+**discard** it (say so, so nobody re-derives it in a month). No disposition is a defect the same
+way a missing scoreboard is. The rule should be cheap — one line per stranded artifact — and
+should name the D-18 ledger as the default destination.
+
+**Anchors (if accepted):** `policy/plan-critique.md` (D-18 next-increment ledger section — the
+natural home), `policy/acceptance-contract.md` (evidence/scratch lifecycle, interacts with D-13),
+`adapters/claude-code/agents/agentfw-implementer.md` (worker reports its stranded artifacts).
+
+**Cold-start verification:**
+```sh
+grep -n "next-increment ledger" policy/plan-critique.md
+grep -n "1,300\|stranded" evaluation/field-report-2026-08-01-drydock-zero-delivery.md
+```
+
+## D-27 · Blocker re-validation on age
+
+**Status:** proposed · **Priority:** medium · **Effort:** small (policy rule)
+
+**Origin:** the 2026-08-01 drydock analysis — the blocker list grew monotonically across five
+rounds and nothing ever asked whether an old blocker still reproduced.
+
+**Evidence:** **6 blockers accumulated over 5 review rounds** with no duty on anyone to
+re-demonstrate that they still fail
+([field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md)).
+Each round's fixes changed the artifact underneath the older findings, yet the older findings kept
+their standing unexamined.
+
+**Problem:** a blocker is a claim about a specific artifact state. Once the artifact changes, the
+claim is stale — but the gate treats an open blocker as durable until someone argues it away.
+Stale blockers are pure treadmill fuel: they keep an objective in review on evidence that may no
+longer exist, and re-litigating them costs cycles D-2 charges to the objective.
+
+**Proposed mechanism:** any blocker still open after N rounds (proposal: 2) must be
+**re-demonstrated against the current artifact** — a recorded probe/command showing it still
+fails — or it is DROPPED, in the same demote-not-debate spirit as D-19's C6. The re-demonstration
+is the blocker-holder's duty, not the producer's rebuttal burden. Safety-floor findings are
+exempt from dropping but not from re-demonstration: they stand, and their evidence is refreshed.
+Interacts with D-8 (verification-cycle cap) — D-8 bounds how long you may re-litigate, D-27 bounds
+how long a finding may coast.
+
+**Anchors (if accepted):** `policy/plan-critique.md` (post-blocker protocol),
+`policy/acceptance-contract.md` (verifier duties), both judge prompts
+(`adapters/claude-code/agents/agentfw-plan-critic.md`, `agentfw-verifier.md`).
+
+**Cold-start verification:**
+```sh
+grep -n "post-blocker\|Post-blocker" policy/plan-critique.md | head
+grep -n "6 blockers" evaluation/field-report-2026-08-01-drydock-zero-delivery.md
 ```
 
 ## D-14 · Adaptive dispatch (flagship-cap model right-sizing)

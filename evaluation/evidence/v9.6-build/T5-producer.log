@@ -1,0 +1,22 @@
+=== T5 PRODUCER ACCEPTANCE RUN — 2026-08-01T07:02:18Z ===
+cwd: /Users/briantaylor/Projects/AgentFW
+command: bash -c 'grep -q "D-21" CANDIDATES.md && ... && echo T5_DOCS_OK'
+--- output ---
+T5_DOCS_OK
+exit=0
+
+=== T5 PRODUCER ACCEPTANCE RE-RUN (after adding next-increment note 5 to the field report) — 2026-08-01T07:03:07Z ===
+cwd: /Users/briantaylor/Projects/AgentFW
+--- output ---
+T5_DOCS_OK
+exit=0
+
+--- supporting check (not part of the acceptance command): ledger-entry schema ---
+CANDIDATES_OK: D-21, D-22, D-23, D-24, D-25, D-26, D-27
+exit=0
+
+--- capability snapshot refresh (repo-root active-capabilities.yaml; gitignored generated artifact) ---
+before: generated: "20260715-123112"
+generated: "20260801-020200"
+produced by: CLAUDE_DIR=<scratch mirror of ~/.claude probe inputs> bash tools/agentfw-install status  (exit 0)
+mirror-vs-live installed snapshot diff: only the two timestamp lines (fields byte-identical)

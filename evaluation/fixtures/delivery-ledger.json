@@ -1,0 +1,77 @@
+{
+  "_comment": "D-21 decision table for the zero-dispatch tripwire plus a full durable <plan>.ledger.json record. Machine-checked by tools/check-delivery-invariants.py.",
+  "tripwire": {
+    "zero_dispatch_cycles": 2,
+    "forced_action": "FORCE_FORK",
+    "fork_options": ["proactive override offer", "explicit rescope proposal", "halt"]
+  },
+  "cases": [
+    {
+      "case": "first_cycle_no_dispatch_yet",
+      "completed_cycles": 1,
+      "workers_dispatched": 0,
+      "tasks_verified": 0,
+      "scoreboard_emitted": true,
+      "action": "CONTINUE",
+      "why": "one gate cycle with nothing dispatched is normal planning, not a treadmill"
+    },
+    {
+      "case": "two_cycles_zero_dispatch",
+      "completed_cycles": 2,
+      "workers_dispatched": 0,
+      "tasks_verified": 0,
+      "scoreboard_emitted": true,
+      "action": "FORCE_FORK",
+      "why": "two completed cycles that dispatched no worker force the D-2 exhaustion fork immediately, even with liveness budget remaining"
+    },
+    {
+      "case": "five_cycles_zero_dispatch",
+      "completed_cycles": 5,
+      "workers_dispatched": 0,
+      "tasks_verified": 0,
+      "scoreboard_emitted": true,
+      "action": "FORCE_FORK",
+      "why": "the tripwire stays latched above the threshold; more review never clears it"
+    },
+    {
+      "case": "two_cycles_with_dispatch",
+      "completed_cycles": 2,
+      "workers_dispatched": 3,
+      "tasks_verified": 3,
+      "scoreboard_emitted": true,
+      "action": "CONTINUE",
+      "why": "cycles that actually delivered work are governed by the liveness budget alone"
+    },
+    {
+      "case": "sub_objective_zero_dispatch",
+      "completed_cycles": 2,
+      "workers_dispatched": 0,
+      "tasks_verified": 0,
+      "root_objective": "parent-goal",
+      "scoreboard_emitted": true,
+      "action": "FORCE_FORK",
+      "why": "a sub-objective rolls up to its root_objective; renarrowing does not buy fresh zero-dispatch cycles"
+    },
+    {
+      "case": "scoreboard_missing_at_gate_event",
+      "scoreboard_emitted": false,
+      "action": "DEFECT",
+      "why": "a gate event with no [SCOREBOARD:] marker leaves the ledger uncounted, so no tripwire can fire"
+    }
+  ],
+  "ledger_example": {
+    "objective": "operator-compass",
+    "root_objective": "operator-compass",
+    "cycles": 2,
+    "layer2_passes": 2,
+    "workers_dispatched": 0,
+    "tasks_verified": 0,
+    "gate_events": [
+      {"event": "layer1_pass_rev1", "runtime": "claude-code", "date": "2026-08-01"},
+      {"event": "layer2_pass1_dual_blockers", "runtime": "claude-code", "date": "2026-08-01"},
+      {"event": "layer1_pass_rev2", "runtime": "claude-code", "date": "2026-08-01"},
+      {"event": "layer2_pass2_dual_clean", "runtime": "codex", "date": "2026-08-01"},
+      {"event": "human_dispatch_go", "runtime": "claude-code", "date": "2026-08-01"}
+    ]
+  }
+}

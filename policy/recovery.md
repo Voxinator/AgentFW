@@ -87,3 +87,57 @@ is a governance-cost decision the paying human must make, so a session in sleep 
 default (**Halt**, option 4) and waits — it never auto-selects option 1/2/3, which require an
 explicit authorized turn. Sleep mode auto-advances only non-floor recovery (local/contract-scope
 retries), never a cap escalation, a destructive gate, or a flagship model escalation.
+
+## 8. Session-start reconciliation — read the ledger before the next gate cycle (D-25)
+
+A resumed context inherits the ledger's CLAIMS, not the world. The claims are cheap to trust and
+cheap to be wrong: a session that ended mid-cycle, a compaction that dropped the last verdict, a
+runtime hop that never saw the failing run — each leaves a `<plan>.ledger.json`
+(`plan-critique.md` § Delivery ledger, D-21) asserting counters and verified tasks that the tree
+may no longer support. Planning on top of a stale ledger is the late-discovery rule (§4) waiting
+to happen, one gate cycle later and with the evidence gone.
+
+**When the duty fires.** On resuming a gated **A2+ objective** in a context that did not itself
+record the ledger's latest state — a new session, recovery after compaction, or a runtime hop
+(Claude Code ↔ Codex) — and BEFORE any new gate cycle for that objective. It is the first gate
+event's precondition, not a step inside it. No new plan, no Layer-1 run, no Layer-2 dispatch, and
+no worker dispatch precedes it.
+
+**The duty, in order — all four steps are blocking:**
+
+1. **Read the ledger.** Load the objective's `<plan>.ledger.json` at its `root_objective` (D-22):
+   `cycles`, `layer2_passes`, `workers_dispatched`, `tasks_verified`, and `gate_events`. A
+   missing or unreadable ledger is itself a MISMATCH result — say so and re-derive, never restart
+   the counts at zero.
+2. **Re-derive observed state with mechanical probes, never from narration or memory.** At
+   minimum: re-run the plan validator (`tools/validate-plan` over the plan's block) for the
+   plan's current Layer-1 status; check that the **evidence file each claimed-verified task
+   names actually exists** and is non-empty; and grep the repo for the deliverables those tasks
+   claim to have produced. The probes are commands with recorded output — a ledger claim
+   confirmed by reasoning is not confirmed.
+3. **Emit the marker,** naming the root objective slug and both sides of the comparison:
+   `[RECONCILE: objective <slug> — ledger claims X, observed Y — MATCH|MISMATCH]`
+   Per the speak-twice rule (`plan-critique.md` § Operator digest, D-20) the marker carries one
+   plain sentence beside it, e.g. "the record says three tasks were verified; the evidence file
+   for one of them is missing, so it counts as unverified again."
+4. **On MISMATCH, correct the ledger FIRST.** Planning may not continue until the ledger reflects
+   observed reality; the correction is never made alongside a new cycle, in parallel with
+   planning, or deferred to the next gate event. Specifically: **a claimed-verified task whose
+   acceptance evidence is absent reverts to unverified** in the ledger, and `tasks_verified` is
+   decremented to match. Corrections may only move the ledger toward observed reality —
+   reconciliation never spends down `cycles` or `layer2_passes` (that would make a resume a way
+   to buy budget, the laundering D-22 closes). Append the correction as a `gate_events` entry
+   naming this runtime, then re-emit the marker; the cycle begins only once it reads MATCH.
+
+A MATCH is recorded the same way and costs nothing further — the ledger stood up to its probes,
+and the objective proceeds to its gate cycle with counters intact.
+
+**Why blocking.** Reconciling alongside the new cycle means the cycle's first decisions are made
+on the unreconciled claims — the defect the duty exists to catch escapes into exactly the plan
+built to act on it, and the resulting work is contaminated under §2 rather than prevented.
+
+**Machine check.** The duty's decision rules are encoded as a decision table
+(`evaluation/fixtures/reconcile.json`, enforced by `tools/check-reconcile-invariants.py`): a
+MISMATCH row that proceeds, an absent-evidence claim declared MATCH or left verified, or a
+correction that spends down `cycles`/`layer2_passes` is rejected — the same fixture-plus-checker
+discipline as D-2 and D-21.

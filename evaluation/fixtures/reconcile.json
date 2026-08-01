@@ -1,0 +1,9 @@
+{
+  "description": "Canonical decision table for session-start reconciliation (D-25). On resuming a gated A2+ objective, the ledger is read and observed state re-derived mechanically BEFORE any new gate cycle; a MISMATCH blocks planning until the ledger is corrected (CORRECT_FIRST), a claimed-verified task with absent acceptance evidence is itself a MISMATCH and reverts to unverified, and corrections never spend down cycles or layer2_passes (the ratchet - reconciliation is not a budget refund). check-reconcile-invariants.py enforces this table; policy/recovery.md section 8 is its prose.",
+  "cases": [
+    {"case": "resume_match_proceeds", "mismatch": false, "evidence_absent_for_claimed_verified": false, "counters_decremented": false, "action": "PROCEED"},
+    {"case": "resume_mismatch_corrects_first", "mismatch": true, "evidence_absent_for_claimed_verified": false, "counters_decremented": false, "action": "CORRECT_FIRST"},
+    {"case": "claimed_verified_evidence_absent", "mismatch": true, "evidence_absent_for_claimed_verified": true, "reverts_to_unverified": true, "counters_decremented": false, "action": "CORRECT_FIRST"},
+    {"case": "cross_runtime_resume_mismatch", "mismatch": true, "evidence_absent_for_claimed_verified": false, "counters_decremented": false, "action": "CORRECT_FIRST"}
+  ]
+}

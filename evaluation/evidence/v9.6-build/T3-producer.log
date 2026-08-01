@@ -1,0 +1,7 @@
+=== T3 D-25 acceptance ===
+2026-08-01T06:49:15Z
+cwd=/Users/briantaylor/Projects/AgentFW
+cmd: bash -c 'grep -q "RECONCILE" policy/recovery.md && grep -q "MISMATCH" policy/recovery.md && grep -q "RECONCILE" policy/plan-critique.md && echo T3_D25_OK'
+--- output ---
+T3_D25_OK
+exit=0

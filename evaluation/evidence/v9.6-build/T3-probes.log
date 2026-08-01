@@ -1,0 +1,33 @@
+=== T3 D-25 probes ===
+2026-08-01T06:49:32Z
+
+baseline occurrence counts (real tree):
+  recovery.md RECONCILE: 1
+  recovery.md MISMATCH:  3
+  plan-critique.md RECONCILE: 1
+
+scratch root: /var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.m8k3ZK2RR3
+
+--- MUTATION PROBE 1: delete the reconciliation section from policy/recovery.md (expected: red) ---
+post-mutation counts: RECONCILE=0 MISMATCH=0
+exit=1
+
+--- NEGATIVE CASE 1: remove the MISMATCH sentence from policy/recovery.md (expected: red) ---
+post-mutation counts: RECONCILE=0 MISMATCH=0
+exit=1
+
+--- CONTROL: unmutated scratch copy (expected: green) ---
+T3_D25_OK
+exit=0
+
+--- NEGATIVE CASE 1b (isolating): keep RECONCILE, remove only the MISMATCH token from recovery.md (expected: red) ---
+note: in the real file the marker line carries BOTH tokens, so case 1's line-deletion zeroed both.
+this variant isolates the MISMATCH grep leg by substituting the token only.
+post-mutation counts: RECONCILE=1 MISMATCH=0
+exit=1
+
+--- THIRD-LEG PROBE: delete the cross-reference from policy/plan-critique.md (expected: red) ---
+post-mutation counts: plan-critique.md RECONCILE=0
+exit=1
+
+=== end probes ===

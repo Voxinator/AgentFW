@@ -1,0 +1,70 @@
+{
+  "objective": "operator-compass",
+  "root_objective": "operator-compass",
+  "cycles": 2,
+  "layer2_passes": 2,
+  "workers_dispatched": 5,
+  "tasks_verified": 5,
+  "gate_events": [
+    {
+      "event": "layer1_pass_rev1",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "layer2_pass1_dual_blockers",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "layer1_pass_rev2",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "layer2_pass2_dual_clean",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "human_dispatch_go",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T1_producer_complete_T2_dispatched",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T1_verified_T2_producer_done_T3_dispatched",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T2_verified_T3_producer_done_T4_T5_dispatched",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T3_verified_T4_T5_producers_done_verifiers_dispatched",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T4_verified",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T5_contract_strengthened_after_verifier_rejection_witness_rerecorded",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    },
+    {
+      "event": "T5_verified_rev2_all_tasks_verified",
+      "runtime": "claude-code",
+      "date": "2026-08-01"
+    }
+  ]
+}

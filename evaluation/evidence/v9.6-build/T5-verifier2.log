@@ -1,0 +1,47 @@
+T5 VERIFIER (rev 2, post-contract-strengthening) — 2026-08-01 — independent judge of record
+Repo: /Users/briantaylor/Projects/AgentFW (dirty working tree, unreleased v9.6.0 work)
+
+== 1. WITNESS PAIR DIGEST (schema 1.6) ==
+contract command sha256 (no trailing newline) = c99f4da9aaa1a0f530746cf10dfd22713f3b314b30e49dfaa44c621fe704083a
+witness_pair.red.command_sha256              = c99f4da9aaa1a0f530746cf10dfd22713f3b314b30e49dfaa44c621fe704083a  MATCH
+witness_pair.green.command_sha256            = c99f4da9aaa1a0f530746cf10dfd22713f3b314b30e49dfaa44c621fe704083a  MATCH
+-rw-r--r--  1 briantaylor  staff   67 Aug  1 02:10 evaluation/evidence/v9.6-witness/T5-green.log
+-rw-r--r--  1 briantaylor  staff  334 Aug  1 02:10 evaluation/evidence/v9.6-witness/T5-red.log
+
+== 2. BASELINE RE-EXECUTION (whole command, repo root) ==
+CANDIDATES_OK: D-21, D-22, D-23, D-24, D-25, D-26, D-27
+T5_DOCS_OK
+exit=0  (matches producer2 log; terminal line exactly T5_DOCS_OK)
+
+== 3-4. SCRATCH PROBES (fresh mktemp -d copies, rsync -a --exclude .git) ==
+probe1  delete ONLY the '## D-22' section (4 residual D-22 refs incl. board row) -> exit 1, FAIL: no '## D-22' section heading, no T5_DOCS_OK   RED
+probe2  zero-byte field report                                                    -> exit 1 (test -s leg), no T5_DOCS_OK                          RED
+negcase1 delete v9.6.0 section + smuggle D-21/D-22/D-25 tokens into v9.5.0        -> exit 1 (heading anchor leg), no T5_DOCS_OK                   RED
+off-A   CANDIDATES.md replaced by one-line decoy carrying all 7 ids               -> exit 1, 7 defects                                            RED (prior killer closed)
+off-D   CANDIDATES.md replaced by hollow schema-shaped decoy (headings + bare
+        label words + board rows, zero content)                                   -> exit 0, T5_DOCS_OK                                          GREEN (residual weakness)
+off-E   v9.6.0 section deleted, '## v9.6.0' line smuggled inside a fenced code
+        block                                                                     -> exit 0, T5_DOCS_OK                                          GREEN (residual weakness)
+off-G   field report truncated to a single space byte                             -> exit 0, T5_DOCS_OK                                          GREEN (test -s is size-only)
+off-repeat  two consecutive baseline runs                                         -> exit 0 both; git status byte-identical before/after (read-only)
+
+== 5. NEGATIVE CASE 3 — reviewer confirmation of the field report ==
+5 rounds / one clause of 1 of 13 reqs / 0 of 12 dispatched / ~15 governance commits, zero product behavior /
+2 runtimes (Claude Code + Codex) roughly two days, each restarting counters / operator asked 3 escalating times:
+  ALL PRESENT and matching the facts of record (accounting table + Findings 1-2).
+Verbatim maintainer quote present including '...not even aware that it hadn't produced a single fucking feature from the plan'.
+Disposition: D-21/D-22/D-25 BUILT 2026-08-01; D-23/D-26/D-27 proposed; D-24 folded into D-21 rationale — matches CANDIDATES.md board rows and sections.
+Anchors on disk: policy/plan-critique.md:397 (Delivery ledger... D-21), :353 (Budget & ledger inheritance D-22),
+  policy/recovery.md:91 (Session-start reconciliation D-25), fixtures + checkers present; all markdown links resolve.
+Cold-start block re-run: DELIVERY_SELFTEST_OK / DELIVERY_OK (6 cases) / LIVENESS_OK (12 cases) / drydock plan artifact present.
+active-capabilities.yaml: generated 20260801-020200 (fresh, post-change) with command_resolution block (grep -> /usr/bin/grep).
+
+== FINDINGS ==
+F1 (low, residual check strength): hollow schema-shaped CANDIDATES.md keeps the command green (off-D).
+F2 (low, residual check strength): '^## v9.6.0' matches inside a fenced code block (off-E).
+F3 (low, residual check strength): test -s accepts a 1-byte report (off-G) — content correctness rests on negcase-3 reviewer duty, which passed.
+F4 (informational, doc freshness): field report 'Next-increment notes' item 5 asserts in present tense that
+   'This report's own acceptance command has the same weakness' / deleting the D-22 section 'leaves the T5 command GREEN'.
+   That is now false of the strengthened command — probe1 above proves RED. Historical (producer-observed) but stale as written.
+
+== VERDICT: VERIFIED ==

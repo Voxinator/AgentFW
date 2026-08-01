@@ -1,0 +1,26 @@
+=== T1 D-21 producer mutation probes — 2026-08-01T06:39:21Z
+=== scratch base: /private/tmp/claude-501/-Users-briantaylor-Projects-AgentFW/ca8e8717-d7e1-4a9d-87f9-0da2c2ef37d7/scratchpad/t1probe.wFaVyy (real tree never mutated)
+=== command under test (run from each scratch root):
+[ "$(python3 tools/check-delivery-invariants.py --selftest)" = "DELIVERY_SELFTEST_OK" ] && python3 tools/check-delivery-invariants.py evaluation/fixtures/delivery-ledger.json && grep -q "SCOREBOARD" policy/plan-critique.md && grep -q "zero-dispatch" policy/plan-critique.md && grep -q "ledger.json" policy/plan-critique.md && echo T1_D21_OK
+
+--- BASELINE (unmutated scratch copy) — expected green
+DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+T1_D21_OK
+exit=0
+
+--- PROBE 1: two_cycles_zero_dispatch action FORCE_FORK -> CONTINUE — expected red
+DEFECT: case 'two_cycles_zero_dispatch': 2 completed cycles with zero workers dispatched must FORCE_FORK, not 'CONTINUE' — the zero-dispatch tripwire fires even when liveness budget remains
+exit=1
+
+--- PROBE 2: delete the SCOREBOARD marker paragraph from policy/plan-critique.md — expected red
+(deleted paragraph; remaining uppercase SCOREBOARD hits: 0)
+DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+exit=1
+
+--- PROBE 3: replace check-delivery-invariants.py with a zero-byte file — expected red
+(checker size:        0 bytes)
+exit=1
+
+--- PROBE 4: remove root_objective from the fixture's ledger_example — expected red
+DEFECT: ledger_example is missing required key 'root_objective' — the durable ledger shape is objective, root_objective, cycles, layer2_passes, workers_dispatched, tasks_verified, gate_events, and a record missing any of them cannot be counted from
+exit=1

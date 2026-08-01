@@ -1,0 +1,151 @@
+=== T4 INDEPENDENT VERIFIER RUN (judge of record) ===
+2026-08-01T07:08:44Z
+repo=/Users/briantaylor/Projects/AgentFW  head=ff30e26  tree=working (uncommitted)
+
+--- [1] ACCEPTANCE COMMAND, whole string, from repo root ---
+bash -c 'python3 tools/check-skill-sync.py && grep -q "SCOREBOARD" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/codex/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/codex/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/claude-code/CLAUDE-block.md && grep -q "SCOREBOARD" adapters/codex/AGENTS.md && echo T4_SYNC_OK'
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0
+
+--- [1b] witness_pair digest admissibility (schema 1.6) ---
+sha256(contract command) = 0ea9fbf1091098de8d787b38198a7025acfd386097b33323173ec328ca48aa99
+red   leg sha=0ea9fbf1091098de8d787b38198a7025acfd386097b33323173ec328ca48aa99 match=True exit=2 evidence=evaluation/evidence/v9.6-witness/T4-red.log
+green leg sha=0ea9fbf1091098de8d787b38198a7025acfd386097b33323173ec328ca48aa99 match=True exit=0 evidence=evaluation/evidence/v9.6-witness/T4-green.log
+
+--- [2] AGENTFW-SYNC block containment + byte-identity ---
+adapters/claude-code/skills/agentfw/SKILL.md block_len=4835 sha256=469396439f51a5b8eab58a4c3968e77198bc5c8bec6dbbdd38927a8dd7295e2a
+   in-block ## 9. Delivery scoreboard  True   occurrences-in-file 1
+   in-block SCOREBOARD                 True   occurrences-in-file 1
+   in-block RECONCILE                  True   occurrences-in-file 1
+adapters/codex/skills/agentfw/SKILL.md block_len=4835 sha256=469396439f51a5b8eab58a4c3968e77198bc5c8bec6dbbdd38927a8dd7295e2a
+   in-block ## 9. Delivery scoreboard  True   occurrences-in-file 1
+   in-block SCOREBOARD                 True   occurrences-in-file 1
+   in-block RECONCILE                  True   occurrences-in-file 1
+BYTE_IDENTICAL: True
+
+--- [3] MUTATION PROBES + NEGATIVE CASES (fresh scratch copies) ---
+scratch base=/private/tmp/claude-501/-Users-briantaylor-Projects-AgentFW/ca8e8717-d7e1-4a9d-87f9-0da2c2ef37d7/scratchpad/verify-t4-log ; command run from each scratch root:
+python3 tools/check-skill-sync.py && grep -q "SCOREBOARD" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/codex/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/codex/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/claude-code/CLAUDE-block.md && grep -q "SCOREBOARD" adapters/codex/AGENTS.md && echo T4_SYNC_OK
+
+[CONTROL pristine scratch] expect green
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0
+
+[PROBE 1] mutation: one-word desync in claude sync block (ORCHESTRATOR->SUBAGENT) | expected red
+FAIL: check-skill-sync — 1 defect(s):
+  - AGENTFW-SYNC blocks differ between the two adapter SKILLs
+exit=1
+
+[PROBE 2] mutation: codex SKILL.md section-9 paragraph deleted entirely | expected red
+FAIL: check-skill-sync — 1 defect(s):
+  - AGENTFW-SYNC blocks differ between the two adapter SKILLs
+exit=1
+
+[NEGATIVE 1a] claude-code CLAUDE-block.md SCOREBOARD line deleted | expected red
+SKILL_SYNC_OK
+exit=1
+
+[NEGATIVE 1b] codex AGENTS.md SCOREBOARD line deleted | expected red
+SKILL_SYNC_OK
+exit=1
+
+[NEGATIVE 2] one-word divergence = PROBE 1 above (mechanical, red)
+
+--- [4] OFF-CONTRACT HOSTILE PROBES ---
+[OC1] section 9 relocated OUTSIDE the sync block in BOTH adapters (identically). Criteria says INSIDE.
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0  -> GREEN means the command does not enforce in-block placement
+[OC2] early END marker injected in both files (enforced block collapses to empty) + one-word cross-adapter divergence after it
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0  -> GREEN means marker injection bypasses byte-identity enforcement (pre-existing check-skill-sync.py property; tool unmodified by T4)
+[OC3] duty deleted from both SKILLs; tokens survive only in an inert TODO comment
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0  -> GREEN means token greps cannot distinguish a duty from a TODO
+
+[OC4] idempotence: 3 consecutive live runs
+  run1 exit=0
+  run2 exit=0
+  run3 exit=0
+
+[OC5] regression sweep — sibling checkers on the live tree
+SKILL_SYNC_SELFTEST_OK
+  skill-sync --selftest exit=0
+LIVENESS_OK: 12 cases, budget 2 cycles / 4 layer2 passes
+  liveness exit=0
+DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+  delivery exit=0
+POSTURE_SELFTEST_OK
+  posture --selftest exit=0
+
+[OC6] adapter edits are pure insertion (no pre-existing adapter text lost)
+5	0	adapters/claude-code/CLAUDE-block.md
+45	0	adapters/claude-code/skills/agentfw/SKILL.md
+5	0	adapters/codex/AGENTS.md
+45	0	adapters/codex/skills/agentfw/SKILL.md
+
+[OC7] installed live runtimes vs repo adapters (out of contract scope; release-time gap)
+  /Users/briantaylor/.claude/CLAUDE.md SCOREBOARD=0 RECONCILE=0
+  /Users/briantaylor/.claude/skills/agentfw/SKILL.md SCOREBOARD=0 RECONCILE=0
+  /Users/briantaylor/.codex/AGENTS.md SCOREBOARD=0 RECONCILE=0
+
+--- [5] SEMANTIC READ vs authoritative policy: marker-shape equality across policy + adapters ---
+SCOREBOARD distinct shapes: 1
+   [SCOREBOARD: objective <slug> — musts built b/t · workers dispatched w · verified v · cycle n/2 · passes m/4]
+     -> ['policy/plan-critique.md', 'adapters/claude-code/skills/agentfw/SKILL.md', 'adapters/codex/skills/agentfw/SKILL.md', 'adapters/claude-code/CLAUDE-block.md', 'adapters/codex/AGENTS.md']
+RECONCILE distinct shapes: 1
+   [RECONCILE: objective <slug> — ledger claims X, observed Y — MATCH|MISMATCH]
+     -> ['policy/plan-critique.md', 'policy/recovery.md', 'adapters/claude-code/skills/agentfw/SKILL.md', 'adapters/codex/skills/agentfw/SKILL.md']
+
+=== END VERIFIER RUN ===
+2026-08-01T07:09:12Z
+
+--- [6] SEMANTIC CLAUSE COVERAGE (adapter sync block vs authoritative policy) ---
+clause                                   policy anchor                                  adapter | verdict
+ledger filename <plan>.ledger.json       plan-critique D-21 "durable ledger"            present | faithful
+ledger keys objective/root_objective/    plan-critique D-21 "carries exactly:"          present | faithful (exact key list)
+  cycles/layer2_passes/workers_dispatched
+  /tasks_verified/gate_events
+gate_events append-only, names runtime   plan-critique D-21                             present | faithful
+SCOREBOARD at EVERY gate event           plan-critique D-21 "at EVERY gate event"       present | faithful (same 5 event types)
+marker shape                             identical string, 1 distinct shape repo-wide   present | faithful
+"missing marker is a defect"             plan-critique D-21                             present | faithful
+digest from ledger + validate-plan       plan-critique D-21 "Digest rendering duty"     present | faithful
+  --digest, never narration; ledger
+  authoritative on disagreement
+tripwire >=2 cycles & 0 dispatched       plan-critique D-21 "Two or more..."            present | faithful
+forces D-2 fork w/ budget remaining      plan-critique D-21 "even when budget remains"  present | faithful
+latches; only dispatch clears            plan-critique D-21 "The tripwire latches"      present | faithful
+human fork; sleep halts as at 2-pass cap plan-critique D-21                             present | faithful
+must not fire below threshold/after      plan-critique D-21                             present | faithful
+  dispatch
+one ledger per root_objective;           plan-critique D-22 bullet                      present | faithful
+  no reset on decompose/rename/hop
+markers name root slug (sub: <sub>)      plan-critique D-22                             present | faithful
+RECONCILE blocking, before any new       recovery.md S8 "BEFORE any new gate cycle"     present | faithful
+  gate cycle; new session/compaction/hop
+missing ledger == MISMATCH               recovery.md S8 step 1                          present | faithful
+mechanical probes (validator, evidence   recovery.md S8 step 2                          present | faithful
+  file exists+non-empty, greps)
+correct ledger FIRST; unverified revert  recovery.md S8 step 4                          present | faithful
+  + decrement tasks_verified
+never spend down cycles/layer2_passes    recovery.md S8 step 4                          present | faithful
+append correction naming runtime;        recovery.md S8 step 4                          present | faithful
+  begin only at MATCH
+cross-references (D-21 heading, D-22     headings match verbatim                        present | faithful
+  bullet, recovery S8)
+
+CONTRADICTIONS FOUND: none.
+ADDITION NOT PRESENT IN POLICY (advisory, non-contradicting): adapter opens with
+  "These are ORCHESTRATOR duties - the main session that runs the gate owns them; subagents do
+   not keep the ledger."
+  policy/plan-critique.md and policy/recovery.md are silent on orchestrator-vs-subagent ledger
+  ownership (grep -i "orchestrator|main session" over both policy files returns zero hits).
+  Does not contradict policy; but adapters currently carry one governance sentence that the
+  authoritative policy does not state.
+
+VERDICT: VERIFIED

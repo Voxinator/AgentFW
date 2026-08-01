@@ -1,0 +1,8 @@
+=== T1 D-21 producer acceptance run — 2026-08-01T06:38:55Z
+=== cwd: /Users/briantaylor/Projects/AgentFW
+=== command:
+bash -c '[ "$(python3 tools/check-delivery-invariants.py --selftest)" = "DELIVERY_SELFTEST_OK" ] && python3 tools/check-delivery-invariants.py evaluation/fixtures/delivery-ledger.json && grep -q "SCOREBOARD" policy/plan-critique.md && grep -q "zero-dispatch" policy/plan-critique.md && grep -q "ledger.json" policy/plan-critique.md && echo T1_D21_OK'
+=== output:
+DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+T1_D21_OK
+exit=0

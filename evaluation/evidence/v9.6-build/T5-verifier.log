@@ -1,0 +1,50 @@
+=== T5 INDEPENDENT VERIFIER LOG — 2026-08-01T07:08:35Z ===
+judge: independent verifier (read-only wrt work); repo /Users/briantaylor/Projects/AgentFW @ ff30e26 + working tree
+
+--- [1] acceptance_command re-executed WHOLE, from repo root ---
+T5_DOCS_OK
+exit=0  signal_matched=yes
+command_sha256=53b03b645c53a5917034db8f47556056af137ace9975beee64f0e5a2cfb0483e
+
+--- [2] discriminating registration check (repo tool) ---
+CANDIDATES_OK: D-21, D-22, D-23, D-24, D-25, D-26, D-27
+exit=0
+
+--- [3] MUTATION PROBE 1 as-written: delete the '## D-22' entry section (scratch) ---
+acceptance:  T5_DOCS_OK  exit=0   -> RED? NO  (PROBE FAILS AS WRITTEN)
+check-candidates.py on same scratch: FAIL: D-22: no '## D-22' section heading  exit=1  -> RED
+--- [3b] MUTATION PROBE 1 at full-deletion strength (every 'D-22' token removed): exit=1, no T5_DOCS_OK -> RED
+
+--- [4] MUTATION PROBE 2 / NEGATIVE 2: field report truncated to 0 bytes (scratch): exit=1, no signal -> RED
+--- [5] NEGATIVE 1: CHANGELOG v9.6.0 block removed (scratch): exit=1, no signal -> RED
+
+--- [6] NEGATIVE 3 (semantic, verifier duty): field report vs facts of record ---
+5 rounds=MATCH | one clause of 1 of 13 reqs=MATCH | 0 of 12 siblings=MATCH | ~15 governance commits, zero product behavior=MATCH
+2 runtimes (Claude Code + Codex) ~2 days, counters restarted=MATCH | 3 escalating asks=MATCH | verbatim quote reproduced faithfully=MATCH
+Disposition: D-21/D-22/D-25 BUILT 2026-08-01; D-23/D-26/D-27 proposed; D-24 folded into D-21 = MATCHES repo state
+
+--- [7] anchors spot-checked on disk (all exist, non-empty; claimed sections present) ---
+397:## Delivery ledger, scoreboard & zero-dispatch tripwire (D-21)
+353:- **Budget & ledger inheritance — one ledger per root objective (D-22).** These counters are not
+91:## 8. Session-start reconciliation — read the ledger before the next gate cycle (D-25)
+382:- **Gate entry on a resumed objective — reconcile first (D-25).** A resumed A2+ objective's FIRST
+DELIVERY_SELFTEST_OK
+DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+LIVENESS_OK: 12 cases, budget 2 cycles / 4 layer2 passes
+
+--- [8] active-capabilities.yaml (repo root, gitignored generated artifact) ---
+generated: "20260801-020200"
+1
+Aug  1 02:02:04 2026 active-capabilities.yaml
+
+--- [9] OFF-CONTRACT PROBES ---
+OC1 one-line decoy CANDIDATES.md (all 7 tokens, zero entries) + 1-byte field report -> acceptance GREEN exit=0 [HIGH]
+    same scratch, check-candidates.py -> FAIL 7 defects exit=1 (discriminating check exists in-repo)
+OC2 CHANGELOG with NO v9.6.0 entry, tokens smuggled into v9.5.0 section -> acceptance GREEN exit=0 [HIGH]
+OC3 field report counts falsified (5->50 rounds, 0 of 12 -> 12 of 12) -> acceptance GREEN exit=0 [MEDIUM]
+OC4 anchor cold-start checks re-run: DELIVERY_SELFTEST_OK / DELIVERY_OK / LIVENESS_OK -> registrations backed [PASS]
+OC5 seeded-content survival: git diff numstat CANDIDATES.md 324/0, CHANGELOG.md 51/0 (purely additive); D-2..D-20 still CANDIDATES_OK [PASS]
+    (D-1 has no section heading in HEAD either -> pre-existing, not a T5 regression)
+OC6 repeated runs x3 -> exit 0,0,0 stable; signal cannot appear on a failure line (grep D-99 -> exit 1, no output) [PASS]
+
+=== VERDICT: REJECTED — mutation probe 1 stays GREEN as written; acceptance command is token-level and does not gate 2 of 4 criteria clauses. Artifact CONTENT verified correct; the CHECK is insufficient. Remedy: add 'python3 tools/check-candidates.py D-21 D-22 D-23 D-24 D-25 D-26 D-27' as an acceptance leg (green on delivered tree, red on section deletion). ===

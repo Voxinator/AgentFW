@@ -1,0 +1,119 @@
+=== T2 VERIFIER LOG (judge of record, independent re-execution) — 2026-08-01 ===
+Repo: /Users/briantaylor/Projects/AgentFW  HEAD: ff30e26 (v9.5.0), work uncommitted in tree.
+All runs below were executed by the verifier after the change; producer log used only as a pointer.
+
+--- [1] ACCEPTANCE COMMAND, whole-command end-to-end, from repo root ---
+$ bash -c '[ "$(python3 tools/check-liveness-invariants.py --selftest)" = "LIVENESS_SELFTEST_OK" ] && python3 tools/check-liveness-invariants.py evaluation/fixtures/liveness-budget.json && grep -q "root_objective" evaluation/fixtures/liveness-budget.json && grep -q "root_objective" policy/plan-critique.md && echo T2_D22_OK'
+LIVENESS_OK: 12 cases, budget 2 cycles / 4 layer2 passes
+T2_D22_OK
+exit=0    -> terminal line exactly T2_D22_OK, exit 0 : SIGNAL MATCHED
+Re-run after concurrent sibling-task edits landed: exit=0, T2_D22_OK (freshness re-confirmed).
+Producer-recorded output matches this live run (12 cases / T2_D22_OK / exit 0).
+
+--- [1b] WITNESS-PAIR DIGEST CHECK (schema 1.6, rule 1) ---
+sha256(exact acceptance_command string) = 320d2f128593a71546f9bb4c676276c3c9b4be3aed3d3055349327b827b41887
+plan witness_pair.red.command_sha256    = 320d2f12... MATCH
+plan witness_pair.green.command_sha256  = 320d2f12... MATCH
+Witness evidence files present: evaluation/evidence/v9.6-witness/T2-red.log (checker absent, red),
+T2-green.log (11 cases / T2_D22_OK).
+
+--- [2] MUTATION PROBES (fresh mktemp -d scratch per probe; live tree never mutated) ---
+CONTROL  unmutated scratch, delivered checker            -> exit 0, T2_D22_OK (command runnable from scratch)
+PROBE 1  delete sub_objective_inherits_root_counters case, root_objective mention retained
+         (grep count in mutated fixture = 2, case count 12 -> 11)
+         DEFECT: missing required case 'sub_objective_inherits_root_counters'
+         -> exit 1  RED as contracted
+PROBE 1b SAME case-deleted fixture vs `git show HEAD:tools/check-liveness-invariants.py`
+         HEAD checker sha    ee28ee12afcc299913ce5fe99c0c4920bd8afdc8c3cc209a3546d6761877b505
+         delivered checker   ab5700658c10ec119e2da2d5e8b3a5dcfde0942915074d9c0e11d98646d1b22e
+         LIVENESS_OK: 11 cases / T2_D22_OK -> exit 0  GREEN under pre-v9.6 checker
+         => reversion-detection claim INDEPENDENTLY CONFIRMED; probe isolates checker
+            enforcement from the grep leg.
+PROBE 2  counters_reset:true on sub_objective_inherits_root_counters
+         DEFECT: case 'sub_objective_inherits_root_counters': a case naming a root_objective
+         spends from that root's ledger — ... treadmill laundering
+         -> exit 1  RED as contracted
+PROBE 3  zero-byte tools/check-liveness-invariants.py (0 bytes verified)
+         -> exit 1  RED as contracted (selftest-signal gate)
+All scratch copies removed after use.
+
+--- [3] NEGATIVE CASES + SIGNAL-FAKING DETECTION ---
+NEG-1  root_objective + counters_reset:true on a DIFFERENT case (under_budget_clean_verdict)
+       DEFECT emitted, exit 1  (rule is general, not hard-coded to the one case)
+NEG-1b root_objective:"" on the inheritance case
+       DEFECT: 'root_objective' must be a non-empty string ... , exit 1
+NEG-2  fixture lacking the required case  -> exit 1 (PROBE 1)
+NEG-3  zero-byte checker                  -> exit 1 (PROBE 3)
+FAKE-A checker replaced by 2-line stub printing LIVENESS_SELFTEST_OK, exit 0, unmutated fixture
+       -> exit 0, T2_D22_OK  (command green under a stub)
+FAKE-B same stub + probe-1 mutation (required case deleted)
+       -> exit 0, T2_D22_OK  (contracted probe FAILS to go red)
+       => detection confirmed: the command's strength rests entirely on checker integrity;
+          only the zero-byte substitution is guarded, not a signal-faking substitution.
+
+--- [4] REGRESSION / NO-REMOVAL AUDIT ---
+git diff tools/check-liveness-invariants.py: only deletions are 5 docstring lines (rewritten in
+place); every pre-existing assertion in check() retained. REQUIRED_CASES: 5 -> 6 (append only).
+Fixture: pre-existing cases altered = NONE; removed = NONE; budget unchanged;
+added = sub_objective_inherits_root_counters, cross_runtime_resume_inherits_root_counters.
+$ bash tools/tests/release-v9.5.sh                       -> RELEASE_V9_5_OK, exit 0
+   (incl. "PASS: liveness-budget invariant", LIVENESS_SELFTEST_OK, LIVENESS_OK 12 cases)
+   re-run after sibling edits landed                     -> exit 0
+$ python3 tools/validate-plan tools/fixtures/plan-good-16-witness.md -> PASS, exit 0
+$ python3 tools/validate-plan PLAN-v9.6-operator-compass.md          -> PASS, exit 0
+
+--- [5] SEMANTIC READ OF THE POLICY AMENDMENT vs R4 ---
+policy/plan-critique.md lines 353-369 ("Budget & ledger inheritance — one ledger per root
+objective (D-22)"), inside the "Global liveness budget — per objective (D-2)" section:
+  durable ledger        : "they live in the durable `<plan>.ledger.json` (D-21 below), keyed by
+                          **`root_objective`**" -> R4 satisfied
+  sub-objectives        : "a sub-objective produced by decomposing the goal" spends from root
+  renames / re-plans    : "a renamed or re-planned objective"
+  cross-runtime resumes : "a **cross-runtime resume** (Claude Code <-> Codex, or a new session of
+                          either) all read the root ledger, add to it, and write it back"
+  never reset           : "Counters therefore **never reset on decomposition**, rename, or a
+                          runtime hop"
+  markers name root     : "[LIVENESS: objective <root-slug> — cycle n/2, layer2 passes m/4]",
+                          sub named alongside as "<root-slug> (sub: <sub-slug>)"
+  missing-ledger case   : "say so and re-derive it rather than restarting the count at zero"
+No contradiction with the D-2 "No reset" bullet (line 349, extended not overridden), with the
+D-25 reconcile bullet (382), or with D-21's ledger schema (409, root_objective defined identically
+and "one ledger, not two"). All four R4 clauses covered.
+
+--- [6] OFF-CONTRACT HOSTILE PROBES ---
+A  Delete the ENTIRE D-22 amendment (policy lines 353-369) from a scratch copy, leave rest intact
+   -> exit 0, T2_D22_OK  *** GREEN ***  because `root_objective` still occurs once at line 409 in
+   the D-21 section authored by task T1. The policy leg of the acceptance command does NOT gate
+   the R4 amendment; it is satisfied by a sibling task's text.  SEVERITY: MEDIUM (check strength).
+B  Keep the required case NAME but strip `root_objective` from every case and set
+   counters_reset:true with same_objective:false
+   -> exit 0, T2_D22_OK  *** GREEN ***  The checker requires the case NAME but never requires any
+   case to actually CARRY a root_objective, so the D-22 invariant can be satisfied in name only.
+   SEVERITY: MEDIUM (enforcement gap).
+C  Repeated runs on the live tree, 3x -> exit 0,0,0; command writes nothing (tracked-file status
+   unchanged by the runs). Idempotent.  SEVERITY: none.
+D  Duplicate JSON key laundering: '"counters_reset": true, "counters_reset": false' in the
+   inheritance case -> exit 0, T2_D22_OK. Python json keeps the last value; a human reader sees
+   `true`. Pre-existing checker class (repo has plan-bad-duplicate-json-key for validate-plan).
+   SEVERITY: LOW.
+E  Partial reversion: keep REQUIRED_CASES, delete only the `if "root_objective" in c:` block
+   -> DEFECT: selftest RED table (rooted sub-objective resets counters) was accepted
+      DEFECT: selftest RED table (empty root_objective) was accepted
+      selftest exit=1, whole command exit=1.  The --selftest genuinely discriminates the new
+   enforcement logic; it is not decorative.  SEVERITY: none (positive result).
+F  Malformed/non-JSON fixture -> DEFECT: cannot read fixture, exit 1.  SEVERITY: none.
+G  Tree stability: policy/recovery.md and +6 lines of plan-critique.md landed from a sibling task
+   during verification. T2's own surfaces stayed byte-stable
+   (checker ab570065..., fixture 7be9c734..., plan-critique 584c38a8... at final re-run) and the
+   acceptance command plus release-v9.5.sh were re-run green afterwards.  SEVERITY: INFO.
+
+--- VERDICT: VERIFIED ---
+Every contracted claim re-executed and reproduced: acceptance command green with the exact
+terminal signal T2_D22_OK at exit 0; all three mutation probes RED on fresh scratch copies; the
+reversion-detection claim independently confirmed (green under HEAD checker, red under delivered);
+all three negative cases RED; no pre-existing check or fixture case removed; unrelated surfaces
+(release-v9.5.sh, validate-plan) still green; the policy amendment satisfies all four R4 clauses
+without contradicting neighbouring D-2/D-21/D-25 text.
+Non-blocking findings for hardening: A (policy grep leg does not isolate the D-22 amendment),
+B (required case can be present in name only), D (duplicate-key laundering), FAKE-B
+(signal-faking checker defeats the probes).

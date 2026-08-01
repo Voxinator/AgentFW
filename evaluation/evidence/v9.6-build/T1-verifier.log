@@ -1,0 +1,79 @@
+=== T1 D-21 INDEPENDENT VERIFIER run — 2026-08-01T06:46:33Z
+=== repo: /Users/briantaylor/Projects/AgentFW   HEAD: ff30e26
+=== contract command sha256: 6bb57a93138b08203f4e4c8902eee8c7496ba520abd980e92cf390e9e6a06d0c
+===   == plan contract sha AND both witness_pair legs (red+green) -> whole-command evidence confirmed
+
+--- [1] ACCEPTANCE COMMAND, entire string, live tree, cwd=repo root
+  DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+  T1_D21_OK
+  EXIT=0  terminal line: T1_D21_OK
+
+--- [2] MUTATION PROBES (fresh scratch copy per probe; live tree never mutated)
+M1 fixture: two_cycles_zero_dispatch action -> CONTINUE
+  DEFECT: case 'two_cycles_zero_dispatch': 2 completed cycles with zero workers dispatched must FORCE_FORK, not 'CONTINUE' — the zero-dispatch tripwire fires even when liveness budget remains
+  EXIT=1  (expected: red)
+M2 policy: delete the SCOREBOARD marker bullet from plan-critique.md
+  DELIVERY_OK: 6 cases, tripwire at 2 zero-dispatch cycles, ledger_example 'operator-compass' with 5 gate events
+  EXIT=1  (expected: red)
+M3 tool: check-delivery-invariants.py replaced with a zero-byte file
+  
+  EXIT=1  (expected: red)
+M4 fixture: ledger_example.root_objective removed
+  DEFECT: ledger_example is missing required key 'root_objective' — the durable ledger shape is objective, root_objective, cycles, layer2_passes, workers_dispatched, tasks_verified, gate_events, and a record missing any of them cannot be counted from
+  EXIT=1  (expected: red)
+
+--- [3] NEGATIVE CASES
+NA >=threshold, 0 dispatched, CONTINUE (five_cycles_zero_dispatch)
+  DEFECT: case 'five_cycles_zero_dispatch': 5 completed cycles with zero workers dispatched must FORCE_FORK, not 'CONTINUE' — the zero-dispatch tripwire fires even when liveness budget remains
+  EXIT=1  (expected: red)
+NB1 FORCE_FORK below threshold (first_cycle_no_dispatch_yet)
+  DEFECT: case 'first_cycle_no_dispatch_yet': FORCE_FORK fired at 1/2 cycles with 0 workers dispatched — the tripwire must not fire below the threshold or once work has been dispatched
+  EXIT=1  (expected: red)
+NB2 FORCE_FORK with workers dispatched (two_cycles_with_dispatch)
+  DEFECT: case 'two_cycles_with_dispatch': FORCE_FORK fired at 2/2 cycles with 3 workers dispatched — the tripwire must not fire below the threshold or once work has been dispatched
+  EXIT=1  (expected: red)
+NC1 scoreboard_emitted:false with action CONTINUE
+  DEFECT: case 'scoreboard_missing_at_gate_event': a gate event with no [SCOREBOARD:] marker is a DEFECT, not 'CONTINUE' — an unemitted scoreboard is how a zero-dispatch objective stays invisible
+  DEFECT: table is vacuous: no case exercises action 'DEFECT'
+  EXIT=1  (expected: red)
+NC2 scoreboard_emitted:false with action FORCE_FORK
+  DEFECT: case 'scoreboard_missing_at_gate_event': a gate event with no [SCOREBOARD:] marker is a DEFECT, not 'FORCE_FORK' — an unemitted scoreboard is how a zero-dispatch objective stays invisible
+  DEFECT: table is vacuous: no case exercises action 'DEFECT'
+  EXIT=1  (expected: red)
+ND ledger_example missing each required key (7 scratch copies)
+  missing objective            EXIT=1 (expected red)
+  missing root_objective       EXIT=1 (expected red)
+  missing cycles               EXIT=1 (expected red)
+  missing layer2_passes        EXIT=1 (expected red)
+  missing workers_dispatched   EXIT=1 (expected red)
+  missing tasks_verified       EXIT=1 (expected red)
+  missing gate_events          EXIT=1 (expected red)
+ND2 gate event not naming its writing runtime
+  gate_events[0] runtime removed  EXIT=1 (expected red)
+  gate_events[2] runtime removed  EXIT=1 (expected red)
+  gate_events[4] runtime removed  EXIT=1 (expected red)
+  whitespace-only runtime        EXIT=1 (expected red)
+  ledger_example absent          EXIT=1 (expected red)
+NE zero-byte checker fails the selftest-signal gate: covered by M3 above
+NF signal-faking checker (unconditionally prints DELIVERY_SELFTEST_OK, exit 0)
+  fake checker, clean fixture    EXIT=0 (passes the bare command)
+  fake checker + M1 + M4 applied EXIT=0 -> STAYS GREEN = fake detected by mutation probes
+  (delivered checker goes red on the same two mutations: see M1/M4 above)
+
+--- [4] OFF-CONTRACT PROBES (verifier-initiated, not in the contract)
+O1  greps change-sensitive: SCOREBOARD/zero-dispatch/ledger.json all ABSENT in HEAD:policy/plan-critique.md -> OK
+O2  grep bypass: HEAD policy + single decoy comment "<!-- TODO: SCOREBOARD zero-dispatch ledger.json -->" -> EXIT=0  FINDING (check strength)
+O3  threshold laundering: fixture with tripwire.zero_dispatch_cycles=50 and rows made consistent -> EXIT=0  FINDING (R3 constant unpinned)
+O4  duplicate case name (lawful FORCE_FORK row + unlawful CONTINUE clone) -> EXIT=1 OK
+O5  hostile fixtures: [] / {} / zero-byte / garbage / missing file / directory / 0 args / 2 args -> EXIT=1 each, named DEFECT, no traceback OK
+O6  --selftest run from / (no repo state) -> DELIVERY_SELFTEST_OK EXIT=0 OK
+O7  live PLAN-v9.6-operator-compass.ledger.json passed check_ledger() with zero violations; runtimes attributed OK
+O8  policy names "validate-plan --digest": tools/validate-plan --digest exists, emits "must=5 nice-to-have=5 fluff=0 tasks=5" -> real capability OK
+O9  3 consecutive runs identical, terminal line exactly T1_D21_OK, git status hash unchanged -> deterministic + read-only OK
+O10 git diff --numstat policy/plan-critique.md = 61 insertions / 0 deletions -> purely additive, pre-existing policy survives OK
+O11 tools/check-skill-sync.py -> SKILL_SYNC_OK (no stale mirrored copy) OK
+O12 sibling checkers: LIVENESS_SELFTEST_OK, POSTURE_SELFTEST_OK -> no regression OK
+O13 tools/tests/check-links.sh -> PASS: 93 links checked (new file references resolve) OK
+O14 tools/tests/validate-plan.sh -> ALL CHECKS PASSED OK
+
+VERDICT: VERIFIED (2 check-strength findings recorded, both non-blocking; see O2, O3)

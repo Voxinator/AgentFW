@@ -1,0 +1,37 @@
+=== T4 mutation probes + negative case 1 ===
+2026-08-01T06:56:24Z
+scratch=/private/tmp/claude-501/-Users-briantaylor-Projects-AgentFW/ca8e8717-d7e1-4a9d-87f9-0da2c2ef37d7/scratchpad/t4probe.TXD1 (adapters/ + tools/check-skill-sync.py copied from repo)
+command under test (run from scratch root):
+python3 tools/check-skill-sync.py && grep -q "SCOREBOARD" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/codex/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/codex/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/claude-code/CLAUDE-block.md && grep -q "SCOREBOARD" adapters/codex/AGENTS.md && echo T4_SYNC_OK
+
+--- CONTROL (unmutated scratch copy) — expect green T4_SYNC_OK exit 0 ---
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0
+
+mutation applied: claude SKILL.md sync block 'ORCHESTRATOR' -> 'SUBAGENT' (one word)
+--- PROBE 1 one-word desync between adapters — expect red (non-zero) ---
+FAIL: check-skill-sync — 1 defect(s):
+  - AGENTFW-SYNC blocks differ between the two adapter SKILLs
+exit=1
+
+mutation applied: codex SKILL.md section 9 (D-21/D-22/D-25 paragraph) deleted
+--- PROBE 2 codex paragraph removed — expect red (non-zero) ---
+FAIL: check-skill-sync — 1 defect(s):
+  - AGENTFW-SYNC blocks differ between the two adapter SKILLs
+exit=1
+
+mutation applied: CLAUDE-block.md SCOREBOARD line deleted
+--- NEGATIVE 1a claude-code bootloader SCOREBOARD line deleted — expect red ---
+SKILL_SYNC_OK
+exit=1
+
+mutation applied: codex AGENTS.md SCOREBOARD line deleted
+--- NEGATIVE 1b codex bootloader SCOREBOARD line deleted — expect red ---
+SKILL_SYNC_OK
+exit=1
+
+--- RESTORE CHECK (scratch back to pristine) — expect green ---
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0

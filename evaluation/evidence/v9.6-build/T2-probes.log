@@ -1,0 +1,29 @@
+=== PROBE 0 (control): unmutated scratch copy, delivered checker — expect green
+scratch=/var/folders/rk/6ysygvyd6j59npqqh0k43q680000gn/T/tmp.OPwfpysn99
+LIVENESS_OK: 12 cases, budget 2 cycles / 4 layer2 passes
+T2_D22_OK
+exit=0
+
+=== PROBE 1: delete sub_objective_inherits_root_counters case (root_objective mention retained in description) — expect RED
+case present after mutation: 0
+root_objective still greppable in fixture: 2
+DEFECT: missing required case 'sub_objective_inherits_root_counters'
+exit=1
+
+=== PROBE 1b (reversion detection): SAME case-deleted fixture against pre-v9.6 shipped checker (git show HEAD) — expect GREEN
+checker sha (HEAD): fddf554993fa3c69ab56af2f94c621a869c898fb
+checker sha (delivered): 18d68b121f54b6bbfacc3b511f2486ce7665e397
+LIVENESS_OK: 11 cases, budget 2 cycles / 4 layer2 passes
+T2_D22_OK
+exit=0
+
+=== PROBE 2: set counters_reset true on sub_objective_inherits_root_counters — expect RED
+DEFECT: case 'sub_objective_inherits_root_counters': a case naming a root_objective spends from that root's ledger — resetting counters on decomposition, rename, or a cross-runtime resume is treadmill laundering
+exit=1
+
+=== PROBE 3: zero-byte checker — expect RED
+checker bytes:        0
+exit=1
+
+=== SUMMARY: probe1 RED(exit1) / probe1b-reversion GREEN under HEAD checker(exit0) / probe2 RED(exit1) / probe3 RED(exit1); control GREEN(exit0)
+=== test surface: validate-plan.sh exit=0 (does not exercise liveness checker); release-v9.5.sh exit=0 (liveness invariant PASS); --selftest LIVENESS_SELFTEST_OK exit=0; release-v9.4.sh exit=1 PRE-EXISTING (pins metadata.json to 9.4.0; repo is 9.5.0 — unrelated to this task)

@@ -1,0 +1,9 @@
+=== T4 producer acceptance run ===
+2026-08-01T06:55:55Z
+cwd=/Users/briantaylor/Projects/AgentFW
+--- command ---
+bash -c 'python3 tools/check-skill-sync.py && grep -q "SCOREBOARD" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/codex/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/claude-code/skills/agentfw/SKILL.md && grep -q "RECONCILE" adapters/codex/skills/agentfw/SKILL.md && grep -q "SCOREBOARD" adapters/claude-code/CLAUDE-block.md && grep -q "SCOREBOARD" adapters/codex/AGENTS.md && echo T4_SYNC_OK'
+--- output ---
+SKILL_SYNC_OK
+T4_SYNC_OK
+exit=0
