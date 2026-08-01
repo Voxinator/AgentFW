@@ -1,0 +1,5 @@
+# RED witness — plan-bad-15-carrying-16-field must FAIL with the witness/version keyword
+$ python3 tools/validate-plan tools/fixtures/plan-bad-15-carrying-16-field.md
+FAIL: tools/fixtures/plan-bad-15-carrying-16-field.md — 1 Layer-1 defect(s):
+  - task T1: 'witness_pair' is a schema-1.6 field — schema 1.5 does not define it; declare "version": "1.6" to use witness pairs (wrong schema version)
+exit=1

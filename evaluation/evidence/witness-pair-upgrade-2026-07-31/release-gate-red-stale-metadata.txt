@@ -1,0 +1,6 @@
+# RED probe 1: stale metadata (9.4.0) must fail the v9.5 gate
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+AssertionError: 9.4.0
+release-v9.5.sh: FAIL: metadata.json must report version 9.5.0 and revision r9.5
+exit=1

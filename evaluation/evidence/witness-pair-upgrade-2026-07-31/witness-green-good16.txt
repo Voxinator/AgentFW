@@ -1,0 +1,7 @@
+# GREEN witness — satisfiable 1.6 contract + valid witness records PASSES under schema 1.6
+$ python3 tools/validate-plan --digest tools/fixtures/plan-good-16-witness.md
+PASS: tools/fixtures/plan-good-16-witness.md — 5 requirements, 2 tasks, assurance A2; all Layer-1 checks passed (structure/coverage/known-command-shape lint/witness pair — semantic command strength is a Layer-2 judge question)
+scope note: task T2 serves only nice-to-have requirements (R3) — confirm a human pulled this scope into the current increment
+digest: must=2 nice-to-have=2 (deferred 1) fluff=1 tasks=2
+review tier: single
+exit=0

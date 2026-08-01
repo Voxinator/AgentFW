@@ -1,0 +1,8 @@
+=== /Users/briantaylor/Projects/drydock/docs/failure-routing-fence-isolation-plan.md
+PASS: /Users/briantaylor/Projects/drydock/docs/failure-routing-fence-isolation-plan.md — 4 requirements, 3 tasks, assurance A3; all Layer-1 checks passed (structure/coverage/known-command-shape lint — semantic command strength is a Layer-2 judge question)
+review tier: dual — dispatch two disjoint-input judges after Layer 1, before Layer-2 pass 1
+exit=0
+=== /Users/briantaylor/Projects/drydock/docs/reliable-project-delivery-plan.md
+PASS: /Users/briantaylor/Projects/drydock/docs/reliable-project-delivery-plan.md — 7 requirements, 8 tasks, assurance A3; all Layer-1 checks passed (structure/coverage/known-command-shape lint — semantic command strength is a Layer-2 judge question)
+review tier: dual — dispatch two disjoint-input judges after Layer 1, before Layer-2 pass 1
+exit=0

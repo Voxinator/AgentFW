@@ -23,19 +23,46 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.4.0, released 2026-07-31** — the *operator* release. Five field-driven candidates
-that make the framework answer to the operator: an operator's deliberate full-access/bypass
-choice is a **declared lever, never a plan blocker** (D-16); a plan objective gets a hard
-**review budget** so the 2-pass cap can't be reset by replanning forever (D-2); scope discovered
-after the gate **defers by default** instead of growing the plan (D-18); every requirement
-declares **must / nice-to-have / fluff** with a plain-language justification, and a judge is now
-paid to *cut* unjustified musts, not just find missing ones (D-19, plan schema 1.5, rubric
-C0–C6); and every gate outcome ships with a **plain-language operator digest** whose scope
-counts are machine-checked against the plan block (D-20). The deterministic release gate is
-green; no new behavioral-evaluation round was run for v9.4.0. See
-[the v9.4.0 release notes](RELEASE-NOTES-v9.4.0.md),
-[the v9.3.0 release notes](RELEASE-NOTES-v9.3.0.md) and
+**Status: v9.5.0, released 2026-07-31** — the *witness-pair* release. One field incident, one
+structural fix: an **impossible-to-pass acceptance command** survived every layer of the gate in
+the drydock failure-routing workstream, because red-path calibration only proves a command can
+FAIL — and an impossible command aces every red probe. Plan schema **1.6** now requires every
+`acceptance_command` at A2+ to carry a recorded **witness pair** before Layer-2 dispatch: RED on
+a broken scratch (the existing duty, unchanged) and GREEN on a planner-authored witness tree
+proving the command *can* pass. Witness evidence is **whole-command-only** — each leg is one
+end-to-end run of the entire command string, sha256-matched to the contract, so a single-leg run
+mechanically cannot masquerade as the whole. A command never shown able to pass is rejected at
+plan time (new defect keyword `witness`). The deterministic release gate is green; pre-1.6
+plans validate byte-identically; no new behavioral-evaluation round was run for v9.5.0. See
+[the v9.5.0 release notes](RELEASE-NOTES-v9.5.0.md),
+[the v9.4.0 release notes](RELEASE-NOTES-v9.4.0.md) and
 [Verification & provenance](#verification--provenance).
+
+## What's new in v9.5
+
+One field incident, one theme: a gate that only proves tests can fail structurally rewards
+impossible tests.
+
+- **The witness pair (schema 1.6).** Before Layer-2 dispatch, every `acceptance_command` at A2+
+  carries two recorded runs: red on a deliberately broken scratch, green on a planner-authored
+  **witness tree** — a minimal stub tree that satisfies the contract. The green witness claims
+  exactly one thing ("this command CAN pass") and is never evidence work was done;
+  verification-time green still runs on the real tree. A witness tree an empty implementation
+  would also satisfy is void.
+- **Whole-command-only evidence.** A witness counts only as one end-to-end invocation of the
+  ENTIRE command string, matched to the contract by `command_sha256` — running one leg and
+  reporting the command is inadmissible, and mechanically cannot carry the contract's digest.
+- **Layer-1 enforcement.** `tools/validate-plan` checks presence at A2+, exact record shape,
+  digest equality on both legs, `red.exit_code != 0`, `green.exit_code == 0` — six new fixtures
+  including a regression model of the field incident, where the contradictory command is
+  **rejected at plan time**. New stable defect keyword `witness`.
+- **C2 upgrade.** The plan critic MUST re-execute both witness legs itself and MUST reject a
+  green witness whose tree passes with the deliverables stubbed to nothing; the old "wherever
+  feasible" hatch is scoped to a named `reasoned` infeasibility, never a silent skip. The
+  temporal split ("the command is read as a spec at plan time") is replaced by the witness-pair
+  duty.
+- **Drift fix.** `policy/acceptance-contract.md` gained its missing schema-1.5 section and its
+  versioning header now matches the validator (both had shipped 1.5 in v9.4.0).
 
 ## What's new in v9.4
 
@@ -198,6 +225,7 @@ What r9's quality claims rest on — and what they don't:
 
 - **Built by the process it encodes.** The r9 build and both follow-up passes ran under the full harness: judged plans (Plan-Critique Gate over each plan before dispatch), parallel workers with disjoint file ownership, and independent + adversarial verification of the results.
 - **Externally reviewed, seven rounds.** Seven rounds of adversarial external review (GPT 5.6 Sol), every finding independently re-reproduced against the tree before acceptance. Review #7 verdict: approved, **zero open findings**.
+- **v9.5 deterministic release evidence:** `tools/tests/release-v9.5.sh` re-pins the gate to the v9.5.0 identity and adds the witness-pair assertions — the schema-1.6 policy text on both policy surfaces and both judge prompts, the six 1.6 fixtures (including the plan-time rejection of the round-3-style contradictory command and the digest-forgery red path), the `--digest` count oracle on both the 1.5 and 1.6 fixtures — on top of every prior suite. The pre-1.6 byte-identical regression (144 old-vs-new validator invocations; sole diff is the precedented migrate-pointer) is recorded with raw output in `evaluation/evidence/witness-pair-upgrade-2026-07-31/`, independently re-derived by an input-curated verifier.
 - **v9.4 deterministic release evidence:** `tools/tests/release-v9.4.sh` re-pins the gate to the v9.4.0 identity and adds D-16/D-2/D-18/D-19/D-20 assertions — the operator-relaxation rule, the liveness decision-table invariant (`check-liveness-invariants.py` over `evaluation/fixtures/liveness-budget.json`), the schema-1.5 fixture harness with the `--digest` count oracle, the C0–C6 rubric surfacing, and ledger completeness for D-2 + D-14–D-20 — on top of every prior suite.
 - **v9.3 deterministic release evidence:** `tools/tests/release-v9.3.sh` re-pins the gate to the v9.3.0 identity and adds D-14/D-15 assertions — the 11-key capability schema with validator-enforced tier-ladder sub-fields, the byte-identical adapter SKILL sync (`check-skill-sync.py`), and the sleep-posture floor-halt invariant (`check-posture-invariants.py` over `evaluation/fixtures/sleep-posture.json`) — each red-path probed in the release record.
 - **v9.2 deterministic release evidence:** `tools/tests/release-v9.2.sh` re-pins the same gate to the v9.2.0 identity and adds D-1 assertions — the override policy text, the schema 1.4 fixtures, and the adapter sync — each red-path probed in the release record.
@@ -211,7 +239,7 @@ What r9's quality claims rest on — and what they don't:
 
 ```
 agentfw/
-├── metadata.json                  # Project metadata (version 9.4.0, install routing)
+├── metadata.json                  # Project metadata (version 9.5.0, install routing)
 ├── README.md                      # This file
 ├── CHANGELOG.md                   # Version history with audit trail
 ├── DESIGN.md                      # Historical r8 design spec with a v9.1 current-release banner
@@ -220,7 +248,7 @@ agentfw/
 ├── policy/                        # r9 semantic policy (platform-neutral)
 │   ├── core.md                    # Policy core — critical rules, verification tiers, invariants
 │   ├── assurance-model.md         # A0–A4 derivation
-│   ├── acceptance-contract.md     # Contract v2 + additive plan-block schemas (1.3 current)
+│   ├── acceptance-contract.md     # Contract v2 + additive plan-block schemas (1.6 current)
 │   ├── plan-critique.md           # Two-layer Plan-Critique Gate
 │   ├── capability-contract.md     # Capability claims: available/configured/verified
 │   ├── recovery.md                # Failure scope, contamination, retry budget

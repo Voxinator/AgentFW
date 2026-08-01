@@ -25,8 +25,18 @@ Run every check and record a per-check result (clean | concern | BLOCKER) with q
   `acceptance_command` — not merely described in `expected_signal` prose. If the command can exit
   0 without exercising the lever ⇒ BLOCKER. If the task's `risk` names a production-environment
   failure (concurrency, trust-proxy, streaming/buffering, clock), a command must exercise THAT
-  layer. Tier-1 lever = at least one negative/regression assertion the command RUNS. Temporal
-  split: at plan time the command is read as a spec — it need not run green on greenfield. For
+  layer. Tier-1 lever = at least one negative/regression assertion the command RUNS. Witness
+  pair (schema 1.6): at plan time the command need not run green on the GREENFIELD tree, but the
+  contract must carry a recorded witness pair — red on a broken scratch, green on a
+  planner-authored witness tree proving the command CAN pass. You MUST re-execute BOTH witness
+  legs yourself: red on a scratch you break yourself, green on the plan's witness tree (or one
+  you reconstruct from its record). You MUST reject a green witness whose tree still passes with
+  the deliverables stubbed to nothing — that witness tree is void. A witness (red or green)
+  counts only as one end-to-end invocation of the ENTIRE command string, digest-matched to the
+  contract; a single-leg run reported as the whole command is inadmissible. When re-execution is
+  genuinely infeasible in your environment, tag the C2 result `reasoned` and state the
+  infeasibility — a silent skip is a policy violation. On pre-1.6 contracts the old temporal
+  split applies (command read as spec at plan time). For
   EVERY task, attempt an empirical C2 probe; where feasible, execute the acceptance command against
   a minimal hostile stub or disposable scratch artifact. Tag every C2 result and finding
   **demonstrated** when you ran a probe (quote the command, live output, and exit code), or

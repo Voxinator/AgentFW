@@ -151,7 +151,7 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-Schema `"1.5"` is the schema of record; `"1.1"` through `"1.4"` remain valid for older
+Schema `"1.6"` is the schema of record; `"1.1"` through `"1.5"` remain valid for older
 plans. A `"version": "1"` block is rejected by default and accepted only via `validate-plan
 --legacy` for historical provenance; never author a new plan against v1. Schema 1.1 still defines
 the structured verification-tier fields, 1.2 adds plan-review tier and failure surfaces, and 1.3
@@ -166,12 +166,20 @@ tier, schema 1.5 (D-19), adds necessity tiers: EVERY requirement carries `necess
 naming the concrete failure without it. Coverage becomes tier-aware: an uncovered
 nice-to-have is valid deferred scope (the block doubles as the next-increment ledger), and a
 task serving a fluff requirement is a defect. `validate-plan --digest` emits the machine
-tier counts the operator digest (below) must match.
+tier counts the operator digest (below) must match. The current tier, schema 1.6, adds the
+**witness pair**: at A2+ every contract carries `witness_pair` — recorded red AND green runs of
+the WHOLE `acceptance_command` (red on a broken scratch, green on a planner-authored witness
+tree), each leg digest-matched to the contract's exact command string with
+`red.exit_code != 0` and `green.exit_code == 0`. A command never shown able to pass is rejected
+at plan time (defect keyword `witness`).
 
 **Producer red-path gate (before Layer 2):** the planner, as producer of each contract, executes
 its `acceptance_command` against at least one deliberately broken scratch copy and records the
 non-zero/red output. Producers repeat every contracted 1.3 mutation after implementation; the
-required verifier independently executes every probe on scratch copies. The command must be
+required verifier independently executes every probe on scratch copies. Under schema 1.6 the
+red run is one leg of the witness pair: the producer also records the GREEN witness — the whole
+command exiting 0 on a planner-authored witness tree — before Layer-2 dispatch; the pair extends
+the red-path duty, never replaces it. The command must be
 exit-code gated with no pipe before a gating `&&`; emit an explicit success signal last, only after
 an immediately preceding successful `&&`, so every clause gates the terminal signal.
 

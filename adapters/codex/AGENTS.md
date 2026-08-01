@@ -1,6 +1,6 @@
 # AgentFW r9 — Assurance Kernel (Codex bootloader)
 
-Installed release: **AgentFW v9.4.0** — when asked what version is running, answer from this
+Installed release: **AgentFW v9.5.0** — when asked what version is running, answer from this
 line, not from feature-paragraph labels below (those name the release each feature shipped in).
 
 Before any material action, derive an assurance level and emit the marker. Full policy lives in
@@ -60,3 +60,9 @@ there.
 flagship tier is a human-gated economic escalation. Sleep (unattended) mode auto-takes the
 recommended option at non-floor forks but halts like headless at the floor (incl. flagship
 escalation). See `policy/model-dispatch.md` and the sleep posture in `policy/assurance-model.md`.
+
+**Witness pair (v9.5).** Schema 1.6: before Layer-2 dispatch every `acceptance_command`
+carries recorded proof it can FAIL **and** PASS — red on a broken scratch (the existing duty,
+unchanged) and green on a planner-authored witness tree. Whole-command-only evidence: each leg
+is one end-to-end run of the entire command string, digest-matched to the contract. A command
+never shown able to pass is rejected at plan time (defect keyword `witness`).

@@ -1,5 +1,37 @@
 # AgentFW Changelog
 
+## v9.5.0 (2026-07-31) — RELEASED
+
+The witness-pair release. Field driver: in the drydock failure-routing workstream an
+IMPOSSIBLE-to-pass acceptance command survived Layer 1, both Layer-2 judges, and three producer
+rounds — red-path calibration only proves a command can FAIL, and an impossible command aces
+every red probe. Evidence:
+`drydock/.agentfw/evidence/failure-routing/receipt-authority-redesign-2026-07-31/round-3/layer2-pass2/VERDICTS-SUMMARY.md`.
+
+- **Witness pair** (`policy/acceptance-contract.md` § The witness pair; plan schema **1.6**, the
+  new schema of record; new defect keyword `witness`): before Layer-2 dispatch every
+  `acceptance_command` at A2+ carries a recorded pair — RED on a broken scratch (the schema-1.3
+  duty, unchanged) and GREEN on a planner-authored witness tree proving the command CAN pass.
+  The green witness claims exactly one thing — "this command CAN pass" — never that work was
+  done; verification-time green still runs on the REAL tree. A command never shown able to pass
+  is rejected at plan time.
+- **Whole-command-only evidence**: each witness leg is one end-to-end run of the ENTIRE command
+  string, matched to the contract by `command_sha256`; single-leg runs reported as the whole
+  command are inadmissible and mechanically cannot carry the contract's digest.
+- **Layer 1 enforcement** (`tools/validate-plan`): `witness_pair` presence at A2+, exact shape,
+  digest equality on both legs, `red.exit_code != 0`, `green.exit_code == 0`; pre-1.6 schemas
+  carrying the field rejected naming 1.6. Six new fixtures including the round-3 regression
+  (`plan-bad-16-round3-contradiction.md`). Pre-1.6 validation proven byte-identical (144
+  invocations old-vs-new; sole diff is the precedented moving migrate-pointer in the
+  legacy-"1" diagnostic): `evaluation/evidence/witness-pair-upgrade-2026-07-31/`.
+- **C2 upgrade** (`policy/plan-critique.md`, both judge prompts): SHOULD→MUST — the critic
+  re-executes both witness legs itself and rejects a green witness whose tree passes with the
+  deliverables stubbed to nothing; the "wherever feasible" hatch is scoped (named `reasoned`
+  infeasibility), never silent. The temporal split is replaced by the witness-pair duty.
+- **Drift fix**: `policy/acceptance-contract.md` had no schema-1.5 section and still named 1.4
+  the schema of record (validator and plan-critique.md shipped 1.5 in v9.4.0); the section now
+  exists and the header matches the validator.
+
 ## v9.4.0 (2026-07-31) — RELEASED
 
 The operator release. Five field-driven candidates that make the framework answer to the

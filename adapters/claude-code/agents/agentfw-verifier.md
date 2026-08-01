@@ -18,6 +18,13 @@ Rules:
    disk, and record the actual output and exit code. If your dispatch contains producer-recorded
    output, ignore it as proof — it is only a pointer to what to re-run. A verdict that merely
    *reasons about* whether checks would pass is ZERO verification.
+   **Whole-command-only evidence (schema 1.6).** Your run is one end-to-end invocation of the
+   ENTIRE `acceptance_command` string exactly as the contract states it — never one leg of a
+   multi-leg command reported as the whole. On schema-1.6 contracts, confirm both `witness_pair`
+   legs' `command_sha256` match the sha256 of the contract's exact command string; a mismatch is
+   a finding (inadmissible witness). The green witness proved only that the command CAN pass —
+   at verification time the green run happens on the REAL tree (this rule), and the red duty
+   (rule 4) is unchanged.
 2. **Evidence rules.** Verified requires recorded machine-check output produced after the change,
    captured by you. Freshness matters: evidence predating the change is invalid. A long-running
    service that was not restarted is unverified.

@@ -1,0 +1,5 @@
+# RED witness — plan-bad-16-digest-mismatch must FAIL with the witness/version keyword
+$ python3 tools/validate-plan tools/fixtures/plan-bad-16-digest-mismatch.md
+FAIL: tools/fixtures/plan-bad-16-digest-mismatch.md — 1 Layer-1 defect(s):
+  - task T1: witness green record's command_sha256 does not match the sha256 of the contract's acceptance_command — whole-command-only evidence: a record of a partial or drifted command cannot carry the contract's digest (witness digest mismatch)
+exit=1

@@ -17,6 +17,7 @@ whose discriminating lever lives only in prose verifies nothing — a wrong impl
 | `expected_signal` | The exact output/exit pattern that means PASS — anchored so it cannot also match a fail line (see footguns below). |
 | `negative_cases[]` | Disconfirming assertions the command runs — inputs/states that a wrong implementation would mishandle. **REQUIRED whenever `risk` is present.** |
 | `mutation_probes[]` | Schema 1.3 roster of deliberate scratch-copy breakages, each shaped exactly as `{mutation: non-empty string, expected: "red"}`. The acceptance command must exit non-zero and must not emit its terminal success signal under each mutation. |
+| `witness_pair` | Schema 1.6 record that the WHOLE `acceptance_command` has been run twice before Layer-2 dispatch: `red` on a deliberately broken/bare scratch (exit ≠ 0) and `green` on a planner-authored witness tree (exit 0). Each leg carries `tree`, `command_sha256` (digest of the contract's exact command string), `exit_code`, and `evidence_path`. The green leg claims exactly one thing — "this command CAN pass" — never that work was done. |
 | `risk` | The failure this task must not ship — name the layer (concurrency, trust-proxy, streaming/buffering, clock, data loss); the command must exercise THAT layer. |
 | `evidence` | Artifact types the check records (test log, build output, diff, rendered page) + **freshness: `produced_after_change`** — evidence older than the change it claims to verify is void. |
 | `rerunnable` | Boolean — the check can be executed again, from the tree, by a context that did not produce the work. Non-rerunnable evidence is testimony. |
@@ -47,6 +48,36 @@ the contracted probes after the change as part of its own checks, and the verifi
 required tier executes every probe independently on scratch copies before returning a verified
 verdict. `expected: "red"` means the acceptance command exits non-zero **and** cannot reach its
 terminal success signal. Record both green-path and red-path output as fresh evidence.
+
+### The witness pair (schema 1.6) — prove the command CAN pass, at plan time
+
+The red-path self-probe proves an `acceptance_command` can FAIL; it never proves the command can
+PASS — an impossible-to-pass command aces every red probe while being incapable of ever going
+green, which makes it indistinguishable from the strictest command in the room. Under schema 1.6,
+before Layer-2 dispatch every `acceptance_command` therefore carries TWO recorded runs — the
+**witness pair**:
+
+- **red** — the existing duty, unchanged: one end-to-end run on a deliberately broken or bare
+  scratch, exiting non-zero without the terminal success signal;
+- **green** — one end-to-end run on a **witness tree**: a planner-authored minimal tree (stubs
+  allowed) that satisfies the contract, labeled `witness-tree` in its evidence record. The green
+  witness claims exactly one thing — *this command CAN pass* — and is never evidence that work
+  was done. No green witness ⇒ the gate rejects the plan at plan time.
+
+**Whole-command-only evidence.** A witness (red or green) counts only if it is one recorded
+end-to-end invocation of the ENTIRE command string from the contract, matched to the contract by
+`command_sha256` — the sha256 of the exact `acceptance_command` string. Running one leg of a
+multi-leg command and reporting the whole command is inadmissible, and its record cannot carry
+the contract's digest.
+
+**Void witness trees.** A witness tree that an EMPTY implementation would also satisfy is void.
+The mechanical half of the enforcement is the red witness on the bare scratch; the semantic half
+is a C2 judge duty — reject a green witness whose tree still passes with the deliverables stubbed
+to nothing (`policy/plan-critique.md`). Raw transcripts live beside the plan (e.g.
+`.agentfw/evidence/<plan>/witness/`); the plan block's `witness_pair` field carries the
+machine-checkable summary per contract (field table in the schema 1.6 section below). At
+verification time the green path runs on the REAL tree per the tiers above — the witness tree
+never substitutes for that.
 
 Shell success signals are ordered, not merely present: each checking clause must gate the next by
 exit status; no pipeline may appear before a gating `&&`; and an explicit success signal is emitted
@@ -122,12 +153,12 @@ each selects the corresponding terminal STATE `verified_producer` / `verified_in
 valid field values, and the validator rejects them; write `independent`, never `verified_independent`,
 in the field.
 
-## Block versioning — `"1.4"` is the schema of record; `"1.1"`/`"1.2"`/`"1.3"` remain valid; `"1"` is legacy-only
+## Block versioning — `"1.6"` is the schema of record; `"1.1"`–`"1.5"` remain valid; `"1"` is legacy-only
 
-The plan's embedded machine-readable block declares a schema `version`. Schema `"1.4"` is the
-**schema of record** — author new plans against it (see the schema 1.4 section below). Schemas
-`"1.1"`, `"1.2"`, and `"1.3"` remain valid for plans that predate 1.4: default validation accepts
-all four and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
+The plan's embedded machine-readable block declares a schema `version`. Schema `"1.6"` is the
+**schema of record** — author new plans against it (see the schema 1.6 section below). Schemas
+`"1.1"` through `"1.5"` remain valid for plans that predate 1.6: default validation accepts
+all six and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
 HISTORICAL PROVENANCE ONLY — re-checking plans authored before the 1.1 schema — and is accepted
 solely under `tools/validate-plan --legacy`, which applies the original v1 rules. Never author a new
 plan against v1. Unknown version strings are rejected naming the version.
@@ -207,7 +238,7 @@ This lint is deliberately narrower than a shell parser and does not claim that c
 are semantically strong. Producer red-path execution and independent mutation probing provide that
 evidence.
 
-## Schema 1.4 — the schema of record: override follow-up tests + the `overrides` ledger
+## Schema 1.4 — retained: override follow-up tests + the `overrides` ledger
 
 Schema `"1.4"` is ADDITIVE over 1.3: every 1.1, 1.2, and 1.3 rule applies unchanged. It adds one
 OPTIONAL plan-level field — the mechanical record of a human delivery override
@@ -245,6 +276,47 @@ naming schema 1.4 (keyword `version`). Existing 1.1–1.3 plans without the fiel
 validate exactly as before. The ledger is authored by the model at the override offer — zero human
 burden — and the safety floor is out of its reach: floor blockers never appear as `overrides`
 entries because they cannot be waived at all.
+
+## Schema 1.5 — retained: necessity tiers (D-19)
+
+Schema `"1.5"` is ADDITIVE over 1.4: every 1.1–1.4 rule applies unchanged. It adds the
+requirement-inflation defense — EVERY requirement carries `necessity` ∈ `must` | `nice-to-have` |
+`fluff`, a `must` additionally carries a non-empty plain-language `because` naming the concrete
+failure without it, and coverage becomes tier-aware (only `must` requirements demand a covering
+task; an uncovered nice-to-have is valid deferred scope; a task serving `fluff` is a defect).
+Full semantics, the C6 necessity audit, and the `--digest` operator-digest counts:
+`policy/plan-critique.md` (Layer-1 rule 15 and the Operator digest section). The
+`necessity`/`because` fields are not defined by schemas 1.1–1.4; an older schema carrying them is
+rejected naming schema 1.5 (keyword `version`).
+
+*(This section was added retroactively when 1.6 shipped — 1.5 was defined in
+`policy/plan-critique.md` and `tools/validate-plan` from v9.4.0, and this file's versioning
+header had drifted. The validator was already the authority; the prose now matches it.)*
+
+## Schema 1.6 — the schema of record: the witness pair + whole-command evidence
+
+Schema `"1.6"` is ADDITIVE over 1.5: every 1.1–1.5 rule applies unchanged. It adds one
+per-contract field — the machine-checkable summary of the witness pair defined in "The witness
+pair (schema 1.6)" above — and a new stable defect keyword `witness`.
+
+| Field (1.6) | Level | Mandatory at | Rule |
+|---|---|---|---|
+| `witness_pair` | per contract | A2+ (optional below A2; shape/digest-checked when present) | an object containing exactly `red` and `green`; each leg an object containing exactly `tree` (non-empty string; the green leg's tree is the planner-authored witness tree, labeled `witness-tree` in its evidence record), `command_sha256` (the sha256 hex digest of the contract's exact `acceptance_command` string), `exit_code` (a JSON integer — `red` ≠ 0, `green` = 0), and `evidence_path` (non-empty string; the raw transcript beside the plan) |
+
+What Layer 1 checks mechanically: presence at A2+, exact shape, BOTH legs' `command_sha256`
+equal to the digest of the contract's own `acceptance_command` (the whole-command rule made
+mechanical — a record produced from a partial or drifted command cannot carry the contract's
+digest), `red.exit_code != 0`, and `green.exit_code == 0`. A round-3-style impossible command is
+rejected at plan time: no honest record can put `exit_code: 0` on its green leg. What Layer 1
+does NOT check: the honesty of the witness tree (a C2 judge duty — the critic re-executes both
+legs and rejects a green witness whose tree passes with the deliverables stubbed to nothing) and
+the existence/content of `evidence_path` (the validator stays a hermetic single-file checker;
+judges read the transcripts). The witness pair never weakens the red-path duty: the pair is red
+AND green, never green instead.
+
+The `witness_pair` field is not defined by schemas 1.1–1.5; an older schema carrying it is
+rejected with a diagnostic naming schema 1.6 (keyword `version`). Existing 1.1–1.5 plans without
+the field continue to validate exactly as before.
 
 ## Evidence classes — non-code and mixed work
 
@@ -325,7 +397,8 @@ layer down does not discharge it.
 
 Structural completeness of contracts (non-empty `criteria` + `acceptance_command` + `expected_signal`;
 `risk` ⇒ non-empty `negative_cases`; coverage; acyclic deps), schema 1.3 mutation-probe shape and
-presence, and the known weak command shapes above are machine-checked by `tools/validate-plan`
+presence, schema 1.6 witness-pair presence/shape/digest/exit-codes, and the known weak command
+shapes above are machine-checked by `tools/validate-plan`
 against the plan's embedded `json agentfw-plan` block — see `policy/plan-critique.md` Layer 1. Whether
 the command is STRONG enough to exercise the lever remains a Layer-2 judge question; passing the
 shape lint does not answer it.

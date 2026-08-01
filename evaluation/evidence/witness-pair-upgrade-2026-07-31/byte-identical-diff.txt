@@ -1,0 +1,8 @@
+312c312
+<   - plan: legacy schema version "1" — migrate to "1.5" or run with --legacy (version "1" is accepted for historical provenance only)
+---
+>   - plan: legacy schema version "1" — migrate to "1.6" or run with --legacy (version "1" is accepted for historical provenance only)
+319c319
+<   - plan: legacy schema version "1" — migrate to "1.5" or run with --legacy (version "1" is accepted for historical provenance only)
+---
+>   - plan: legacy schema version "1" — migrate to "1.6" or run with --legacy (version "1" is accepted for historical provenance only)

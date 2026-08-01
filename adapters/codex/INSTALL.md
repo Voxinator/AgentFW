@@ -1,6 +1,6 @@
 # AgentFW r9 — Codex install (manual)
 
-Current release: **AgentFW v9.4.0**. The `r9` block markers are stable major-version install
+Current release: **AgentFW v9.5.0**. The `r9` block markers are stable major-version install
 markers. v9.2.0 is deterministically verified; it carries forward v9.0.0's bounded behavioral
 evidence and does not claim a new behavioral-evaluation round.
 

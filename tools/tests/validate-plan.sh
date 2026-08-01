@@ -99,8 +99,8 @@ expect_policy_text "$ACCEPTANCE_POLICY" 'success signal is emitted'
 # Regression guards for policy/plan-critique.md: reverting the schema of
 # record, dropping mutation contracts, or dropping any known weak command
 # shape must make this harness fail even when all fixtures still pass.
-expect_policy_text "$PLAN_POLICY" 'mode — `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`, or `"1.5"`'
-expect_policy_text "$PLAN_POLICY" '**schema 1.5 is the schema of record**'
+expect_policy_text "$PLAN_POLICY" 'mode — `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`, `"1.5"`, or `"1.6"`'
+expect_policy_text "$PLAN_POLICY" '**schema 1.6 is the schema of record**'
 expect_policy_text "$PLAN_POLICY" \
   '**Schema 1.3 mutation probes + known command-shape lint (additive over 1.2):**'
 expect_policy_text "$PLAN_POLICY" \
@@ -162,5 +162,46 @@ expect_policy_text "$PLAN_POLICY" \
   '**Schema 1.5 necessity tiers (additive over 1.4):**'
 expect_policy_text "$PLAN_POLICY" 'C6 necessity audit'
 expect_policy_text "$PLAN_POLICY" '## Operator digest'
+
+# Schema 1.6 witness pair: positives, whole-command digest matching, the
+# round-3 impossible-command regression, and hostile shapes.
+CRITIC="$ROOT/adapters/claude-code/agents/agentfw-plan-critic.md"
+VERIFIER_PROMPT="$ROOT/adapters/claude-code/agents/agentfw-verifier.md"
+expect_pass "$FIXTURES/plan-good-16-witness.md" "witness pair"
+digest16_output=$(python3 "$VALIDATOR" --digest \
+  "$FIXTURES/plan-good-16-witness.md" 2>&1) \
+  || fail "--digest rejected the good 1.6 fixture: $digest16_output"
+[[ $digest16_output == *"digest: must=2 nice-to-have=2 (deferred 1) fluff=1 tasks=2"* ]] \
+  || fail "--digest counts did not match the 1.6 fixture; got: $digest16_output"
+expect_fail "$FIXTURES/plan-bad-16-missing-witness.md" "missing witness pair"
+expect_fail "$FIXTURES/plan-bad-16-round3-contradiction.md" \
+  "never been shown able to pass"
+expect_fail "$FIXTURES/plan-bad-16-round3-contradiction.md" \
+  "rejected at plan time (witness exit code)"
+expect_fail "$FIXTURES/plan-bad-16-digest-mismatch.md" \
+  "witness digest mismatch"
+expect_fail "$FIXTURES/plan-bad-16-witness-shape.md" \
+  "exactly the keys 'red' and 'green'"
+expect_fail "$FIXTURES/plan-bad-16-witness-shape.md" \
+  "'exit_code' must be a JSON integer"
+expect_fail "$FIXTURES/plan-bad-15-carrying-16-field.md" "schema-1.6 field"
+expect_policy_text "$ACCEPTANCE_POLICY" \
+  '### The witness pair (schema 1.6) — prove the command CAN pass, at plan time'
+expect_policy_text "$ACCEPTANCE_POLICY" '**Whole-command-only evidence.**'
+expect_policy_text "$ACCEPTANCE_POLICY" \
+  'A witness tree that an EMPTY implementation would also satisfy is void'
+expect_policy_text "$PLAN_POLICY" \
+  '**Schema 1.6 witness pair (additive over 1.5):**'
+expect_policy_text "$PLAN_POLICY" \
+  '`witness` covers every schema-1.6 `witness_pair` defect'
+expect_policy_text "$PLAN_POLICY" \
+  '**Witness pair replaces the temporal split (1.6):**'
+expect_policy_text "$PLAN_POLICY" 'it never weakens or replaces it'
+# The C2 stub-tree rejection duty must live in the judge prompt, or judges
+# will not act on it (the D-level fixture for the judge instruction).
+expect_policy_text "$CRITIC" \
+  'MUST reject a green witness whose tree still passes with'
+expect_policy_text "$CRITIC" 'the deliverables stubbed to nothing'
+expect_policy_text "$VERIFIER_PROMPT" '**Whole-command-only evidence (schema 1.6).**'
 
 printf 'validate-plan.sh: ALL CHECKS PASSED\n'

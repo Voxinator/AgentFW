@@ -20,8 +20,8 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
 
 1. The block parses as valid JSON with no duplicate object keys at any level (last-wins duplicate
    keys are rejected as silently-accepted ambiguity), and `version` is present and — in default
-   mode — `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`, or `"1.5"`: **schema 1.5 is the schema of record**
-   (author new plans against it; 1.1 through 1.4 remain valid for plans that predate it). A `"version": "1"`
+   mode — `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`, `"1.5"`, or `"1.6"`: **schema 1.6 is the schema of record**
+   (author new plans against it; 1.1 through 1.5 remain valid for plans that predate it). A `"version": "1"`
    block is rejected as a legacy schema version; unknown version strings are rejected naming the
    version. The `--legacy` flag accepts `"version": "1"` blocks under the ORIGINAL v1 rules
    (rules 2–10 below; none of rules 11–13's newer fields are required — the task-id precheck still
@@ -103,6 +103,19 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
     1.1–1.4 block carrying `necessity`/`because` is rejected naming schema 1.5 (keyword
     `version`). The `--digest` flag prints the machine-derived tier counts the operator digest
     must match (see the Operator digest section below).
+16. **Schema 1.6 witness pair (additive over 1.5):** a `"1.6"` block enforces every 1.1–1.5 rule
+    above PLUS the witness-pair duty (full semantics:
+    `policy/acceptance-contract.md` § The witness pair). At A2+, EVERY contract carries
+    `witness_pair` — an object containing exactly `red` and `green`, each leg an object
+    containing exactly `tree` (non-empty string), `command_sha256`, `exit_code` (a JSON
+    integer), and `evidence_path` (non-empty string). Mechanically enforced: BOTH legs'
+    `command_sha256` equal the sha256 hex digest of the contract's exact
+    `acceptance_command` string — the whole-command-only evidence rule; a record produced from a
+    partial or drifted command cannot carry the contract's digest — `red.exit_code != 0`, and
+    `green.exit_code == 0` (an impossible-to-pass command is rejected at plan time: no honest
+    record can put exit 0 on its green leg). Below A2 the field is optional but fully checked
+    when present. A 1.1–1.5 block carrying `witness_pair` is rejected naming schema 1.6
+    (keyword `version`). Layer 1 does not judge witness-tree honesty — that is C2's duty (below).
 
 **Schema 1.3 red-path execution duty:** Layer 1 validates the declared mutation roster and the
 three known weak command shapes; it does not execute mutation probes. Before Layer 2 dispatch, the
@@ -110,7 +123,11 @@ contract producer MUST execute every proposed `acceptance_command` against a del
 scratch copy and record the raw non-zero/red result. After implementation, the implementation
 producer repeats every contracted probe on scratch copies, and the verifier at the contract's
 required tier independently executes every probe on fresh scratch copies. Each probe passes only
-when the command exits non-zero and does not emit its terminal success signal.
+when the command exits non-zero and does not emit its terminal success signal. Under schema 1.6
+this red run is one leg of the mandatory witness pair: the same producer also records the GREEN
+witness — the whole command exiting 0 on a planner-authored witness tree — before Layer-2
+dispatch (`policy/acceptance-contract.md` § The witness pair). The pair extends the red-path
+duty; it never weakens or replaces it.
 
 Exit 0 + `PASS` on success; on any failure, non-zero exit with messages naming the offending
 task/requirement id and defect class. All defects are reported, not just the first.
@@ -118,7 +135,7 @@ task/requirement id and defect class. All defects are reported, not just the fir
 **Defect-keyword contract (stable, grep-able):** harness-facing Layer-1 diagnostics carry one or
 more of the stable defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`,
 `empty`, `duplicate`, `tier`, `review`, `failure_surface`, `mutation`, `command`, `version`,
-`override`, `necessity`. A
+`override`, `necessity`, `witness`. A
 diagnostic may carry a general and a specific keyword together; fixtures should key on the most
 specific stable keyword. `tier` covers every tier-derivation defect — a
 missing/invalid `required_verification_tier`, a missing/invalid `integration_seam` or
@@ -129,7 +146,9 @@ defects; `mutation` covers every schema-1.3 `mutation_probes` presence and shape
 `command` covers the three schema-1.3 weak acceptance-command shapes; `override` covers every
 schema-1.4 `overrides` ledger shape defect; `necessity` covers every schema-1.5 necessity-tier
 defect — a missing/invalid `necessity`, a must without `because`, or a task serving fluff
-(requirement inflation); `empty` includes the task-id
+(requirement inflation); `witness` covers every schema-1.6 `witness_pair` defect — a missing or
+malformed pair, a leg whose `command_sha256` does not match the contract's `acceptance_command`
+digest, or wrong exit codes (red = 0 or green ≠ 0); `empty` includes the task-id
 precheck; `version` covers legacy-`"1"`, unknown-version, and
 older-schema-carrying-newer-schema-field rejections, the legacy message also naming `--legacy`.
 Harness code and fixtures key on these words; changing them is a breaking schema change to this
@@ -142,10 +161,15 @@ shape the narrow lint does not recognize. Producer red-path probes provide execu
 Layer 2 still judges semantic reachability. A Layer-1 PASS raises the floor; it green-lights nothing
 semantically.
 
-**Temporal split:** at plan time the `acceptance_command` is read as a spec — it need not run green
-on a greenfield tree — but schema-1.3 red-path self-probes must run as specified above. At
-verification time both its green path and every contracted red path must run, and be re-run by the
-verifier at the required tier.
+**Witness pair replaces the temporal split (1.6):** at plan time the `acceptance_command` still
+need not run green on the GREENFIELD tree — the implementation does not exist yet — but that is
+no longer a waiver of green evidence entirely: under schema 1.6 the command must carry a recorded
+witness pair before Layer-2 dispatch — RED on a deliberately broken scratch (the schema-1.3 duty
+above, unchanged) and GREEN on a planner-authored witness tree proving the command CAN pass
+(`policy/acceptance-contract.md` § The witness pair). A command that has never been shown able to
+pass is rejected at plan time, not discovered impossible after burning Layer-2 passes. At
+verification time both its green path — now on the REAL tree — and every contracted red path must
+run, and be re-run by the verifier at the required tier.
 
 ## Layer 2 — semantic judge (C0–C6 rubric)
 
@@ -165,8 +189,15 @@ Each check with its one-line pass test:
   implementation makes the command exit non-zero, and the command exercises the layer the `risk` names
   (concurrency, trust-proxy, streaming/buffering, clock ⇒ blocker if unexercised). Tier-1 lever = ≥1
   negative/regression assertion the command RUNS; Tier-2 = ≥1 disconfirming criterion. The critic
-  MUST attempt an empirical C2 probe for every task and SHOULD execute the command against a minimal
-  hostile stub or disposable scratch artifact wherever feasible. Every C2 result and finding is
+  MUST attempt an empirical C2 probe for every task. On schema-1.6 contracts the probe duty is
+  concrete: the critic MUST re-execute BOTH witness legs itself — red on a scratch it breaks
+  itself, green on the plan's witness tree (or one it reconstructs from the record) — and MUST
+  reject a green witness whose tree still passes with the deliverables stubbed to nothing (a
+  void witness tree). The former "wherever feasible" hatch is SCOPED, not open-ended: when
+  re-execution is genuinely infeasible in the critic's environment, the C2 result is tagged
+  `reasoned` with the infeasibility stated, and the producer's witness records stand as producer
+  evidence only — a silent skip is a policy violation; an infeasibility is named. Every C2 result
+  and finding is
   tagged **demonstrated** (the critic ran a probe and records its command, live output, and exit code)
   or **reasoned** (execution was infeasible and the critic states why). A reasoned inference must
   never be presented as demonstrated. Demonstrated blockers stand unless the plan is fixed or the

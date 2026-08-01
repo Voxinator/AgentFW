@@ -1,0 +1,3 @@
+# RED probe 2: schema-of-record reverted to 1.5 in plan-critique.md must fail the v9.5 gate
+release-v9.5.sh: FAIL: policy/plan-critique.md is missing required text: **schema 1.6 is the schema of record**
+exit=1

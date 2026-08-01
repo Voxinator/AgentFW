@@ -8,9 +8,9 @@ every deterministic (Layer-1) check from policy/plan-critique.md:
 
   - block parses as valid JSON with NO duplicate object keys at any level
     (a last-wins duplicated key is silently-accepted ambiguity); `version`
-    present and, in DEFAULT mode, "1.1", "1.2", "1.3", "1.4", or "1.5" —
-    schema 1.5 is the schema of record; 1.1 through 1.4 remain valid for
-    plans that predate it.
+    present and, in DEFAULT mode, "1.1", "1.2", "1.3", "1.4", "1.5", or
+    "1.6" — schema 1.6 is the schema of record; 1.1 through 1.5 remain
+    valid for plans that predate it.
     A "version": "1" block is rejected as a legacy schema version; unknown
     version strings are rejected naming the version
   - `--legacy` accepts "version": "1" blocks under the ORIGINAL v1 rules —
@@ -120,6 +120,27 @@ necessity tiers (D-19 — requirement-inflation defense):
 `necessity`/`because` are NOT defined by schemas 1.1-1.4. A block carrying
 them must declare schema 1.5; older schemas carrying them are rejected.
 
+Version "1.6" blocks enforce EVERY 1.5 rule above (1.6 is additive) plus
+the witness pair (whole-command pass/fail evidence at plan time):
+
+  - assurance A2+ => EVERY contract carries `witness_pair`, an object with
+    exactly the keys `red` and `green`; each leg an object with exactly
+    `tree` (non-empty string), `command_sha256`, `exit_code` (JSON
+    integer), and `evidence_path` (non-empty string)   [keyword: witness]
+  - BOTH legs' `command_sha256` must equal the sha256 hex digest of the
+    contract's exact `acceptance_command` string — whole-command-only
+    evidence: a record produced from a partial or drifted command cannot
+    carry the contract's digest                        [keyword: witness]
+  - red.exit_code != 0 and green.exit_code == 0 — a command never shown
+    able to pass (an impossible command) is rejected at plan time
+                                                       [keyword: witness]
+  - below A2 the field is optional but fully checked when present. Layer 1
+    does NOT judge witness-tree honesty (a C2 judge duty) and does NOT
+    stat `evidence_path` (hermetic single-file checker)
+
+`witness_pair` is NOT defined by schemas 1.1-1.5. A block carrying it must
+declare schema 1.6; older schemas carrying it are rejected.
+
 `--digest` (D-20 operator-digest support): after a PASS, prints one
 machine-derived tier-count line, e.g.
   digest: must=3 nice-to-have=2 (deferred 1) fluff=1 tasks=4
@@ -130,12 +151,13 @@ no necessity tiers exist and to migrate.
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
 defect class keyword (contract / cover / cycl / negative / assurance /
-empty / duplicate / tier / version).
+empty / duplicate / tier / version / witness).
 
-stdlib only (json, re, shlex, sys). Honest limit: the 1.3 command lint catches
+stdlib only (hashlib, json, re, shlex, sys). Honest limit: the 1.3 command lint catches
 only known weak SHAPES; semantic command STRENGTH remains the Layer-2 judge's
 job.
 """
+import hashlib
 import json
 import re
 import shlex
@@ -161,6 +183,10 @@ OVERRIDE_KEYS = ("blocker", "assumption", "followup_test", "authorized_turn")
 # v1.5 necessity tiers (D-19): must is built now; nice-to-have may be built
 # (covered) or deferred (uncovered); fluff is recorded and dropped
 VALID_NECESSITY = ("must", "nice-to-have", "fluff")
+# v1.6 witness pair: the exact per-leg field set; red must record a
+# non-zero exit, green a zero exit, both on the WHOLE contract command
+WITNESS_LEGS = ("red", "green")
+WITNESS_LEG_KEYS = ("tree", "command_sha256", "exit_code", "evidence_path")
 SHELL_NAMES = ("bash", "dash", "ksh", "sh", "zsh")
 ECHO_SIGNAL_RE = re.compile(
     r"(?<![A-Za-z0-9_$-])echo(?:[ \t]+-[nEe]+)?[ \t]+"
@@ -375,21 +401,22 @@ def main():
     elif version == "1":
         if not legacy:
             errors.append("plan: legacy schema version \"1\" — migrate to "
-                          "\"1.5\" or run with --legacy (version \"1\" is "
+                          "\"1.6\" or run with --legacy (version \"1\" is "
                           "accepted for historical provenance only)")
-    elif version not in ("1.1", "1.2", "1.3", "1.4", "1.5"):
+    elif version not in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6"):
         errors.append("plan: unknown schema version %r — known versions are "
                       "\"1\" (legacy, --legacy only), \"1.1\", \"1.2\", "
-                      "\"1.3\", \"1.4\", and \"1.5\"; "
+                      "\"1.3\", \"1.4\", \"1.5\", and \"1.6\"; "
                       "assurance rules for an unknown schema version cannot "
                       "be applied" % (version,))
-    # Schemas are additive: 1.5 inherits 1.4, which inherits 1.3, which
-    # inherits 1.2, which inherits every 1.1 rule.
-    v11 = version in ("1.1", "1.2", "1.3", "1.4", "1.5")
-    v12 = version in ("1.2", "1.3", "1.4", "1.5")
-    v13 = version in ("1.3", "1.4", "1.5")
-    v14 = version in ("1.4", "1.5")
-    v15 = version == "1.5"
+    # Schemas are additive: 1.6 inherits 1.5, which inherits 1.4, which
+    # inherits 1.3, which inherits 1.2, which inherits every 1.1 rule.
+    v11 = version in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6")
+    v12 = version in ("1.2", "1.3", "1.4", "1.5", "1.6")
+    v13 = version in ("1.3", "1.4", "1.5", "1.6")
+    v14 = version in ("1.4", "1.5", "1.6")
+    v15 = version in ("1.5", "1.6")
+    v16 = version == "1.6"
 
     # v1.2-only fields are NOT defined by schema 1.1 — a 1.1 block carrying
     # them is rejected naming the schema version that defines them
@@ -801,6 +828,83 @@ def main():
                     "schema %s does not define it; declare \"version\": "
                     "\"1.3\" to use mutation probes (wrong schema version)"
                     % (tid, version))
+            # ---- version 1.6 additional per-contract rules ----
+            if v16:
+                wp = c.get("witness_pair")
+                if "witness_pair" not in c:
+                    if assurance in A2_PLUS:
+                        errors.append(
+                            "task %s: schema 1.6 at assurance %s requires "
+                            "'witness_pair' in every contract — a recorded "
+                            "red AND green run of the whole "
+                            "acceptance_command (missing witness pair)"
+                            % (tid, assurance))
+                elif not isinstance(wp, dict) or set(wp) != set(WITNESS_LEGS):
+                    errors.append(
+                        "task %s: 'witness_pair' must be an object "
+                        "containing exactly the keys 'red' and 'green' "
+                        "(invalid witness pair)" % tid)
+                else:
+                    command = c.get("acceptance_command")
+                    expected_digest = hashlib.sha256(
+                        command.encode("utf-8")).hexdigest() \
+                        if nonempty_str(command) else None
+                    for leg in WITNESS_LEGS:
+                        rec = wp[leg]
+                        if not isinstance(rec, dict) \
+                                or set(rec) != set(WITNESS_LEG_KEYS):
+                            errors.append(
+                                "task %s: witness %s record must be an "
+                                "object containing exactly the keys %s "
+                                "(invalid witness record)"
+                                % (tid, leg, ", ".join(WITNESS_LEG_KEYS)))
+                            continue
+                        for field in ("tree", "command_sha256",
+                                      "evidence_path"):
+                            if not nonempty_str(rec.get(field)):
+                                errors.append(
+                                    "task %s: witness %s field '%s' must be "
+                                    "a non-empty string (invalid witness "
+                                    "record)" % (tid, leg, field))
+                        exit_code = rec.get("exit_code")
+                        if isinstance(exit_code, bool) \
+                                or not isinstance(exit_code, int):
+                            errors.append(
+                                "task %s: witness %s field 'exit_code' must "
+                                "be a JSON integer, got %r (invalid witness "
+                                "record)" % (tid, leg, exit_code))
+                            exit_code = None
+                        digest = rec.get("command_sha256")
+                        if nonempty_str(digest) and expected_digest \
+                                and digest.strip().lower() != expected_digest:
+                            errors.append(
+                                "task %s: witness %s record's command_sha256 "
+                                "does not match the sha256 of the contract's "
+                                "acceptance_command — whole-command-only "
+                                "evidence: a record of a partial or drifted "
+                                "command cannot carry the contract's digest "
+                                "(witness digest mismatch)" % (tid, leg))
+                        if leg == "red" and exit_code == 0:
+                            errors.append(
+                                "task %s: witness red record exit_code is 0 "
+                                "— the red witness must record the whole "
+                                "command FAILING on a broken scratch "
+                                "(witness exit code)" % tid)
+                        if leg == "green" and exit_code is not None \
+                                and exit_code != 0:
+                            errors.append(
+                                "task %s: witness green record exit_code is "
+                                "%d — the command has never been shown able "
+                                "to pass; an impossible acceptance_command "
+                                "is rejected at plan time (witness exit "
+                                "code)" % (tid, exit_code))
+            elif version in ("1.1", "1.2", "1.3", "1.4", "1.5") \
+                    and "witness_pair" in c:
+                errors.append(
+                    "task %s: 'witness_pair' is a schema-1.6 field — schema "
+                    "%s does not define it; declare \"version\": \"1.6\" to "
+                    "use witness pairs (wrong schema version)"
+                    % (tid, version))
             if assurance in ("A3", "A4"):
                 # evidence: non-empty string or non-empty object
                 ev = c.get("evidence")
@@ -901,11 +1005,13 @@ def main():
 
     mode = " [--legacy: v1 rules, historical provenance only]" \
         if legacy and version == "1" else ""
+    checks_note = "/known-command-shape lint" if v13 else ""
+    if v16:
+        checks_note += "/witness pair"
     print("PASS: %s — %d requirements, %d tasks, assurance %s%s; all Layer-1 "
           "checks passed (structure/coverage%s — semantic command strength "
           "is a Layer-2 judge question)"
-          % (path, len(req_ids), len(tasks), assurance, mode,
-             "/known-command-shape lint" if v13 else ""))
+          % (path, len(req_ids), len(tasks), assurance, mode, checks_note))
 
     # schema 1.5: non-fatal scope notes (nice-to-have-only tasks) and, on
     # request, the machine-derived necessity tier counts the operator digest

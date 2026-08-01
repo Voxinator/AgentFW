@@ -1,6 +1,6 @@
 # AgentFW r9 — guided profile: ChatGPT Projects (standard ChatGPT, web / desktop)
 
-Current release: **AgentFW v9.4.0**. The `r9` marker below is the stable major-version install
+Current release: **AgentFW v9.5.0**. The `r9` marker below is the stable major-version install
 marker, not a stale release identifier.
 
 **This is not an adapter.** This profile covers **standard ChatGPT with Projects** — the
