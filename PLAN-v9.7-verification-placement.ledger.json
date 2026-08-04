@@ -265,6 +265,26 @@
       "event": "NOT_YET_INSTALLED_to_either_runtime_both_still_carry_v9.6.0",
       "runtime": "claude-code",
       "date": "2026-08-04"
+    },
+    {
+      "event": "installed_claude_code_runtime_v9.7.0_via_agentfw_install_upgrade_CLAUDE.md_backed_up",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "installed_codex_runtime_v9.7.0_manual_procedure_AGENTS.md_backed_up_skill_policy_validator_capability_refreshed",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "install_VERIFIED_both_validators_enforce_1.7_reject_exit0_fixture_emit_locality_defect_and_pass_1.6_backcompat",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "install_VERIFIED_no_installed_surface_teaches_retired_duty_policy_retains_1.6_docs_correctly_zero_repo_vs_installed_drift",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
     }
   ]
 }
