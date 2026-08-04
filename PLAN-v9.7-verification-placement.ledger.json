@@ -245,6 +245,26 @@
       "event": "RELEASE_V9_7_OK_full_gate_green_all_five_task_commands_still_green_no_surface_claims_9.6.0_as_current",
       "runtime": "claude-code",
       "date": "2026-08-04"
+    },
+    {
+      "event": "committed_2664197_41_files_unrelated_v9.1.0_artifacts_left_unstaged",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "pushed_main_and_tag_v9.7.0_to_github",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "github_release_v9.7.0_published_as_Latest_notes_from_RELEASE-NOTES-v9.7.0.md",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "NOT_YET_INSTALLED_to_either_runtime_both_still_carry_v9.6.0",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
     }
   ]
 }
