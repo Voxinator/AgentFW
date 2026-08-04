@@ -23,25 +23,58 @@ The result is deliberately small: **structured Markdown plus a few stdlib-only v
 - **Not a prompt pack or a bundle of "best-practice" vibes.** Its load-bearing guarantees are mechanical and testable — a validator that rejects an unsafe plan, an installer that proves its own reversibility. Where a guarantee *can't* be made mechanical, it says so out loud instead of dressing a suggestion up as a rule.
 - **Not a correctness guarantee.** It does not promise the model never errs. It promises structure — decomposition, independent verification, evidence before belief, hard stops on destructive and irreversible actions — that catches the errors a lone one-shot attempt would ship.
 
-**Status: v9.6.0, released 2026-08-01** — the *operator-compass* release. One field incident,
-one theme: a governance gate that counts only what review SPENDS can treadmill forever without
-anyone noticing that nothing has SHIPPED. The drydock failure-routing workstream ran five review
-rounds on one clause of 1 of 13 requirements, dispatched 0 of 12 sibling tasks, and did it
-across BOTH runtimes over roughly two days — each runtime restarting the counters — while the
-operator learned the delivered-feature count was zero only by asking three escalating times.
-v9.6.0 gives every objective a **durable delivery ledger** (`<plan>.ledger.json`, shared across
-sessions, renames, and runtimes), a **`[SCOREBOARD:]` marker at every gate event** whose counts
-come from the ledger rather than narration, a **zero-dispatch tripwire** that forces the
-escalation fork after two cycles with no workers dispatched, **root-objective budget
-inheritance** (D-22) so decomposition can never mint a fresh budget, and a **blocking
-`[RECONCILE:]` resume duty** (D-25) so no session plans on top of fictional progress — each
-machine-checked by its own decision table. The deterministic release gate is green
-(`tools/tests/release-v9.6.sh`); no new behavioral-evaluation round was run for v9.6.0. See
-[the v9.6.0 release notes](RELEASE-NOTES-v9.6.0.md),
-[the v9.5.0 release notes](RELEASE-NOTES-v9.5.0.md) and
+**Status: v9.7.0, released 2026-08-04** — the *verification-placement* release. One field
+incident, one theme: asking "is this check any good?" at the point of maximum uncertainty about
+the implementation — the producer, at plan time — instead of at the point where it's cheap to
+answer. Two independent sessions, two different repos, both governed by v9.6.0, each produced a
+void witness pair on the first attempt and then spent roughly 7 lines of acceptance apparatus for
+every line of deliverable across four review passes that found zero product defects, while the
+same producer's ordinary (non-gated) work that same week ran under 1:1 apparatus, one round, zero
+rejections. v9.7.0 replaces the plan-time green witness with a **schema-1.7 `red_witness`**
+(D-28) — the producer still proves ONE red leg on a broken scratch, but proving the command CAN
+pass now belongs to the independent verifier on the real tree, and a command that can never pass
+against a correct implementation returns **`IMPOSSIBLE-COMMAND`**, a contract defect routed to a
+re-approach fork rather than a work defect charged to the worker. It adds an **enforcement-locality
+check at Layer 1** (D-29) — every `must` requirement's `enforced_in` paths must be exactly covered
+by some task's `touches`, never by substring — and the **`re-approach` fork** itself (D-31), a
+fifth cap-menu option and fourth exhaustion-fork branch that lets a plan re-author its acceptance
+contracts without losing its requirements, bounded to once per objective and eligible only when
+every open blocker is contract-mechanics class. The deterministic release gate is green
+(`tools/tests/release-v9.7.sh`). See
+[the v9.7.0 release notes](RELEASE-NOTES-v9.7.0.md),
+[the v9.6.0 release notes](RELEASE-NOTES-v9.6.0.md) and
 [Verification & provenance](#verification--provenance).
 
-## What's new in v9.6
+## What's new in v9.7
+
+One field incident, one theme: the producer was asked to prove its own acceptance command was any
+good at the point of maximum uncertainty; the fix moves that duty to the independent verifier, on
+the real tree, where it's cheap to answer.
+
+- **Witness-pair demotion (D-28).** Schema **1.7** removes the plan-time `witness_pair` GREEN leg.
+  Every A2+ contract now carries a single `red_witness` (`tree`, `command_sha256`, `exit_code != 0`,
+  `evidence_path`) — red-only, so a stub tree can never satisfy it. Proving the command CAN pass is
+  now the verifier's whole-command run on the real tree; a contracted command the verifier cannot
+  make pass against a correct implementation returns `IMPOSSIBLE-COMMAND`, routed to the re-approach
+  fork as a contract defect, never charged to the worker. Schema 1.6 plans keep validating
+  unchanged.
+- **Enforcement-locality check at Layer 1 (D-29).** Every requirement carries `enforced_in`
+  (non-empty repo-relative paths); every task carries `touches`. The validator rejects, with defect
+  keyword `locality`, any `must` requirement whose enforcement paths aren't covered — exact-element,
+  never substring — by a covering task.
+- **The `re-approach` fork (D-31).** A fifth cap-menu option and a fourth D-2 exhaustion-fork
+  branch: plan and requirements retained, acceptance contracts re-authored, cycle counter charged
+  exactly once, plan re-enters Layer 1. Eligibility is mechanically derived — every open blocker is
+  contract-mechanics class and none cites a requirement id — bounded to at most once per objective,
+  recorded in the ledger, machine-checked.
+- **Adapter & kernel propagation.** Both adapter `SKILL.md` files, both kernel bootloaders, and the
+  executing verifier surface state the demotion consistently; no installed surface retains an
+  instruction to author a plan-time witness tree.
+
+Full detail: [the v9.7.0 release notes](RELEASE-NOTES-v9.7.0.md) and the
+[field report](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md).
+
+## What's new in v9.6 (prior release)
 
 One field incident, one theme: review spend was counted; delivery was not.
 

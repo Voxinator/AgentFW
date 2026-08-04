@@ -56,10 +56,19 @@ matches. If it doesn't, trust the quotes as historical evidence and note the dri
 | D-21 | Delivery ledger, scoreboard & zero-dispatch tripwire | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
 | D-22 | Budget & ledger inheritance (`root_objective`) | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
 | D-23 | Increment-shape check + dependency-edge audit + partial dispatch | proposed |
-| D-24 | Proof-cost inversion | **folded into D-21's rationale** — no standalone mechanism (see D-21) |
+| D-24 | Proof-cost inversion | **unfolded into D-30, 2026-08-04** — the mechanical rendering the D-21 rationale note reserved a new id for (see D-30) |
 | D-25 | Session-start reconciliation (`RECONCILE` marker) | **IMPLEMENTED on main** (unreleased) — built 2026-08-01 |
 | D-26 | Stranded-implementation disposition | proposed |
 | D-27 | Blocker re-validation on age | proposed |
+| D-28 | Witness-pair demotion (schema 1.7 `red_witness` + `IMPOSSIBLE-COMMAND`) | **IMPLEMENTED on main** (unreleased) — build [PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md) |
+| D-29 | Enforcement-locality check at Layer 1 (`enforced_in` / `touches`) | **IMPLEMENTED on main** (unreleased) — build [PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md) |
+| D-30 | Apparatus-to-deliverable ratio, measured at verification time (D-24 unfold) | proposed |
+| D-31 | `re-approach` fork (2-pass cap menu + D-2 exhaustion-fork branch) | **IMPLEMENTED on main** (unreleased) — build [PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md) |
+| D-32 | Change-delta input to assurance derivation | proposed |
+| D-33 | Vacuity floor relative to declared risk fields | proposed |
+| D-34 | Out-of-domain validation before universal mandate | proposed |
+| D-35 | Multi-repo objectives | proposed |
+| D-36 | Layer-1 PASS semantics + assertion-presence lint | proposed |
 
 ---
 
@@ -770,42 +779,58 @@ grep -n "C6 necessity audit" policy/plan-critique.md   # the rubric this would e
 grep -n "12 sibling tasks\|serialized" evaluation/field-report-2026-08-01-drydock-zero-delivery.md
 ```
 
-## D-24 · Proof-cost inversion (folded into D-21)
+## D-24 · Proof-cost inversion (unfolded into D-30)
 
-**Status:** **folded into D-21's rationale, 2026-08-01** — id retained for provenance; no
-standalone mechanism will be built under this number.
+**Status:** **unfolded into D-30, 2026-08-04** — no standalone build under this number; the
+mechanical rendering D-21's rationale note reserved a new id for arrived, and D-30 carries it.
 
 **Origin:** the 2026-08-01 maintenance conversation, alongside D-21 — the observation that in the
 drydock rounds the apparatus built to PROVE an increment repeatedly cost more than reading the
 increment would have.
 
-**Evidence:** the same execution-half record
+**Evidence:** the original execution-half record
 ([field-report-2026-08-01-drydock-zero-delivery.md](evaluation/field-report-2026-08-01-drydock-zero-delivery.md)):
-~15 commits of plans, authorizations, verdicts, and handoffs against zero product behavior. The
-verification apparatus for one sub-clause outweighed the sub-clause by every available measure.
+~15 commits of plans, authorizations, verdicts, and handoffs against zero product behavior — plus
+the confirming second data point,
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)'s
+natural experiment (Finding 4 + "The accounting"): the same producer, same repo, same week,
+shipped a **233-line** ungated-A1 deliverable against **118 lines** of ordinary tests (≈0.5:1, one
+round, zero rejections) while a **163-line** gated-A3 item cycled **four Layer-2 passes** against
+**≈1,130–1,150 lines** of acceptance apparatus (≈7:1) that found zero product defects.
 
 **Problem:** there is a real inversion point — beyond it, building more proof machinery is
-strictly worse than direct human review of the artifact — and the framework has no way to notice
-crossing it.
+strictly worse than direct human review of the artifact — and the framework had no way to notice
+crossing it, and (as of D-21) no way to render the general case mechanically.
 
-**Proposed mechanism (none — deliberately folded):** every rendering attempted required a cost
-threshold, and any threshold the framework picks is a velocity/economics opinion it has no
-standing to hold (the framework reports; it never optimizes — see
-`PLAN-v9.6-operator-compass.md` § Deliberately out of scope). Rather than ship an unenforceable
-SHOULD, the diagnosis is recorded inside **D-21's rationale**, and D-21's **zero-dispatch
-tripwire is its enforceable shadow**: the single case where proof cost has provably overtaken
-delivery — two complete review cycles, zero workers dispatched — is detected mechanically and
-forced to a human fork. If a future session finds a mechanical rendering of the general case, it
-gets a NEW id; this one stays closed so the ledger records the judgment, not a silent drop.
+**Proposed mechanism (unfolded — this is the change from the original entry):** D-21's rationale
+note (2026-08-01) closed D-24 with no mechanism, because every rendering it tried required a
+COST THRESHOLD, and any threshold the framework picks is a velocity/economics opinion it has no
+standing to hold (`PLAN-v9.6-operator-compass.md` § Deliberately out of scope). It left the door
+open on exactly one condition: *"If a future session finds a mechanical rendering of the general
+case, it gets a NEW id."* The 2026-08-03/04 session found one that sets no threshold at all:
+**D-30** measures the apparatus-to-deliverable ratio from the diffstat the verifier already has —
+mechanical, free, unfakeable, no new plan-block field — and requires a named justification only
+when the ratio exceeds 1:1, feeding C6 and the D-31 re-approach fork rather than gating anything
+by itself. D-24 is therefore **restated as unfolded into D-30**: the diagnosis this entry recorded
+now has an enforceable rendering, carried under D-30's id, and D-24 keeps no separate mechanism of
+its own — the same "id retained for provenance, mechanism lives elsewhere" shape the original fold
+into D-21 used, now pointed at its actual destination.
 
-**Anchors:** [CANDIDATES.md](CANDIDATES.md) § D-21 (rationale note),
-[policy/plan-critique.md](policy/plan-critique.md) (§ Delivery ledger — the tripwire),
-[PLAN-v9.6-operator-compass.md](PLAN-v9.6-operator-compass.md) (§ Deliberately out of scope).
+**Anchors:** [CANDIDATES.md](CANDIDATES.md) § D-30 (the unfold destination) and § D-21 (the
+original rationale note, left in place as history), [PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md)
+(§ Deferred to the next increment, R6), `evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md`
+(Finding 4 and "The natural experiment").
+
+**Falsifier:** D-24 is wrongly marked unfolded if D-30 is ever built with a mechanism that is NOT
+the diffstat-measured, threshold-free ratio described above (i.e. if D-30 reintroduces a cost
+threshold, the unfold claim here is false and D-24 reverts to "folded, no mechanism"). D-30 carries
+its own falsifier for the mechanism itself.
 
 **Cold-start verification:**
 ```sh
-grep -n "D-24" CANDIDATES.md                             # rationale note inside D-21 + this entry
-grep -n "zero-dispatch tripwire" policy/plan-critique.md
+grep -n "D-24" CANDIDATES.md                             # this entry + the D-21 rationale note
+grep -n "D-24 unfold" PLAN-v9.7-verification-placement.md
+grep -n "unfolded into D-30" CANDIDATES.md
 ```
 
 ## D-25 · Session-start reconciliation (`RECONCILE` marker)
@@ -929,6 +954,386 @@ how long a finding may coast.
 ```sh
 grep -n "post-blocker\|Post-blocker" policy/plan-critique.md | head
 grep -n "6 blockers" evaluation/field-report-2026-08-01-drydock-zero-delivery.md
+```
+
+## D-28 · Witness-pair demotion (schema 1.7 `red_witness` + `IMPOSSIBLE-COMMAND`)
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-08-04 · **Priority:** high ·
+**Effort:** medium — build provenance:
+[PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md)
+
+**Origin:** field report 2026-08-03, revised 2026-08-04 — two sessions, two different repos,
+2026-08-02 → 2026-08-03, both governed by v9.6.0 on both runtimes.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md),
+Findings 1/2/3/5. Verbatim: *"`policy/plan-critique.md` rule 16 closes with: 'Layer 1 does not
+judge witness-tree honesty — that is C2's duty.'"* — schema 1.6 required the **producer** to
+author both witness legs at the point of maximum uncertainty about the implementation, deferring
+the check to the scarcest budget in the system (a 2-pass Layer-2 cap). Both sessions produced
+**void witness pairs on their first attempt, independently, in different repos** — stub modules
+returning `'expected'` in one, witness legs that were never end-to-end runs in the other. Measured
+cost: ≈1,130–1,150 lines of acceptance apparatus against a 163-line deliverable (≈7:1) over four
+Layer-2 passes that found **zero** product defects.
+
+**Problem:** the framework documented that the mechanism it mandates is unverifiable exactly where
+it is mandated, and both convergent failures point at the same defect: an easily-satisfied,
+uninspected reading of "prove this command can pass," at plan time, is cheaper to fake than to do
+honestly, and nothing independent checks which reading was used before Layer 2.
+
+**Proposed mechanism (built):** schema 1.7 replaces the plan-time `witness_pair` (green + red)
+with a single `red_witness` leg — `tree`, `command_sha256`, `exit_code` (≠ 0), `evidence_path` —
+recorded at plan time. Red-only is stub-proof: a command that never runs cannot exit non-zero for
+the right reason on a real hostile tree, so the exact failure both sessions produced becomes
+unconstructible. The green obligation moves entirely to the **verifier**: its whole-command run
+on the REAL tree is the green evidence of record, and when the verifier cannot make a contracted
+command pass against a correct implementation it returns **`IMPOSSIBLE-COMMAND`** — a *contract*
+defect routed to the D-31 re-approach fork, never a work defect charged to the worker. The trade
+is stated, not hidden: demoted, an impossible command can now reach a worker and burn one
+implementation cycle before detection; D-29 catches the largest real class of that risk (a command
+targeting a file or repo no task touches) mechanically, and the retained red witness usually fails
+*differently* (import error, missing binary, bad path) and visibly.
+
+**Anchors:** `tools/validate-plan` (schema 1.7 `red_witness` branch + 1.6 back-compatibility),
+`policy/acceptance-contract.md` (§ The red witness (schema 1.7); § The IMPOSSIBLE-COMMAND duty),
+`policy/plan-critique.md` (rule 17), `tools/fixtures/plan-good-17*.md` + `plan-bad-17-*.md`,
+`adapters/claude-code/agents/agentfw-verifier.md` (IMPOSSIBLE-COMMAND duty), both adapter
+`SKILL.md`s and both kernel bootloaders (`adapters/claude-code/CLAUDE-block.md`,
+`adapters/codex/AGENTS.md`).
+
+**Falsifier:** post-demotion, verifiers report green without re-execution evidence on the real
+tree (rubber-stamping the leg they now own), or impossible-to-pass commands reach workers at a
+rate whose burned implementation cycles exceed the ≈1,140-line apparatus cost the demotion saved.
+
+**Cold-start verification:**
+```sh
+bash tools/tests/validate-plan.sh                                      # ALL CHECKS PASSED
+python3 tools/validate-plan PLAN-v9.6-operator-compass.md              # still validates, 1.6
+grep -n "red_witness\|IMPOSSIBLE-COMMAND" policy/acceptance-contract.md | head
+```
+
+## D-29 · Enforcement-locality check at Layer 1 (`enforced_in` / `touches`)
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-08-04 · **Priority:** high ·
+**Effort:** small-medium — build provenance:
+[PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md)
+
+**Origin:** field report 2026-08-03/04, Findings 5 and 11 — neither session proposed this
+independently of the other's report, and this plan's own rev-1 requirement table omitted two of
+the paths D-28's own build touched, caught only because a judge read the file by hand.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 5 (C2 asks a question unanswerable at plan time) and Finding 11 (Layer-1 PASS reads as
+"good" when it means "well-formed"). Confirming in-record demonstration:
+[PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md) itself shipped a rev-1
+requirement table missing `adapters/codex/AGENTS.md` — a file that carries the very duty the plan
+removes, and was consequently covered by no task's acceptance command until a judge found it by
+reading. *"This plan's own proposed locality check would have caught it, which is the strongest
+field evidence for R3 in the record."*
+
+**Problem:** a full review round can be spent on requirements enforced in a repo, or a file, that
+no task in the plan actually owns — the question "which file enforces this, and does a task's
+declared scope touch that file?" is mechanically answerable on day zero from the repo, but nothing
+in C0–C6 asks it before Layer 2, after the review apparatus is already built.
+
+**Proposed mechanism (built):** every requirement carries `enforced_in` — a non-empty list of
+repo-relative paths where it is enforced — and every task carries `touches`, the paths it
+modifies. The validator rejects, with defect keyword `locality`, any `must` requirement whose
+`enforced_in` paths are not ALL covered by the `touches` of at least one task covering that
+requirement; comparison is exact-element, never substring (a requirement enforced in
+`tools/validate-plan` is not satisfied by a task touching `tools/validate-plan.sh`).
+Nice-to-have/fluff requirements are exempt, same as tier-aware coverage. Cheapest check in the
+record with the largest measured saving.
+
+**Anchors:** `tools/validate-plan` (`enforced_in`/`touches` fields + `locality` check),
+`policy/acceptance-contract.md` (§ Enforcement locality; field table), `policy/plan-critique.md`
+(stable defect-keyword contract — `locality` gains an owner), `tools/fixtures/plan-bad-17-orphan-enforcement.md`
++ `plan-bad-17-missing-enforced-in.md` + `plan-bad-17-missing-touches.md` +
+`plan-bad-17-locality-substring.md` + `plan-good-17-nice-to-have-unenforced.md`.
+
+**Falsifier:** the question has no single honest answer for a majority of real requirements
+(config-driven enforcement, generated code, cross-cutting policy), making the check a
+false-positive generator rather than a filter.
+
+**Cold-start verification:**
+```sh
+grep -n "^### Enforcement locality" policy/acceptance-contract.md
+grep -n "locality" policy/plan-critique.md | head
+python3 tools/validate-plan tools/fixtures/plan-bad-17-orphan-enforcement.md   # FAIL, locality keyword
+```
+
+## D-30 · Apparatus-to-deliverable ratio, measured at verification time (D-24 unfold)
+
+**Status:** proposed · **Priority:** medium-high · **Effort:** small (verifier duty; no schema
+field)
+
+**Origin:** field report 2026-08-03/04, Finding 4, synthesizing a disagreement between the two
+sessions — this is the **D-24 unfold**: the mechanical rendering D-21's rationale note reserved a
+new id for.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+"The natural experiment" table — same producer, same repo, same week: **233-line** deliverable /
+**118 lines** of ordinary tests (≈0.5:1, one round, zero rejections, A1 ungated) versus a
+**163-line** deliverable / **≈1,130–1,150 lines** of acceptance apparatus (≈7:1, four Layer-2
+passes, A3 gated). Session A proposed declaring the ratio in the plan block and justifying it
+above 1:1 at plan time; session B objected that neither quantity is knowable at plan time — the
+same defect Finding 5 diagnoses in C2, reintroduced one section later by the producer who
+over-built.
+
+**Problem:** the D-21 rationale note diagnosed a real proof-cost inversion point but shipped no
+mechanism, because every rendering it tried required a cost THRESHOLD, which is an unenforceable
+velocity opinion the framework has no standing to hold.
+
+**Proposed mechanism:** **no plan-block field, no threshold.** The verifier computes the
+apparatus-to-deliverable ratio from the diffstat it already has at verification time — mechanical,
+free, unfakeable, no new schema field — reports it in the verdict at each round, and a ratio above
+1:1 requires a named justification in that verdict, feeding the next increment's C6 and serving as
+an input to the D-31 re-approach fork. This preserves the original fold reasoning intact: a
+measured ratio reported after the fact is not a velocity opinion, and no threshold is ever set or
+enforced by the framework itself.
+
+**Anchors:** `policy/acceptance-contract.md` (verifier verdict shape), `policy/plan-critique.md`
+(C6 cross-reference; D-31 re-approach input), [CANDIDATES.md](CANDIDATES.md) § D-24 (the unfold
+note), `evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md` (Finding 4 +
+"The natural experiment").
+
+**Falsifier:** measured ratios cluster indistinguishably across gated and ungated work (no
+signal), or high ratios correlate with *caught defects* rather than with treadmills — in which
+case the ratio is measuring thoroughness, not waste.
+
+**Cold-start verification:**
+```sh
+grep -n "D-24 unfold\|D-30" PLAN-v9.7-verification-placement.md | head
+grep -n "The natural experiment" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md
+```
+
+## D-31 · `re-approach` fork
+
+**Status:** IMPLEMENTED on main (unreleased) · built 2026-08-04 · **Priority:** high ·
+**Effort:** medium — build provenance:
+[PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md)
+
+**Origin:** field report 2026-08-03/04, Finding 6 — the v9.6 zero-dispatch tripwire fired
+correctly in both sessions and routed to a recovery menu with no matching entry.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 6: both sessions' correct move — plan sound, verification strategy wrong — existed on no
+menu, so it cost a bespoke named relaxation plus a human authorization turn, at the exact moment
+the D-21 tripwire had already fired. Confirmed once the proof-machinery demand was replaced with
+an ordinary test requirement: *"Time to ship once the proof apparatus was abandoned: one
+turn / immediate."*
+
+**Problem:** the existing escalation menus (the 2-pass cap, the D-2 exhaustion fork) offer only
+halt / rescope / override — none of which name "the plan is fine, the verification strategy is
+wrong, re-author the contracts and re-enter Layer 1."
+
+**Proposed mechanism (built):** `re-approach` — a fifth option on the 2-pass cap menu and a fourth
+branch on the D-2 exhaustion fork: plan and requirements retained, acceptance contracts
+re-authored, cycle counter charged exactly once, plan re-enters Layer 1. Eligibility is
+**mechanically derived, not judged** — eligible iff every open blocker is contract-mechanics class
+(C2 or the new `locality`) and no open blocker's finding cites a requirement id (a blocker citing
+only task/contract ids is contract-mechanics by construction; one citing an R-id means the
+requirement itself is contested, which re-authoring contracts cannot answer). **Bounded to at
+most once per objective**, recorded in the ledger; a second selection takes the existing
+three-way fork. Machine-checked as a decision table, the D-12/D-21 fixture-over-prose pattern.
+
+**Anchors:** `policy/plan-critique.md` (cap-menu option 5; exhaustion-fork branch 4),
+`tools/check-reapproach-invariants.py` (stdlib; `--selftest` proves red/green discrimination),
+`evaluation/fixtures/reapproach-fork.json` (decision table + eligibility predicate).
+
+**Falsifier:** it is selected more than once per objective, i.e. it becomes the soft override —
+the same treadmill re-axed onto verification strategies instead of plans.
+
+**Cold-start verification:**
+```sh
+python3 tools/check-reapproach-invariants.py --selftest                # REAPPROACH_SELFTEST_OK
+python3 tools/check-reapproach-invariants.py evaluation/fixtures/reapproach-fork.json
+grep -n "Re-approach (D-31)" policy/plan-critique.md
+```
+
+## D-32 · Change-delta input to assurance derivation
+
+**Status:** proposed · **Priority:** medium · **Effort:** medium (assurance-model text + escalator
+clause)
+
+**Origin:** field report 2026-08-03/04, Finding 7 — Q1 asks reversibility but not size or
+additivity, and escalators can mechanically override the one question that comes closest.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 7 (corrected from the report's first draft, which overstated that Q1 does not ask
+reversibility at all — it does; what it does not ask is size/additivity). The natural experiment
+(D-30's evidence) doubles as this candidate's empirical spine: a 233-line change and a 163-line
+change, in the same repo the same week, landed at wildly different assurance tiers for reasons
+unrelated to their delta size.
+
+**Problem:** two changes of very different size and additivity can derive the same tier purely
+from Q1–Q3's existing questions, so nothing in assurance derivation distinguishes "a small,
+additive, easily-reviewed diff" from "a large, structural, hard-to-review one" within a tier.
+
+**Proposed mechanism:** a change-delta axis that modulates **controls within a tier**, never the
+tier itself. **Load-bearing specification:** lowering controls below an **escalator floor**
+requires a named relaxation with explicit human authorization, exactly as any other floor
+relaxation — without that clause this opens the "it's only a small change to production" hole the
+escalators exist to close.
+
+**Anchors (if accepted):** `policy/assurance-model.md` (Q1–Q3 + escalator table), `policy/plan-critique.md`
+(control-modulation cross-reference).
+
+**Falsifier:** delta-derived control relaxation lets a defect reach production that the
+escalator-derived controls would have caught.
+
+**Cold-start verification:**
+```sh
+grep -n "escalator" policy/assurance-model.md | head
+grep -n "Finding 7" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md
+```
+
+## D-33 · Vacuity floor relative to declared risk fields
+
+**Status:** proposed · **Priority:** medium · **Effort:** small (policy text)
+
+**Origin:** field report 2026-08-03/04, Finding 8 — the vacuity floor has no risk relation today,
+and the obvious fix (loosen it) would weaken a floor.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 8: the absolute vacuity floor treats a trivially-satisfiable command the same regardless of
+what the contract's own `risk_class`/`failure_surfaces` say is at stake, so a low-risk contract and
+a high-risk one are held to an identical bar with no calibration between them.
+
+**Problem:** an absolute vacuity bar either over-constrains low-risk work or, if loosened
+uniformly to relieve that, under-constrains high-risk work — the floor needs a relation to
+declared risk, not a single global bar.
+
+**Proposed mechanism:** floor class retained (never removed); *vacuous* is defined **relative to**
+the contract's own `risk_class` / `failure_surfaces` fields rather than as one absolute bar, so a
+contract that declares higher risk is held to a correspondingly stricter vacuity bar and a
+low-risk one is not penalized by a bar it never claimed to need.
+
+**Anchors (if accepted):** `policy/acceptance-contract.md` (vacuity floor definition; `risk_class`
+/ `failure_surfaces` fields), `policy/plan-critique.md` (C2's vacuity duty).
+
+**Falsifier:** a command passing the risk-relative test ships a defect the absolute test would
+have blocked.
+
+**Cold-start verification:**
+```sh
+grep -n "vacuous\|vacuity" policy/acceptance-contract.md | head
+grep -n "Finding 8" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md
+```
+
+## D-34 · Out-of-domain validation before universal mandate
+
+**Status:** proposed · **Priority:** medium · **Effort:** medium (process rule + a designated
+pilot objective)
+
+**Origin:** field report 2026-08-03/04, Finding 9 — the witness pair was validated only against
+AgentFW's own fixtures and promoted straight to a universal A2+ mandate.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 9, echoing the Adapter Sprawl rule *"an adapter you haven't tested is a profile you're
+lying about,"* applied to policy mechanisms rather than platform bindings: these two sessions only
+exercised the witness pair because it was mandatory, not because anyone chose it.
+
+**Problem:** a mechanism validated only in-domain (against the framework's own fixtures) can carry
+hidden domain-specific assumptions that a universal mandate then ships to every workload
+untested — the exact promotion path that produced the D-28 apparatus inversion.
+
+**Proposed mechanism:** a mechanism validated only against AgentFW's own fixtures ships
+**advisory** until one out-of-domain evaluation has run. **Bootstrapping problem, named:** if a
+mechanism is advisory, who exercises it? The candidate is incomplete without a **designated pilot
+objective named at release time**, or the advisory period never ends and the tier becomes a
+graveyard.
+
+**Anchors (if accepted):** `policy/plan-critique.md` (tier-promotion rule), `evaluation/eval-protocol.md`
+(pilot-objective designation), release-gate scripts (advisory-tier bookkeeping).
+
+**Falsifier:** advisory mechanisms are never voluntarily adopted, confirming that the tier defers
+adoption rather than de-risking it.
+
+**Cold-start verification:**
+```sh
+grep -n "Finding 9" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md
+grep -n "advisory" policy/plan-critique.md
+```
+
+## D-35 · Multi-repo objectives
+
+**Status:** proposed · **Priority:** medium · **Effort:** medium (ledger schema + a cross-repo
+reconciliation check)
+
+**Origin:** field report 2026-08-03/04, Finding 10 — no multi-repo support anywhere in the D-21/22
+ledger model, surfaced because the two hermes-brain sessions spanned two different repos.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 10: the ledger and its counters are keyed to a single tree; an objective spanning
+`hermes-brain` and `chief-of-staff-dashboard` had no single ledger to inherit from, so repo-hopping
+is a fourth, unclosed way to re-mint counters alongside the three D-22 already closed (rename,
+decomposition, runtime hop).
+
+**Problem:** D-22 closed rename/decomposition/runtime-hop laundering but never considered an
+objective that legitimately spans more than one git tree — the same counter-reset failure mode,
+one axis wider.
+
+**Proposed mechanism:** ledger and counters keyed to an objective that spans trees; repo-hopping
+closed as the fourth counter reset (alongside D-22's three); a cross-repo analogue of C3's
+shared-derived-value reconciliation, applied to constants/counters duplicated across repos instead
+of languages.
+
+**Anchors (if accepted):** `policy/plan-critique.md` (§ Global liveness budget — D-22 section, the
+natural extension point), ledger schema (`<plan>.ledger.json`), `tools/check-delivery-invariants.py`
+(`LEDGER_KEYS` — a candidate multi-repo key).
+
+**Falsifier:** cross-repo objectives are rare enough that the ledger complexity exceeds the drift
+it prevents — which would make this Complexity Accumulation wearing the framework's own badge.
+
+**Cold-start verification:**
+```sh
+grep -n "Finding 10" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md
+grep -n "root_objective" tools/check-delivery-invariants.py | head
+```
+
+## D-36 · Layer-1 PASS semantics + assertion-presence lint
+
+**Status:** proposed · **Priority:** medium · **Effort:** small (rename + lint extension)
+
+**Origin:** field report 2026-08-03/04, Finding 11 — a Layer-1 PASS reads as "the plan is good"
+when it means "the plan is well-formed," and the existing weak-command lint misses a real vacuous
+class.
+
+**Evidence:**
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md)
+Finding 11: `PASS` is structural — shape, coverage, tier derivation, necessity tiers, dependency
+acyclicity, command shape — not a quality judgment, but the label reads as an endorsement; the
+same session that named this also shipped a plan whose lint-passing commands still contained the
+substring-collision and cross-task vacuity defects this build's own producer report catalogs.
+
+**Problem:** the PASS signal's plain-language meaning outruns what Layer 1 actually checks, and the
+weak-command lint stops at shell shape — it does not catch a test invocation whose target contains
+no executed assertions (the zero-byte-test-file class), which is exactly the vacuity shape this
+release's own build repeatedly found.
+
+**Proposed mechanism:** rename or re-word the PASS signal so it reads as *well-formed*, not *good*;
+extend the weak-command lint past shell shape to the assertion-presence case — a test invocation
+whose target file contains no executed assertions fails the lint the same way a bare `true` does
+today.
+
+**Anchors (if accepted):** `tools/validate-plan` (PASS signal text; weak-command lint),
+`policy/plan-critique.md` (Layer-1 PASS semantics section).
+
+**Falsifier:** the strengthened lint rejects legitimate commands more often than it catches
+vacuous ones.
+
+**Cold-start verification:**
+```sh
+grep -n "Finding 11" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md
+grep -n "weak.command\|weak_command" tools/validate-plan | head
 ```
 
 ## D-14 · Adaptive dispatch (flagship-cap model right-sizing)

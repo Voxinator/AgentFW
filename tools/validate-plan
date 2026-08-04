@@ -8,8 +8,8 @@ every deterministic (Layer-1) check from policy/plan-critique.md:
 
   - block parses as valid JSON with NO duplicate object keys at any level
     (a last-wins duplicated key is silently-accepted ambiguity); `version`
-    present and, in DEFAULT mode, "1.1", "1.2", "1.3", "1.4", "1.5", or
-    "1.6" — schema 1.6 is the schema of record; 1.1 through 1.5 remain
+    present and, in DEFAULT mode, "1.1", "1.2", "1.3", "1.4", "1.5", "1.6",
+    or "1.7" — schema 1.7 is the schema of record; 1.1 through 1.6 remain
     valid for plans that predate it.
     A "version": "1" block is rejected as a legacy schema version; unknown
     version strings are rejected naming the version
@@ -141,6 +141,53 @@ the witness pair (whole-command pass/fail evidence at plan time):
 `witness_pair` is NOT defined by schemas 1.1-1.5. A block carrying it must
 declare schema 1.6; older schemas carrying it are rejected.
 
+Version "1.7" blocks enforce EVERY 1.6 rule above (1.7 is additive) but
+REPLACE the witness pair with a red witness (D-28): the green/pass leg is
+demoted from plan-time evidence to a verifier duty (the IMPOSSIBLE-COMMAND
+duty — see policy/acceptance-contract.md). The red-path duty is retained
+unchanged.
+
+  - assurance A2+ => EVERY contract carries `red_witness`, an object with
+    EXACTLY the keys `tree` (non-empty string), `command_sha256`,
+    `exit_code` (JSON integer), and `evidence_path` (non-empty string)
+                                                       [keyword: witness]
+  - `command_sha256` must equal the sha256 hex digest of the contract's
+    exact `acceptance_command` string — whole-command-only evidence, as
+    in 1.6                                             [keyword: witness]
+  - `exit_code` != 0 — an impossible red leg (a command that cannot even
+    fail on a broken scratch) is as void as a faked green one
+                                                       [keyword: witness]
+  - below A2 the field is optional but fully checked when present, same as
+    1.6's witness_pair
+  - a "1.7" block carrying `witness_pair` is REJECTED — schema 1.7 does not
+    define it; the diagnostic names the demotion and points at
+    `red_witness` as the migration target             [keyword: witness]
+
+`red_witness` is NOT defined by schemas 1.1-1.6. A block carrying it must
+declare schema 1.7; older schemas carrying it are rejected naming schema
+1.7                                                   [keyword: version]
+
+Schema 1.7 ALSO defines enforcement locality (D-29 — Layer-1 locality check):
+
+  - EVERY requirement carries `enforced_in`, a non-empty JSON array of
+    non-empty repo-relative path strings; EVERY task carries `touches`, a
+    JSON array of path strings                          [keyword: locality]
+  - LOCALITY CHECK: for every requirement whose `necessity` is "must",
+    every path in its `enforced_in` must appear in the `touches` of at
+    least ONE task whose `requirement_ids` include that requirement id.
+    Comparison is EXACT STRING ELEMENT equality — never substring, never
+    prefix: a requirement enforced in `tools/validate-plan` is NOT
+    satisfied by a task touching `tools/validate-plan.sh`
+                                                          [keyword: locality]
+  - "nice-to-have" and "fluff" requirements are EXEMPT from the locality
+    check, exactly as they are exempt from tier-aware coverage — an
+    unenforced path on deferred/dropped scope is not a locality defect
+                                                          [keyword: locality]
+
+`enforced_in`/`touches` are NOT defined by schemas 1.1-1.6. A block carrying
+either must declare schema 1.7; older schemas carrying them are rejected
+naming schema 1.7                                        [keyword: version]
+
 `--digest` (D-20 operator-digest support): after a PASS, prints one
 machine-derived tier-count line, e.g.
   digest: must=3 nice-to-have=2 (deferred 1) fluff=1 tasks=4
@@ -151,7 +198,7 @@ no necessity tiers exist and to migrate.
 Exit 0 + PASS summary on success. On any failure: exit 1, reporting ALL
 defects found, each naming the offending task/requirement id and its
 defect class keyword (contract / cover / cycl / negative / assurance /
-empty / duplicate / tier / version / witness).
+empty / duplicate / tier / version / witness / locality).
 
 stdlib only (hashlib, json, re, shlex, sys). Honest limit: the 1.3 command lint catches
 only known weak SHAPES; semantic command STRENGTH remains the Layer-2 judge's
@@ -187,6 +234,10 @@ VALID_NECESSITY = ("must", "nice-to-have", "fluff")
 # non-zero exit, green a zero exit, both on the WHOLE contract command
 WITNESS_LEGS = ("red", "green")
 WITNESS_LEG_KEYS = ("tree", "command_sha256", "exit_code", "evidence_path")
+# v1.7 red witness (D-28): the green leg is demoted to a verifier duty
+# (IMPOSSIBLE-COMMAND); the red witness reuses the same per-record field
+# set as a witness_pair leg, but stands alone (no "green" sibling).
+RED_WITNESS_KEYS = WITNESS_LEG_KEYS
 SHELL_NAMES = ("bash", "dash", "ksh", "sh", "zsh")
 ECHO_SIGNAL_RE = re.compile(
     r"(?<![A-Za-z0-9_$-])echo(?:[ \t]+-[nEe]+)?[ \t]+"
@@ -211,6 +262,14 @@ def nonempty_str(v):
 
 def nonempty_list(v):
     return isinstance(v, list) and any(nonempty_str(x) for x in v)
+
+
+def nonempty_str_list(v):
+    """v1.7 enforced_in shape: a non-empty list where EVERY entry is a
+    non-empty string — unlike nonempty_list (ANY non-empty entry), this
+    requires ALL entries to be non-empty path strings."""
+    return isinstance(v, list) and len(v) > 0 \
+        and all(nonempty_str(x) for x in v)
 
 
 def shell_token_streams(command, depth=0):
@@ -401,22 +460,24 @@ def main():
     elif version == "1":
         if not legacy:
             errors.append("plan: legacy schema version \"1\" — migrate to "
-                          "\"1.6\" or run with --legacy (version \"1\" is "
+                          "\"1.7\" or run with --legacy (version \"1\" is "
                           "accepted for historical provenance only)")
-    elif version not in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6"):
+    elif version not in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"):
         errors.append("plan: unknown schema version %r — known versions are "
                       "\"1\" (legacy, --legacy only), \"1.1\", \"1.2\", "
-                      "\"1.3\", \"1.4\", \"1.5\", and \"1.6\"; "
+                      "\"1.3\", \"1.4\", \"1.5\", \"1.6\", and \"1.7\"; "
                       "assurance rules for an unknown schema version cannot "
                       "be applied" % (version,))
-    # Schemas are additive: 1.6 inherits 1.5, which inherits 1.4, which
-    # inherits 1.3, which inherits 1.2, which inherits every 1.1 rule.
-    v11 = version in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6")
-    v12 = version in ("1.2", "1.3", "1.4", "1.5", "1.6")
-    v13 = version in ("1.3", "1.4", "1.5", "1.6")
-    v14 = version in ("1.4", "1.5", "1.6")
-    v15 = version in ("1.5", "1.6")
+    # Schemas are additive: 1.7 inherits 1.6, which inherits 1.5, which
+    # inherits 1.4, which inherits 1.3, which inherits 1.2, which inherits
+    # every 1.1 rule.
+    v11 = version in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7")
+    v12 = version in ("1.2", "1.3", "1.4", "1.5", "1.6", "1.7")
+    v13 = version in ("1.3", "1.4", "1.5", "1.6", "1.7")
+    v14 = version in ("1.4", "1.5", "1.6", "1.7")
+    v15 = version in ("1.5", "1.6", "1.7")
     v16 = version == "1.6"
+    v17 = version == "1.7"
 
     # v1.2-only fields are NOT defined by schema 1.1 — a 1.1 block carrying
     # them is rejected naming the schema version that defines them
@@ -512,7 +573,8 @@ def main():
                           "list — the tasks list is empty" % assurance)
 
     # requirement record shape: every record needs a non-empty id and text
-    req_tier = {}  # v1.5: requirement id -> declared necessity tier
+    req_tier = {}      # v1.5: requirement id -> declared necessity tier
+    req_enforced = {}  # v1.7: requirement id -> list of enforced_in paths
     for idx, r in enumerate(reqs):
         if not isinstance(r, dict):
             errors.append("requirement record #%d: not an object — id and "
@@ -559,6 +621,27 @@ def main():
                               "non-empty string when present (necessity "
                               "justification)" % rlabel)
 
+        # v1.7-only requirement field 'enforced_in' is NOT defined by older
+        # schemas (D-29 enforcement locality)
+        if version in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6") \
+                and "enforced_in" in r:
+            errors.append("requirement %s: 'enforced_in' is a schema-1.7 "
+                          "requirement field — schema %s does not define "
+                          "it; declare \"version\": \"1.7\" to use "
+                          "enforcement locality (wrong schema version)"
+                          % (rlabel, version))
+        if v17:
+            ei = r.get("enforced_in")
+            if "enforced_in" not in r or not nonempty_str_list(ei):
+                errors.append("requirement %s: schema 1.7 requires "
+                              "'enforced_in' — a non-empty JSON array of "
+                              "non-empty repo-relative path strings — on "
+                              "every requirement; enforcement cannot be "
+                              "located without it (missing enforced_in — "
+                              "locality)" % rlabel)
+            elif nonempty_str(r.get("id")):
+                req_enforced[r["id"]] = [p.strip() for p in ei]
+
     # TASK-ID PRECHECK — runs BEFORE coverage/dependency/cycle validation so
     # a missing id is its own named defect, never a downstream error or a
     # silent skip. Every task must be an object with a non-empty string id.
@@ -582,10 +665,38 @@ def main():
     risky_tasks = []     # v1.2 review-floor input: (tid, risk_class)
     surfaced_tasks = []  # v1.2 review-floor input: tids w/ non-empty surfaces
     scope_notes = []     # v1.5: non-fatal nice-to-have-only task notes
+    task_touches = {}          # v1.7: task id -> set of touched paths
+    task_requirement_ids = {}  # v1.7: task id -> list of requirement ids
     for idx, t in enumerate(tasks):
         if not isinstance(t, dict):
             continue  # already reported by the task-id precheck
         tid = t.get("id") if nonempty_str(t.get("id")) else "#%d" % idx
+
+        # v1.7-only task field 'touches' is NOT defined by older schemas
+        # (D-29 enforcement locality)
+        if version in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6") \
+                and "touches" in t:
+            errors.append("task %s: 'touches' is a schema-1.7 task field — "
+                          "schema %s does not define it; declare "
+                          "\"version\": \"1.7\" to use enforcement locality "
+                          "(wrong schema version)" % (tid, version))
+        if v17:
+            if "touches" not in t:
+                errors.append("task %s: schema 1.7 requires 'touches' — a "
+                              "JSON array of repo-relative path strings — "
+                              "on every task; enforcement locality cannot "
+                              "be checked without it (missing touches — "
+                              "locality)" % tid)
+            else:
+                touches = t.get("touches")
+                if not isinstance(touches, list) \
+                        or any(not isinstance(x, str) for x in touches):
+                    errors.append("task %s: 'touches' must be a JSON array "
+                                  "of path strings (invalid touches — "
+                                  "locality)" % tid)
+                else:
+                    task_touches[tid] = {p.strip() for p in touches
+                                        if nonempty_str(p)}
         c = t.get("contract")
         if not isinstance(c, dict):
             errors.append("task %s: contract missing" % tid)
@@ -596,6 +707,8 @@ def main():
                     errors.append("task %s: contract field '%s' missing or "
                                   "empty (incomplete contract)" % (tid, field))
         rids = c.get("requirement_ids")
+        task_requirement_ids[tid] = [x for x in rids if nonempty_str(x)] \
+            if isinstance(rids, list) else []
         if isinstance(rids, list):
             served_tiers = set()
             for x in rids:
@@ -905,6 +1018,79 @@ def main():
                     "%s does not define it; declare \"version\": \"1.6\" to "
                     "use witness pairs (wrong schema version)"
                     % (tid, version))
+            # ---- version 1.7 additional per-contract rules (red witness,
+            # D-28): the green/pass leg is demoted from plan-time evidence
+            # to a verifier duty (IMPOSSIBLE-COMMAND); the red-path duty
+            # is retained unchanged. ----
+            if v17:
+                if "witness_pair" in c:
+                    errors.append(
+                        "task %s: schema 1.7 does not define 'witness_pair' "
+                        "— the green (pass) leg is demoted from plan-time "
+                        "evidence to a verifier duty (the IMPOSSIBLE-COMMAND "
+                        "duty; see policy/acceptance-contract.md); migrate "
+                        "this contract's witness_pair to 'red_witness' "
+                        "(schema-1.7 witness demotion)" % tid)
+                rw = c.get("red_witness")
+                if "red_witness" not in c:
+                    if assurance in A2_PLUS:
+                        errors.append(
+                            "task %s: schema 1.7 at assurance %s requires "
+                            "'red_witness' in every contract — a recorded "
+                            "FAILING run of the whole acceptance_command on "
+                            "a broken scratch (missing red witness)"
+                            % (tid, assurance))
+                elif not isinstance(rw, dict) \
+                        or set(rw) != set(RED_WITNESS_KEYS):
+                    errors.append(
+                        "task %s: 'red_witness' must be an object "
+                        "containing exactly the keys %s (invalid red "
+                        "witness record)"
+                        % (tid, ", ".join(RED_WITNESS_KEYS)))
+                else:
+                    command = c.get("acceptance_command")
+                    expected_digest = hashlib.sha256(
+                        command.encode("utf-8")).hexdigest() \
+                        if nonempty_str(command) else None
+                    for field in ("tree", "command_sha256",
+                                  "evidence_path"):
+                        if not nonempty_str(rw.get(field)):
+                            errors.append(
+                                "task %s: red_witness field '%s' must be a "
+                                "non-empty string (invalid red witness "
+                                "record)" % (tid, field))
+                    exit_code = rw.get("exit_code")
+                    if isinstance(exit_code, bool) \
+                            or not isinstance(exit_code, int):
+                        errors.append(
+                            "task %s: red_witness field 'exit_code' must "
+                            "be a JSON integer, got %r (invalid red witness "
+                            "record)" % (tid, exit_code))
+                        exit_code = None
+                    digest = rw.get("command_sha256")
+                    if nonempty_str(digest) and expected_digest \
+                            and digest.strip().lower() != expected_digest:
+                        errors.append(
+                            "task %s: red_witness record's command_sha256 "
+                            "does not match the sha256 of the contract's "
+                            "acceptance_command — whole-command-only "
+                            "evidence: a record of a partial or drifted "
+                            "command cannot carry the contract's digest "
+                            "(witness digest mismatch)" % tid)
+                    if exit_code == 0:
+                        errors.append(
+                            "task %s: red_witness field 'exit_code' is 0 — "
+                            "the red witness must record the whole command "
+                            "FAILING on a broken scratch; an impossible red "
+                            "leg is as void as a faked green one (witness "
+                            "exit code)" % tid)
+            elif version in ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6") \
+                    and "red_witness" in c:
+                errors.append(
+                    "task %s: 'red_witness' is a schema-1.7 field — schema "
+                    "%s does not define it; declare \"version\": \"1.7\" to "
+                    "use the red witness (wrong schema version)"
+                    % (tid, version))
             if assurance in ("A3", "A4"):
                 # evidence: non-empty string or non-empty object
                 ev = c.get("evidence")
@@ -969,6 +1155,36 @@ def main():
             errors.append("requirement %s: not covered by any task's "
                           "requirement_ids (uncovered requirement)" % rid)
 
+    # v1.7 enforcement locality (D-29): every MUST requirement's
+    # enforced_in paths must ALL appear in the touches of at least one
+    # task whose requirement_ids include it. Comparison is EXACT STRING
+    # ELEMENT membership (set containment on the literal path strings) —
+    # never substring, never prefix: a requirement enforced in
+    # tools/validate-plan is NOT satisfied by a task touching
+    # tools/validate-plan.sh. nice-to-have/fluff requirements are exempt,
+    # exactly as they are exempt from tier-aware coverage above.
+    if v17:
+        for rid in req_ids:
+            if req_tier.get(rid) != "must":
+                continue
+            paths = req_enforced.get(rid)
+            if not paths:
+                continue  # already reported as a missing/invalid enforced_in
+            covering_touches = set()
+            for ctid, crids in task_requirement_ids.items():
+                if rid in crids:
+                    covering_touches |= task_touches.get(ctid, set())
+            for enf_path in paths:
+                if enf_path not in covering_touches:
+                    errors.append(
+                        "requirement %s: enforced_in path %r is not "
+                        "present (exact-element) in the touches of any "
+                        "task whose requirement_ids include %s — a "
+                        "requirement enforced in a path is NOT satisfied "
+                        "by a task touching a path that merely contains "
+                        "it as a substring (enforcement locality — "
+                        "locality)" % (rid, enf_path, rid))
+
     # acyclicity
     for cyc in find_cycles(list(graph.keys()), graph):
         errors.append("dependency cycle detected: %s (cyclic deps)"
@@ -1008,6 +1224,8 @@ def main():
     checks_note = "/known-command-shape lint" if v13 else ""
     if v16:
         checks_note += "/witness pair"
+    if v17:
+        checks_note += "/red witness/enforcement locality"
     print("PASS: %s — %d requirements, %d tasks, assurance %s%s; all Layer-1 "
           "checks passed (structure/coverage%s — semantic command strength "
           "is a Layer-2 judge question)"

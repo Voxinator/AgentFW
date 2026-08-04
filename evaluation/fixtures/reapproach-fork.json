@@ -1,0 +1,70 @@
+{
+  "_comment": "D-31 decision table for the re-approach fork (cap-menu option 5 / D-2 exhaustion-fork branch 4). Machine-checked by tools/check-reapproach-invariants.py. Eligibility is MECHANICALLY DERIVED from each case's open_blockers: ELIGIBLE iff every blocker is contract-mechanics class AND none cites a requirement id. A blocker citing only task or contract ids is contract-mechanics by construction; a blocker citing an R-id means the requirement itself is in dispute, which re-authoring contracts cannot answer. Bounded to at most once per objective: already_used_this_objective forces INELIGIBLE regardless of how clean the blockers are. An IMPOSSIBLE-COMMAND verifier verdict (policy/acceptance-contract.md) always routes to re-approach independent of blocker composition.",
+  "cases": [
+    {
+      "case": "eligible-first-selection",
+      "open_blockers": [
+        {"class": "contract-mechanics", "cites": "task"}
+      ],
+      "already_used_this_objective": false,
+      "verifier_verdict": null,
+      "eligibility": "ELIGIBLE",
+      "action": "ALLOW",
+      "why": "a first-time selection with only contract-mechanics blockers that cite no requirement id is the healthy path: re-authoring contracts can answer this"
+    },
+    {
+      "case": "second-selection-same-objective",
+      "open_blockers": [
+        {"class": "contract-mechanics", "cites": "task"}
+      ],
+      "already_used_this_objective": true,
+      "verifier_verdict": null,
+      "eligibility": "ELIGIBLE",
+      "action": "INELIGIBLE",
+      "why": "the once-per-objective bound overrides even a perfectly clean blocker set — a second re-approach on the same objective is never eligible"
+    },
+    {
+      "case": "non-contract-mechanics-blocker-open",
+      "open_blockers": [
+        {"class": "other", "cites": null}
+      ],
+      "already_used_this_objective": false,
+      "verifier_verdict": null,
+      "eligibility": "INELIGIBLE",
+      "action": "INELIGIBLE",
+      "why": "an open blocker that is not contract-mechanics class is a substantive plan or requirements defect, not a contract-authoring problem"
+    },
+    {
+      "case": "blocker-cites-requirement-id",
+      "open_blockers": [
+        {"class": "contract-mechanics", "cites": "requirement"}
+      ],
+      "already_used_this_objective": false,
+      "verifier_verdict": null,
+      "eligibility": "INELIGIBLE",
+      "action": "INELIGIBLE",
+      "why": "a finding that cites a requirement id disputes the requirement itself; re-authoring the acceptance contracts cannot answer that dispute"
+    },
+    {
+      "case": "blocker-cites-task-id-only",
+      "open_blockers": [
+        {"class": "contract-mechanics", "cites": "task"},
+        {"class": "contract-mechanics", "cites": "contract"}
+      ],
+      "already_used_this_objective": false,
+      "verifier_verdict": null,
+      "eligibility": "ELIGIBLE",
+      "action": "ALLOW",
+      "why": "blockers citing only task or contract ids are contract-mechanics by construction, so the predicate must not reject them"
+    },
+    {
+      "case": "impossible-command-verdict",
+      "open_blockers": [],
+      "already_used_this_objective": false,
+      "verifier_verdict": "IMPOSSIBLE-COMMAND",
+      "eligibility": "ELIGIBLE",
+      "action": "ROUTE_REAPPROACH",
+      "why": "an IMPOSSIBLE-COMMAND verdict is a CONTRACT defect (policy/acceptance-contract.md) and always routes to re-approach, never to a work-defect retry, independent of blocker composition"
+    }
+  ]
+}

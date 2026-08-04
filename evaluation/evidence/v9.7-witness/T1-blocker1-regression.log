@@ -1,0 +1,5 @@
+### Pass-1 blocker 1 — reproduction and fix, same hostile tree
+### tree: /private/tmp/claude-501/-Users-briantaylor-Projects-AgentFW/c396bbf2-9d42-4e52-af6b-505ccf8d6c8a/scratchpad/v97/hostile (stub validator: exits 2 'cannot read <path>' on missing file, PASS otherwise; NO plan-bad-17-* fixtures; stub sentences appended to both policy files)
+### rev 1 T1 command  -> stdout T1_D28_OK, exit 0   [VACUOUS — blocker confirmed]
+### rev 2 T1 command  -> no signal,        exit 1   [fails at the first test -s existence gate]
+### conclusion: the existence gates are load-bearing; the fix is demonstrated, not asserted.

@@ -1,6 +1,6 @@
 # AgentFW — Design Specification
 
-> **Current-release note (v9.6.0):** This document remains the historical **r8 design spec**; its
+> **Current-release note (v9.7.0):** This document remains the historical **r8 design spec**; its
 > body is retained as-is. The current framework is the v9.1.0 platform-neutral semantic policy plus
 > native adapters — see `policy/core.md`, `policy/assurance-model.md`, the README's v9 sections, and
 > `RELEASE-NOTES-v9.1.0.md`.
@@ -631,3 +631,4 @@ The harness adds overhead that simple tasks don't need. The classification gate 
 | v9.4.0 | 2026-07-31 | Operator release: operator-relaxed enforcement (D-16), per-objective liveness budget (D-2) with machine-checked decision table, post-gate scope freeze (D-18), schema-1.5 necessity tiers + C6 demote-duty (D-19), plain-language operator digest with `--digest` count oracle (D-20) |
 | v9.5.0 | 2026-07-31 | Witness-pair release: schema 1.6 — mandatory red+green witness pair per `acceptance_command` before Layer-2 dispatch, whole-command-only evidence (sha256 digest match), `witness` defect keyword, C2 MUST-re-execute + void-witness-tree rejection; closes the impossible-acceptance-command hole (drydock round 3) |
 | v9.6.0 | 2026-08-01 | Operator-compass release: durable per-objective delivery ledger + `[SCOREBOARD:]` marker at every gate event + zero-dispatch tripwire (D-21, with D-24 folded in as rationale), root-objective budget/ledger inheritance across sessions, renames, and runtimes (D-22), blocking session-start reconciliation with the `[RECONCILE:]` marker (D-25); three new machine-checked decision tables; closes the drydock zero-delivery treadmill (field report 2026-08-01) |
+| v9.7.0 | 2026-08-04 | Verification-placement release: schema 1.7 `red_witness` demotes the plan-time green witness to the independent verifier's whole-command run on the real tree, with `IMPOSSIBLE-COMMAND` routing unpassable contracts to a contract-defect fork instead of charging the worker (D-28); Layer-1 enforcement-locality check rejects any `must` requirement whose `enforced_in` paths aren't exactly covered by a task's `touches` (D-29); the `re-approach` fork lets a plan re-author acceptance contracts without losing requirements, bounded to once per objective (D-31); closes the hermes-brain apparatus inversion (field report 2026-08-03) |

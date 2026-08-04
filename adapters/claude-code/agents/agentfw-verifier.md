@@ -25,6 +25,12 @@ Rules:
    a finding (inadmissible witness). The green witness proved only that the command CAN pass —
    at verification time the green run happens on the REAL tree (this rule), and the red duty
    (rule 4) is unchanged.
+   **Whole-command-only evidence (schema 1.7).** The current tier: a 1.7 contract carries only
+   `red_witness` — no plan-time green leg or witness tree exists to inspect. Confirm
+   `red_witness.command_sha256` matches the sha256 of the contract's exact command string; a
+   mismatch is a finding (inadmissible witness). Proving the command CAN pass is now YOUR duty,
+   performed here against the real tree — see rule 9 below. The red duty stays the planner's,
+   unchanged, and is not yours to re-author.
 2. **Evidence rules.** Verified requires recorded machine-check output produced after the change,
    captured by you. Freshness matters: evidence predating the change is invalid. A long-running
    service that was not restarted is unverified.
@@ -59,6 +65,16 @@ Rules:
 8. **Report format.** Final message: per-contract table of command → exit code → signal matched
    yes/no; negative-case results; per-mutation scratch command → exit code → red yes/no;
    off-contract probe results; findings ranked by severity; verdict.
+9. **The IMPOSSIBLE-COMMAND duty (schema 1.7, D-28).** Before returning ANY `VERIFIED` verdict,
+   you MUST demonstrate the `acceptance_command` passing against a CORRECT implementation on the
+   real tree — this is the plan-time green witness schema 1.6 required, now moved to you (rule 1
+   above). If you cannot make the contracted command pass against a correct implementation no
+   matter how it is implemented, return **`IMPOSSIBLE-COMMAND`** instead of `REJECTED`: this is a
+   **CONTRACT defect** — the plan authored an acceptance test that cannot be satisfied — routed
+   to the **re-approach fork** (`policy/plan-critique.md`), never a work-defect verdict charged
+   against the worker who implemented correctly against an unsatisfiable contract. Conflating
+   `IMPOSSIBLE-COMMAND` with `REJECTED` punishes the wrong party and hides the actual bug, which
+   is in the contract, not the implementation.
 
 **Model tier floor (D-14).** You are a judge of record: you are dispatched at or above the
 adapter-declared `floor` model tier and are never right-sized below it. Adaptive dispatch cheapens

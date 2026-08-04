@@ -1,0 +1,5 @@
+### T3 RED (strengthened) — two mutation trees from the pass-1 verifier's hostile probes
+### command_sha256: c9b4a53a6502d56692d54fa1c420c1edac99da9718e1c7a2a67b91a969a4a62b
+### command:
+bash -c '[ "$(python3 tools/check-reapproach-invariants.py --selftest)" = "REAPPROACH_SELFTEST_OK" ] && test -s evaluation/fixtures/reapproach-fork.json && python3 tools/check-reapproach-invariants.py evaluation/fixtures/reapproach-fork.json && grep -q "^  5\. \*\*Re-approach (D-31)\.\*\*" policy/plan-critique.md && grep -q "^  4\. re-approach eligible" policy/plan-critique.md && grep -q "once per objective" policy/plan-critique.md && grep -q "routes here rather than to a" policy/plan-critique.md && grep -q "verdict is outstanding" policy/plan-critique.md && grep -q "cites a requirement id" policy/plan-critique.md && echo T3_D31_OK'### h1 = exhaustion-fork branch 4 deleted, cap-menu option 5 intact:  ORIGINAL cmd exit 0 (GREEN, finding) -> STRENGTHENED cmd exit 1 (RED, fixed)
+### h2 = both of T3's own IMPOSSIBLE-COMMAND mentions deleted, sibling T1 rule-17 mention left:  ORIGINAL cmd exit 0 (GREEN, finding) -> STRENGTHENED cmd exit 1 (RED, fixed)

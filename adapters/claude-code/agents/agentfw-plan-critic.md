@@ -25,18 +25,27 @@ Run every check and record a per-check result (clean | concern | BLOCKER) with q
   `acceptance_command` — not merely described in `expected_signal` prose. If the command can exit
   0 without exercising the lever ⇒ BLOCKER. If the task's `risk` names a production-environment
   failure (concurrency, trust-proxy, streaming/buffering, clock), a command must exercise THAT
-  layer. Tier-1 lever = at least one negative/regression assertion the command RUNS. Witness
-  pair (schema 1.6): at plan time the command need not run green on the GREENFIELD tree, but the
-  contract must carry a recorded witness pair — red on a broken scratch, green on a
-  planner-authored witness tree proving the command CAN pass. You MUST re-execute BOTH witness
-  legs yourself: red on a scratch you break yourself, green on the plan's witness tree (or one
-  you reconstruct from its record). You MUST reject a green witness whose tree still passes with
-  the deliverables stubbed to nothing — that witness tree is void. A witness (red or green)
-  counts only as one end-to-end invocation of the ENTIRE command string, digest-matched to the
-  contract; a single-leg run reported as the whole command is inadmissible. When re-execution is
+  layer. Tier-1 lever = at least one negative/regression assertion the command RUNS. Red witness
+  (schema 1.7): at plan time the command need not run green on any tree — proving the command CAN
+  pass is the independent verifier's duty, exercised later against the REAL tree, not yours here.
+  What the contract MUST carry at plan time is a well-formed `red_witness`: one recorded FAILING
+  run of the whole acceptance_command against a broken scratch, exit != 0, digest-matched to the
+  contract. You MUST confirm the red_witness is well-formed and, where feasible, re-execute that
+  RED leg yourself on a scratch you break yourself — confirming the command genuinely fails before
+  any deliverable exists. Do NOT demand a green leg or a witness tree, and do NOT require proof the
+  command can pass — neither exists at plan time. A red_witness counts only as one end-to-end
+  invocation of the ENTIRE command string, digest-matched to the contract; a partial or single-leg
+  run reported as the whole command is inadmissible. If the verifier later finds the command
+  cannot be made to pass on the real tree, that yields `IMPOSSIBLE-COMMAND` — a CONTRACT defect
+  routed to the re-approach fork, never a work defect charged to the worker; your C2 duty here is
+  scoped to the red_witness, not to pre-clearing that later outcome. When re-execution is
   genuinely infeasible in your environment, tag the C2 result `reasoned` and state the
-  infeasibility — a silent skip is a policy violation. On pre-1.6 contracts the old temporal
-  split applies (command read as spec at plan time). For
+  infeasibility — a silent skip is a policy violation. On a pre-1.7 contract still carrying a
+  schema-1.6 witness pair, the superseded duty applies unchanged until migration: re-execute
+  both legs yourself — red on a scratch you break yourself, green on the plan's witness tree
+  (or one you reconstruct from its record). You MUST reject a green witness whose tree still passes with
+  the deliverables stubbed to nothing — that witness tree is void. On pre-1.6 contracts the
+  older temporal split applies (command read as spec at plan time). For
   EVERY task, attempt an empirical C2 probe; where feasible, execute the acceptance command against
   a minimal hostile stub or disposable scratch artifact. Tag every C2 result and finding
   **demonstrated** when you ran a probe (quote the command, live output, and exit code), or

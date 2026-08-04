@@ -1,5 +1,55 @@
 # AgentFW Changelog
 
+## v9.7.0 (2026-08-04)
+
+Verification placement. Field driver: two sessions, two different repos, 2026-08-02 →
+2026-08-03, both governed by v9.6.0 on both runtimes, independently produced void witness pairs
+on their first attempt and then spent **≈1,130–1,150 lines of acceptance apparatus against a
+163-line deliverable (≈7:1) over four Layer-2 passes that found zero product defects** — while
+the same producer, same repo, same week, shipped a 233-line ungated-A1 change against 118 lines of
+ordinary tests (≈0.5:1) in one round with zero rejections. Evidence:
+[field-report-2026-08-03-hermes-brain-apparatus-inversion.md](evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md).
+Build plan: [PLAN-v9.7-verification-placement.md](PLAN-v9.7-verification-placement.md).
+
+- **D-28 — witness-pair demotion.** Schema **1.7** (the new schema of record) removes the
+  plan-time `witness_pair` GREEN leg and replaces it with a single `red_witness` leg (`tree`,
+  `command_sha256`, `exit_code != 0`, `evidence_path`) — red-only, stub-proof, cheap, honest. The
+  green obligation moves to the **verifier**: its whole-command run on the REAL tree is the green
+  evidence of record, and a contracted command the verifier cannot make pass against a correct
+  implementation returns **`IMPOSSIBLE-COMMAND`**, a contract defect routed to the D-31
+  re-approach fork rather than a work defect charged to the worker. Schema 1.6 plans keep
+  validating unchanged.
+- **D-29 — enforcement-locality check at Layer 1.** Every requirement now carries `enforced_in`
+  (repo-relative paths where it is enforced) and every task carries `touches`; the validator
+  rejects, with defect keyword `locality`, any `must` requirement whose `enforced_in` paths are
+  not covered — exact-element, never substring — by any covering task's `touches`. Cheapest check
+  in the record with the largest measured saving; this very plan's own rev-1 requirement table was
+  missing a covering path for `adapters/codex/AGENTS.md` until a judge found it by reading — the
+  strongest field evidence for the check.
+- **D-31 — the `re-approach` fork.** A fifth option on the 2-pass cap menu and a fourth branch on
+  the D-2 exhaustion fork: plan and requirements retained, acceptance contracts re-authored, cycle
+  counter charged exactly once, plan re-enters Layer 1. Eligibility is mechanically derived (every
+  open blocker is contract-mechanics class and none cites a requirement id), bounded to at most
+  once per objective, recorded in the ledger, machine-checked
+  (`tools/check-reapproach-invariants.py` + `evaluation/fixtures/reapproach-fork.json`).
+- **Adapter & kernel sync.** Both adapter `SKILL.md` files and both kernel bootloaders
+  (`adapters/claude-code/CLAUDE-block.md`, `adapters/codex/AGENTS.md`) state schema 1.7,
+  `red_witness`, `enforced_in`/`touches`, and the re-approach option consistently; no surface
+  retains the removed plan-time-witness-tree instruction.
+- **D-24 (proof-cost inversion) is now UNFOLDED into D-30** — the mechanical rendering D-21's
+  rationale note reserved a new id for: the apparatus-to-deliverable ratio, measured by the
+  verifier from the diffstat it already has (no plan-block field, no threshold), reported in the
+  verdict, with a named justification required above 1:1.
+- **Registered but not built:** D-30, D-32 (change-delta input to assurance derivation), D-33
+  (vacuity floor relative to declared risk fields), D-34 (out-of-domain validation before
+  universal mandate), D-35 (multi-repo objectives), D-36 (Layer-1 PASS semantics +
+  assertion-presence lint) — all registered in [CANDIDATES.md](CANDIDATES.md), each carrying its
+  own `Falsifier`.
+- **Provenance:** CANDIDATES.md gains D-28–D-36 (full schema entries + status-board rows, each
+  with its own `Falsifier`); `tools/check-candidates.py` now requires `Falsifier` as an eighth
+  per-entry label, validated inside each entry's own section body rather than counted
+  file-globally.
+
 ## v9.6.0 (2026-08-01)
 
 The operator compass. Field driver: the drydock failure-routing workstream ran **five review

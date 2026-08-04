@@ -1,0 +1,4 @@
+### T5 RED — mutation tree: Falsifier made unconditional again (the regression this leg exists to catch)
+### command_sha256: 45e4d0a66e2adf239edc2ed14d4400a52bf9939ead8fc308b00f5ef86d71710f
+### command:
+bash -c '[ "$(python3 tools/check-candidates.py --selftest)" = "CANDIDATES_SELFTEST_OK" ] && python3 tools/check-candidates.py --require-falsifier D-28 D-29 D-30 D-31 D-32 D-33 D-34 D-35 D-36 && python3 tools/check-candidates.py D-2 D-14 D-15 D-16 D-17 D-18 D-19 D-20 D-21 D-22 && grep -q "^## v9.7.0" CHANGELOG.md && test -s RELEASE-NOTES-v9.7.0.md && grep -q "unfolded" CANDIDATES.md && grep -q "BUILT" evaluation/field-report-2026-08-03-hermes-brain-apparatus-inversion.md && echo T5_DOCS_OK'### result: exit 1 — the legacy leg over D-2/D-14..D-22 fails, exactly as it did on the real tree before the flag gating

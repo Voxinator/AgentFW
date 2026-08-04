@@ -204,4 +204,51 @@ expect_policy_text "$CRITIC" \
 expect_policy_text "$CRITIC" 'the deliverables stubbed to nothing'
 expect_policy_text "$VERIFIER_PROMPT" '**Whole-command-only evidence (schema 1.6).**'
 
+# Schema 1.7 red witness (D-28): positive, and the four hostile shapes —
+# carrying the demoted witness_pair, missing red_witness, digest mismatch,
+# and an impossible (exit 0) red leg.
+expect_pass "$FIXTURES/plan-good-17.md" "red witness"
+expect_fail "$FIXTURES/plan-bad-17-carrying-witness-pair.md" "witness"
+expect_fail "$FIXTURES/plan-bad-17-carrying-witness-pair.md" \
+  "schema-1.7 witness demotion"
+expect_fail "$FIXTURES/plan-bad-17-missing-red-witness.md" "witness"
+expect_fail "$FIXTURES/plan-bad-17-missing-red-witness.md" \
+  "missing red witness"
+expect_fail "$FIXTURES/plan-bad-17-red-witness-digest.md" "witness"
+expect_fail "$FIXTURES/plan-bad-17-red-witness-digest.md" \
+  "witness digest mismatch"
+expect_fail "$FIXTURES/plan-bad-17-red-witness-exit0.md" "witness"
+expect_fail "$FIXTURES/plan-bad-17-red-witness-exit0.md" \
+  "witness exit code"
+expect_policy_text "$ACCEPTANCE_POLICY" \
+  '### The red witness (schema 1.7) — the pass leg is now a verifier duty'
+expect_policy_text "$ACCEPTANCE_POLICY" 'IMPOSSIBLE-COMMAND'
+expect_policy_text "$PLAN_POLICY" \
+  '**Schema 1.7 red witness — replaces the green leg with a verifier duty (additive over 1.6,'
+expect_policy_text "$PLAN_POLICY" 'red_witness'
+
+# Schema 1.7 enforcement locality (D-29): positive, the nice-to-have
+# exemption positive, and the four hostile shapes — orphan enforcement,
+# missing enforced_in, missing touches, and the discriminating substring
+# fixture (a substring-based matcher would wrongly PASS it).
+expect_pass "$FIXTURES/plan-good-17.md" "enforcement locality"
+expect_pass "$FIXTURES/plan-good-17-nice-to-have-unenforced.md" \
+  "enforcement locality"
+expect_fail "$FIXTURES/plan-bad-17-orphan-enforcement.md" locality
+expect_fail "$FIXTURES/plan-bad-17-orphan-enforcement.md" \
+  "not present (exact-element)"
+expect_fail "$FIXTURES/plan-bad-17-missing-enforced-in.md" locality
+expect_fail "$FIXTURES/plan-bad-17-missing-enforced-in.md" \
+  "missing enforced_in"
+expect_fail "$FIXTURES/plan-bad-17-missing-touches.md" locality
+expect_fail "$FIXTURES/plan-bad-17-missing-touches.md" "missing touches"
+expect_fail "$FIXTURES/plan-bad-17-locality-substring.md" locality
+expect_fail "$FIXTURES/plan-bad-17-locality-substring.md" \
+  "not present (exact-element)"
+expect_policy_text "$ACCEPTANCE_POLICY" 'enforced_in'
+expect_policy_text "$ACCEPTANCE_POLICY" 'touches'
+expect_policy_text "$PLAN_POLICY" '`witness`, `locality`'
+expect_policy_text "$PLAN_POLICY" \
+  '`locality` covers every schema-1.7'
+
 printf 'validate-plan.sh: ALL CHECKS PASSED\n'

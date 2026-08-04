@@ -17,7 +17,9 @@ whose discriminating lever lives only in prose verifies nothing — a wrong impl
 | `expected_signal` | The exact output/exit pattern that means PASS — anchored so it cannot also match a fail line (see footguns below). |
 | `negative_cases[]` | Disconfirming assertions the command runs — inputs/states that a wrong implementation would mishandle. **REQUIRED whenever `risk` is present.** |
 | `mutation_probes[]` | Schema 1.3 roster of deliberate scratch-copy breakages, each shaped exactly as `{mutation: non-empty string, expected: "red"}`. The acceptance command must exit non-zero and must not emit its terminal success signal under each mutation. |
-| `witness_pair` | Schema 1.6 record that the WHOLE `acceptance_command` has been run twice before Layer-2 dispatch: `red` on a deliberately broken/bare scratch (exit ≠ 0) and `green` on a planner-authored witness tree (exit 0). Each leg carries `tree`, `command_sha256` (digest of the contract's exact command string), `exit_code`, and `evidence_path`. The green leg claims exactly one thing — "this command CAN pass" — never that work was done. |
+| `red_witness` | Schema 1.7 record that the WHOLE `acceptance_command` has been run once before Layer-2 dispatch on a deliberately broken/bare scratch (exit ≠ 0), carrying `tree`, `command_sha256` (digest of the contract's exact command string), `exit_code`, and `evidence_path`. Proving the command CAN pass is no longer plan-time evidence — it is the verifier's IMPOSSIBLE-COMMAND duty (see Verification tiers below). |
+| `enforced_in` | Schema 1.7 requirement-level field (D-29) — a non-empty array of non-empty repo-relative path strings naming where this requirement is actually enforced. Every `must` requirement's `enforced_in` paths must each be exact-string-matched inside the `touches` of ≥1 covering task — a review round spent on a requirement enforced nowhere any task owns is the vacuity the locality check exists to catch. |
+| `touches` | Schema 1.7 task-level field (D-29) — the array of repo-relative path strings this task modifies. It is the OTHER side of the locality check: a task's `touches` satisfies a covered requirement's `enforced_in` path only by exact string equality, never by substring or prefix. |
 | `risk` | The failure this task must not ship — name the layer (concurrency, trust-proxy, streaming/buffering, clock, data loss); the command must exercise THAT layer. |
 | `evidence` | Artifact types the check records (test log, build output, diff, rendered page) + **freshness: `produced_after_change`** — evidence older than the change it claims to verify is void. |
 | `rerunnable` | Boolean — the check can be executed again, from the tree, by a context that did not produce the work. Non-rerunnable evidence is testimony. |
@@ -79,6 +81,45 @@ machine-checkable summary per contract (field table in the schema 1.6 section be
 verification time the green path runs on the REAL tree per the tiers above — the witness tree
 never substitutes for that.
 
+**Superseded by schema 1.7 (D-28) — retained here as historical schema documentation.** Schema
+1.6 is no longer the schema of record; new plans author against schema 1.7 (below), which demotes
+the green leg above to a verifier duty. This section documents 1.6 behavior unchanged, for plans
+still declaring `"version": "1.6"`.
+
+### The red witness (schema 1.7) — the pass leg is now a verifier duty
+
+The red-path self-probe proves an `acceptance_command` can FAIL; it never by itself proves the
+command can PASS — an impossible-to-pass command aces every red probe while being incapable of
+ever going green, which makes it indistinguishable from the strictest command in the room. Schema
+1.6 (above) closed that gap with a plan-time green witness on a planner-authored witness tree.
+Schema 1.7 (D-28) DEMOTES that green leg: proving the command CAN pass is no longer plan-time
+evidence — it becomes the verifier's **IMPOSSIBLE-COMMAND duty** (see "Verification tiers"
+below). The red leg is retained UNCHANGED; a schema-1.7 contract carries one recorded plan-time
+witness, not two:
+
+- **red** (`red_witness`) — the existing duty, unchanged: one end-to-end run on a deliberately
+  broken or bare scratch, exiting non-zero without the terminal success signal.
+- **green** — no longer recorded at plan time. Before returning a verified verdict, the verifier
+  MUST demonstrate the command passing against a CORRECT implementation. When the verifier cannot
+  make the contracted command pass against a correct implementation, it returns
+  **IMPOSSIBLE-COMMAND**: a CONTRACT defect, routed to the re-approach fork, never a work defect
+  charged to the worker who implemented correctly against a contract that could not be satisfied.
+
+**Whole-command-only evidence.** A red witness counts only if it is one recorded end-to-end
+invocation of the ENTIRE command string from the contract, matched to the contract by
+`command_sha256` — the sha256 of the exact `acceptance_command` string. Running one leg of a
+multi-leg command and reporting the whole command is inadmissible, and its record cannot carry
+the contract's digest.
+
+**Why demote the leg instead of dropping the duty.** An impossible-to-pass command is exactly as
+dangerous whether it is caught at plan time or at verification time — the danger is a contract no
+implementation can satisfy, not the timing of the catch. What schema 1.7 removes is the COST of
+authoring a planner witness tree at plan time; what it does NOT remove is the duty to prove
+passability before the terminal verified state — that duty simply moves to the verifier, who is
+already re-running the command against real work. An impossible red leg (`exit_code: 0` on
+`red_witness`) is as void as a schema-1.6 contract whose green leg was faked, and Layer 1 rejects
+it at plan time exactly as before.
+
 Shell success signals are ordered, not merely present: each checking clause must gate the next by
 exit status; no pipeline may appear before a gating `&&`; and an explicit success signal is emitted
 last, only after an immediately preceding successful `&&`. A signal printed before a later clause is
@@ -98,6 +139,18 @@ by `required_verification_tier`:
 | `verified_producer` | the producing context — recorded machine-check output from the producer, fresh per `produced_after_change` | A0 and A1 work — this is the terminal state, not a waypoint |
 | `verified_independent` | an independent, input-curated judge re-executes the `acceptance_command` | A2 integration seams; all A3+ |
 | `verified_adversarial` | an independent judge, plus deliberate refutation attempts and probes beyond what the contract anticipated | A4; security/destructive work at any level |
+
+**The IMPOSSIBLE-COMMAND duty (schema 1.7, D-28).** Before returning ANY verified verdict at
+`verified_independent` or `verified_adversarial`, the verifier MUST demonstrate the
+`acceptance_command` passing against a correct implementation — the plan-time green witness that
+schema 1.6 required is gone, and this is where its proof obligation now lives. When the verifier
+cannot make the contracted command pass against a correct implementation, it returns
+**IMPOSSIBLE-COMMAND** rather than a work-defect verdict: this is a **CONTRACT defect** — the plan
+authored an unpassable acceptance test — and it is routed to the **re-approach fork** (the plan
+must be revised and re-gated), **never** charged against the worker who implemented correctly
+against a contract that could not be satisfied. Conflating IMPOSSIBLE-COMMAND with a work defect
+punishes the wrong party and hides the actual bug, which is in the contract, not the
+implementation.
 
 **Producer evidence remains evidence at every tier.** Every producer runs its own checks and records
 the output, fresh per `produced_after_change`, at every assurance level. What changes across tiers is
@@ -153,12 +206,12 @@ each selects the corresponding terminal STATE `verified_producer` / `verified_in
 valid field values, and the validator rejects them; write `independent`, never `verified_independent`,
 in the field.
 
-## Block versioning — `"1.6"` is the schema of record; `"1.1"`–`"1.5"` remain valid; `"1"` is legacy-only
+## Block versioning — `"1.7"` is the schema of record; `"1.1"`–`"1.6"` remain valid; `"1"` is legacy-only
 
-The plan's embedded machine-readable block declares a schema `version`. Schema `"1.6"` is the
-**schema of record** — author new plans against it (see the schema 1.6 section below). Schemas
-`"1.1"` through `"1.5"` remain valid for plans that predate 1.6: default validation accepts
-all six and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
+The plan's embedded machine-readable block declares a schema `version`. Schema `"1.7"` is the
+**schema of record** — author new plans against it (see the schema 1.7 section below). Schemas
+`"1.1"` through `"1.6"` remain valid for plans that predate 1.7: default validation accepts
+all seven and rejects a `"version": "1"` block as a legacy schema version. Version `"1"` exists for
 HISTORICAL PROVENANCE ONLY — re-checking plans authored before the 1.1 schema — and is accepted
 solely under `tools/validate-plan --legacy`, which applies the original v1 rules. Never author a new
 plan against v1. Unknown version strings are rejected naming the version.
@@ -293,7 +346,7 @@ rejected naming schema 1.5 (keyword `version`).
 `policy/plan-critique.md` and `tools/validate-plan` from v9.4.0, and this file's versioning
 header had drifted. The validator was already the authority; the prose now matches it.)*
 
-## Schema 1.6 — the schema of record: the witness pair + whole-command evidence
+## Schema 1.6 — retained: the witness pair + whole-command evidence
 
 Schema `"1.6"` is ADDITIVE over 1.5: every 1.1–1.5 rule applies unchanged. It adds one
 per-contract field — the machine-checkable summary of the witness pair defined in "The witness
@@ -317,6 +370,64 @@ AND green, never green instead.
 The `witness_pair` field is not defined by schemas 1.1–1.5; an older schema carrying it is
 rejected with a diagnostic naming schema 1.6 (keyword `version`). Existing 1.1–1.5 plans without
 the field continue to validate exactly as before.
+
+## Schema 1.7 — the schema of record: the red witness + IMPOSSIBLE-COMMAND verifier duty (D-28)
+
+Schema `"1.7"` is ADDITIVE over 1.6: every 1.1–1.6 rule applies unchanged, EXCEPT that
+`witness_pair` is no longer defined — a 1.7 block carrying it is REJECTED, naming the demotion and
+pointing at `red_witness` as the migration target (the red leg is retained; the green leg becomes
+the verifier's IMPOSSIBLE-COMMAND duty — see "The red witness (schema 1.7)" and "Verification
+tiers" above).
+
+| Field (1.7) | Level | Mandatory at | Rule |
+|---|---|---|---|
+| `red_witness` | per contract | A2+ (optional below A2; shape/digest-checked when present) | an object containing EXACTLY `tree` (non-empty string), `command_sha256` (the sha256 hex digest of the contract's exact `acceptance_command` string), `exit_code` (a JSON integer, must be ≠ 0), and `evidence_path` (non-empty string; the raw transcript beside the plan) |
+
+What Layer 1 checks mechanically: presence at A2+, exact shape, `command_sha256` equal to the
+digest of the contract's own `acceptance_command` (the whole-command rule made mechanical — a
+record produced from a partial or drifted command cannot carry the contract's digest), and
+`exit_code != 0` (an impossible red leg — a command that cannot even fail on a broken scratch — is
+as void as a faked green one). What Layer 1 does NOT check: the honesty of the red witness tree (a
+C2 judge duty, unchanged from 1.6) and the existence/content of `evidence_path` (the validator
+stays a hermetic single-file checker; judges read the transcripts). A `"1.7"` block carrying
+`witness_pair` is rejected with keyword `witness`, naming the demotion.
+
+The `red_witness` field is not defined by schemas 1.1–1.6; an older schema carrying it is rejected
+with a diagnostic naming schema 1.7 (keyword `version`). Existing 1.1–1.6 plans without the field
+continue to validate exactly as before.
+
+### Enforcement locality (schema 1.7, D-29) — a Layer-1 check that a `must` requirement's proof lives where a task actually looks
+
+A full review round can be spent auditing a requirement that is "enforced" in a file no task in the
+plan touches — nothing asks the question until a C5 judge notices at Layer 2, after the whole proof
+apparatus (contract, mutation probes, red witness) has already been built around it. Schema 1.7 adds
+a Layer-1 locality check that catches this at plan time, mechanically, before any of that cost is
+spent.
+
+| Field (1.7) | Level | Mandatory at | Rule |
+|---|---|---|---|
+| `enforced_in` | per requirement | every requirement, every assurance level | a non-empty JSON array of non-empty repo-relative path strings naming where the requirement is enforced |
+| `touches` | per task | every task, every assurance level | a JSON array of repo-relative path strings this task modifies (may be empty) |
+
+**The locality check itself:** for every requirement whose `necessity` is `must`, every path in its
+`enforced_in` must appear in the `touches` of at least ONE task whose `requirement_ids` include that
+requirement's id. The comparison is **exact string element equality — never substring, never
+prefix**: a requirement enforced in `src/handler.py` is NOT satisfied by a task touching
+`src/handler.py.bak`, even though the latter contains the former as a literal substring. A path
+present only in some OTHER, non-covering task's `touches` also does not satisfy the check — the
+touching task must be one of the requirement's own covering tasks. `nice-to-have` and `fluff`
+requirements are EXEMPT from the locality check, exactly as they are exempt from tier-aware
+coverage (D-19): deferred or dropped scope with an unenforced path is not a locality defect.
+
+What Layer 1 checks mechanically: presence and shape of `enforced_in` on every requirement and
+`touches` on every task, and the exact-element locality match for every `must` requirement. What
+Layer 1 does NOT check: whether the named path is where the requirement's discriminating behavior
+actually lives (a C5 judge question — locality proves a task claims to touch the path, not that the
+implementation there is correct).
+
+`enforced_in` and `touches` are not defined by schemas 1.1–1.6; an older schema carrying either is
+rejected with a diagnostic naming schema 1.7 (keyword `version`). The stable defect keyword for
+every presence/shape/locality defect above is `locality`.
 
 ## Evidence classes — non-code and mixed work
 
@@ -397,7 +508,8 @@ layer down does not discharge it.
 
 Structural completeness of contracts (non-empty `criteria` + `acceptance_command` + `expected_signal`;
 `risk` ⇒ non-empty `negative_cases`; coverage; acyclic deps), schema 1.3 mutation-probe shape and
-presence, schema 1.6 witness-pair presence/shape/digest/exit-codes, and the known weak command
+presence, schema 1.6 witness-pair presence/shape/digest/exit-codes, schema 1.7 red-witness
+presence/shape/digest/exit-code, and the known weak command
 shapes above are machine-checked by `tools/validate-plan`
 against the plan's embedded `json agentfw-plan` block — see `policy/plan-critique.md` Layer 1. Whether
 the command is STRONG enough to exercise the lever remains a Layer-2 judge question; passing the

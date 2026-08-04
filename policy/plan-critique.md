@@ -116,6 +116,29 @@ The plan embeds exactly one fenced block opening with ```` ```json agentfw-plan 
     record can put exit 0 on its green leg). Below A2 the field is optional but fully checked
     when present. A 1.1–1.5 block carrying `witness_pair` is rejected naming schema 1.6
     (keyword `version`). Layer 1 does not judge witness-tree honesty — that is C2's duty (below).
+17. **Schema 1.7 red witness — replaces the green leg with a verifier duty (additive over 1.6,
+    D-28):** a `"1.7"` block enforces every 1.1–1.6 rule above PLUS the red-witness duty (full
+    semantics: `policy/acceptance-contract.md` § The red witness). At A2+, EVERY contract carries
+    `red_witness` — an object containing EXACTLY `tree` (non-empty string), `command_sha256` (the
+    sha256 hex digest of the contract's exact `acceptance_command` string), `exit_code` (a JSON
+    integer, must be ≠ 0), and `evidence_path` (non-empty string). Below A2 the field is optional
+    but fully checked when present. A `"1.7"` block carrying `witness_pair` is REJECTED — 1.7 does
+    not define it; the diagnostic names the demotion (the green/pass leg moves from plan-time
+    evidence to the verifier's IMPOSSIBLE-COMMAND duty, `policy/acceptance-contract.md`) and
+    points at `red_witness` as the migration target. A `"1.1"`–`"1.6"` block carrying
+    `red_witness` is rejected naming schema 1.7 (keyword `version`).
+18. **Schema 1.7 enforcement locality (D-29 — additive within schema 1.7, no version bump):** at
+    EVERY assurance level, every requirement record carries `enforced_in` — a non-empty JSON array
+    of non-empty repo-relative path strings — and every task carries `touches` — a JSON array of
+    repo-relative path strings (may be empty). The LOCALITY CHECK: for every requirement whose
+    `necessity` is `must`, every path in its `enforced_in` must appear in the `touches` of at least
+    ONE task whose `requirement_ids` include that requirement's id. Comparison is EXACT STRING
+    ELEMENT equality — never substring, never prefix — a requirement enforced in
+    `src/handler.py` is NOT satisfied by a task touching `src/handler.py.bak`. `nice-to-have`
+    and `fluff` requirements are EXEMPT from the locality check, exactly as they are exempt from
+    tier-aware coverage (rule 15). A `"1.1"`–`"1.6"` block carrying `enforced_in` or `touches` is
+    rejected naming schema 1.7 (keyword `version`). Full semantics:
+    `policy/acceptance-contract.md` § Enforcement locality.
 
 **Schema 1.3 red-path execution duty:** Layer 1 validates the declared mutation roster and the
 three known weak command shapes; it does not execute mutation probes. Before Layer 2 dispatch, the
@@ -135,7 +158,7 @@ task/requirement id and defect class. All defects are reported, not just the fir
 **Defect-keyword contract (stable, grep-able):** harness-facing Layer-1 diagnostics carry one or
 more of the stable defect-class keywords `contract`, `cover`, `cycl`, `negative`, `assurance`,
 `empty`, `duplicate`, `tier`, `review`, `failure_surface`, `mutation`, `command`, `version`,
-`override`, `necessity`, `witness`. A
+`override`, `necessity`, `witness`, `locality`. A
 diagnostic may carry a general and a specific keyword together; fixtures should key on the most
 specific stable keyword. `tier` covers every tier-derivation defect — a
 missing/invalid `required_verification_tier`, a missing/invalid `integration_seam` or
@@ -146,9 +169,14 @@ defects; `mutation` covers every schema-1.3 `mutation_probes` presence and shape
 `command` covers the three schema-1.3 weak acceptance-command shapes; `override` covers every
 schema-1.4 `overrides` ledger shape defect; `necessity` covers every schema-1.5 necessity-tier
 defect — a missing/invalid `necessity`, a must without `because`, or a task serving fluff
-(requirement inflation); `witness` covers every schema-1.6 `witness_pair` defect — a missing or
-malformed pair, a leg whose `command_sha256` does not match the contract's `acceptance_command`
-digest, or wrong exit codes (red = 0 or green ≠ 0); `empty` includes the task-id
+(requirement inflation); `witness` covers every schema-1.6 `witness_pair` defect AND every
+schema-1.7 `red_witness` defect — a missing or malformed pair/record, a leg or record whose
+`command_sha256` does not match the contract's `acceptance_command` digest, wrong exit codes
+(schema 1.6: red = 0 or green ≠ 0; schema 1.7: `red_witness.exit_code` = 0), or a schema-1.7
+contract still carrying the demoted `witness_pair` field; `locality` covers every schema-1.7
+enforcement-locality defect — a missing/invalid `enforced_in` or `touches`, and a `must`
+requirement's `enforced_in` path not present (by exact string element, never substring) in the
+`touches` of any covering task; `empty` includes the task-id
 precheck; `version` covers legacy-`"1"`, unknown-version, and
 older-schema-carrying-newer-schema-field rejections, the legacy message also naming `--legacy`.
 Harness code and fixtures key on these words; changing them is a breaking schema change to this
@@ -303,9 +331,22 @@ disagreement is itself a defect to fix before dispatch.
      confirmation turn dispatches. Full semantics: the Human delivery override section below.
   4. **Halt.** Always eligible and the default when the human selects no relaxation; preserve the
      blocker record and dispatch nothing.
+  5. **Re-approach (D-31).** Plan and requirements are RETAINED unchanged; only the affected
+     tasks' acceptance contracts are re-authored, exactly ONE cycle is charged, and the revised
+     plan RE-ENTERS Layer 1 — never a direct dispatch. **Eligibility is mechanically derived, not
+     judged:** a re-approach is eligible iff every open blocker is `contract-mechanics` class AND
+     no open blocker's finding **cites a requirement id**. A blocker citing only task or contract
+     ids is contract-mechanics by construction; a blocker citing an R-id means the requirement
+     itself is in dispute, which re-authoring contracts cannot answer — so no free-text field
+     decides eligibility. **Bounded: at most once per objective**, recorded in the ledger; a
+     second selection for the same objective is ineligible regardless of blocker composition. An
+     `IMPOSSIBLE-COMMAND` verifier verdict — a CONTRACT defect defined in
+     `policy/acceptance-contract.md`, never a work-defect — routes here rather than to a
+     work-defect retry. Machine-checked as a decision table:
+     `evaluation/fixtures/reapproach-fork.json`, `tools/check-reapproach-invariants.py`.
 
-  Only an explicit human decision may select options 1, 2, or 3. Any alternative is a **bespoke named
-  relaxation**: it must state the invariant being waived, exact task/blocker scope, compensating
+  Only an explicit human decision may select options 1, 2, 3, or 5. Any alternative is a **bespoke
+  named relaxation**: it must state the invariant being waived, exact task/blocker scope, compensating
   mechanical controls, and termination condition, and it requires explicit human authorization.
   The menu is decision support, never standing authorization.
 - **Do NOT trust a model-judged convergence signal.** Empirically, later passes each caught a real,
@@ -378,6 +419,13 @@ rename, and revision:
      offer (safety/assumption split, assumption ledger with follow-up tests, expenditure to
      date, exact dispatch scope) without waiting for a delivery-intent turn — and **halts** if
      the human declines.
+  4. re-approach eligible (per the cap-menu option 5 above), or an `IMPOSSIBLE-COMMAND` verifier
+     verdict is outstanding — taking precedence over branch 3 when both would otherwise apply
+     → **re-approach**: plan and requirements RETAINED, only the acceptance contracts
+     re-authored, exactly ONE cycle charged, re-entering Layer 1; bounded to at most **once per
+     objective**, recorded in the ledger. Eligibility here is the same mechanical derivation as
+     the cap-menu option — every open blocker contract-mechanics class and none of them cites a
+     requirement id — never a judged exception.
   Exhaustion is a human fork: a sleep-mode session halts here exactly as at the 2-pass cap.
 - **Gate entry on a resumed objective — reconcile first (D-25).** A resumed A2+ objective's FIRST
   gate event is preceded by the reconciliation duty of

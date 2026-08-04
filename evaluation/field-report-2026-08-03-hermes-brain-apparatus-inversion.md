@@ -292,13 +292,21 @@ A meaningful share of the round count is the gate catching real producer errors 
 working. The framework charge is narrower and survives: **it made those errors expensive to discover
 by requiring effort in the wrong order.**
 
-## Disposition — proposed candidates (no CANDIDATES.md entries written yet)
+## Disposition — candidates, now registered in CANDIDATES.md (updated 2026-08-04)
 
 Ranked by expected saving against these two sessions. **Every candidate carries a falsifier**, because
 a series that accumulates candidates across three reports while arguing against complexity owes the
-maintainer a way to retire its own proposals.
+maintainer a way to retire its own proposals. Full schema entries + status-board rows for all nine
+now live in [CANDIDATES.md](../CANDIDATES.md); the disposition below records what shipped versus what
+remains proposed as of the v9.7.0 build.
 
-- **D-28 · Witness-pair demotion** (Findings 1, 2, 3, 5) — green witness moves to the **verifier**;
+**BUILT, this release ([PLAN-v9.7-verification-placement.md](../PLAN-v9.7-verification-placement.md),
+v9.7.0, 2026-08-04): D-28, D-29, D-31.** The remaining six (D-30, D-32, D-33, D-34, D-35, D-36) are
+proposed only — registered in CANDIDATES.md with their falsifiers, deliberately deferred because,
+unlike the three BUILT here, they could not be satisfied without an implementation existing yet (see
+the plan's "Counterweight check").
+
+- **D-28 · Witness-pair demotion — BUILT in v9.7.0.** (Findings 1, 2, 3, 5) — green witness moves to the **verifier**;
   `mutation_probes` becomes the plan-time discriminating duty. The red witness stays (cheap, honest).
   Rationale: a mutation probe is red-only and therefore stub-proof, so the exact failure both sessions
   produced on first attempt becomes unconstructible. Addresses session B's rounds 1, 2, 3, 5.
@@ -312,7 +320,7 @@ maintainer a way to retire its own proposals.
   *Falsifier:* post-demotion, verifiers report green without re-execution evidence (rubber-stamping
   the leg they now own), or impossible-to-pass commands reach workers at a rate whose burned cycles
   exceed the apparatus cost saved.
-- **D-29 · Enforcement-locality check at Layer 1** (Findings 5, 11) — per requirement: *which file
+- **D-29 · Enforcement-locality check at Layer 1 — BUILT in v9.7.0.** (Findings 5, 11) — per requirement: *which file
   enforces this, and does a task's declared scope touch that file?* Mechanical, near-free, kills
   wrong-repo plans before any apparatus exists. Currently only surfaces via C5 at Layer 2, after the
   trees are built. **Cheapest check with the largest saving in this record**, and neither session
@@ -333,7 +341,7 @@ maintainer a way to retire its own proposals.
   *Falsifier:* measured ratios cluster indistinguishably across gated and ungated work (no signal), or
   high ratios correlate with *caught defects* rather than with treadmills — in which case the ratio is
   measuring thoroughness, not waste.
-- **D-31 · `re-approach` fork option** (Finding 6) — added to BOTH the 2-pass cap menu and the D-2
+- **D-31 · `re-approach` fork option — BUILT in v9.7.0.** (Finding 6) — added to BOTH the 2-pass cap menu and the D-2
   exhaustion fork: *plan retained, verification strategy replaced, contracts re-authored, cycle
   counter charged once.* Without it the correct move costs a bespoke relaxation plus a human turn.
   *Falsifier:* it is selected more than once per objective, i.e. it becomes the soft override — the

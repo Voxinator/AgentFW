@@ -1,0 +1,250 @@
+{
+  "objective": "verification-placement",
+  "root_objective": "verification-placement",
+  "cycles": 1,
+  "layer2_passes": 2,
+  "workers_dispatched": 3,
+  "tasks_verified": 5,
+  "gate_events": [
+    {
+      "event": "layer1_fail_rev1_witness_only_5_defects_all_other_checks_pass",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "red_witness_legs_recorded_5of5_two_substrate_defects_found_and_fixed",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "green_witness_legs_not_recorded_operator_fork_presented_measured_cost_1700_lines",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "operator_authorized_named_relaxation_green_witness_waived_T1_T5_rev1_overrides_ledger_recorded",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "layer1_rev1_final_FAIL_5_witness_defects_by_authorized_waiver_all_other_checks_pass_handed_to_operator_for_layer2",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "layer2_dual_critique_dispatched_2_disjoint_input_curated_judges_rev1",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "layer2_dual_verdict_rev1_BLOCKERS_4_distinct_demonstrated_C2_defects_all_local_revise_waiver_judged_sound_by_both_judges",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "local_revise_rev2_authored_4_blockers_fixed_plus_6_suggestions_folded_plus_R4_eligibility_made_mechanical",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "blocker1_reproduced_on_hostile_stub_tree_rev1_cmd_green_exit0_rev2_cmd_red_exit1_same_tree_fix_demonstrated_not_asserted",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "red_witness_legs_rerecorded_5of5_against_rev2_digests_all_exit_nonzero",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "layer1_rev2_FAIL_5_witness_defects_only_all_other_checks_pass_waiver_LAPSED_rev1_scope_awaiting_operator_reauthorization",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T3_producer_complete_7of7_probes_red",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T1_verifier_REJECTED_probe6_stayed_green_bare_whole_file_grep_on_term_occurring_5_times_contract_defect_not_work_defect",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T1_contract_strengthened_4_structural_anchors_replacing_3_token_greps_digest_9ab105e3",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T1_probe6_reproduced_on_gutted_tree_old_leg_green_new_leg_red_regression_proof_recorded",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T2_producer_complete_7of7_probes_red_locality_check_landed",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "tree_quiesced_all_three_task_commands_green_together_suite_passes_1.6_backcompat_intact",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T3_verifier_VERIFIED_INDEPENDENT_7of7_contracted_probes_red_plus_8_hostile_probes",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T3_verifier_2_HIGH_contract_vacuities_demonstrated_h1_exhaustion_fork_branch_unpinned_h2_leg_satisfied_by_sibling_T1_text",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T3_contract_strengthened_6_structural_anchors_probes_7to9_digest_c9b4a53a_both_findings_reproduced_then_fixed",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T3_verified_state_now_against_SUPERSEDED_contract_reverification_decision_pending",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T2_verifier_VERIFIED_INDEPENDENT_7of7_probes_red_exact_element_matcher_confirmed_load_bearing",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T2_verifier_HIGH_finding_documentation_legs_vacuous_bare_token_greps_6_and_8_occurrences",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T2_contract_strengthened_3_structural_anchors_probes_7to8_digest_3f231b1a_finding_reproduced_then_fixed",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "witness_evidence_table_digests_refreshed_to_current_contracts_stale_rev1_digests_corrected",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T1_verifier_pass3_REJECTED_anchor_located_in_wrong_section_plus_fixture_locality_cross_contamination",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T1_contract_refixed_per_fixture_diagnostic_greps_plus_in_paragraph_anchors_probes_9to11_digest_8f0fd2dd",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T1_witness_fixtures_repaired_each_now_reports_exactly_1_defect",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T4_producer_complete_9of9_probes_red_self_caught_own_vacuity_orphaned_cross_reference",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T4_flagged_SIXTH_surface_plan_critic_agent_outside_all_task_scopes_R5_locality_table_gap_number_3",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T4_contract_extended_to_plan_critic_surface_digest_e43bc60c_leg_red_on_real_tree_then_migrated_green",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "plan_critic_migrated_to_1.7_legacy_1.6_duty_retained_as_scoped_backward_compat_path",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "all_four_task_commands_green_together_suite_passes_no_adapter_surface_teaches_removed_duty",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T5_producer_complete_6of6_probes_red_provenance_and_candidates_checker_shipped",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T5_introduced_regression_unconditional_Falsifier_broke_release_gates_v9.3_v9.4_v9.5_v9.6_invisible_to_its_own_contract",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "regression_closed_Falsifier_gated_behind_require_falsifier_flag_legacy_ids_pass_again",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "T2_introduced_broken_doc_references_agent_claimed_pre_existing_orchestrator_checked_git_HEAD_and_disproved_it",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "illustrative_path_pair_reworded_reference_checker_clean",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "all_five_task_commands_green_on_final_tree_45_contracted_probes_layer1_shows_only_the_5_authorized_witness_defects",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "consolidated_verifier_ALL_FIVE_VERIFIED_INDEPENDENT_45of45_probes_red_no_criteria_clause_unmet",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "no_cross_task_regression_release_v9.6_gate_green_legacy_v9.3_v9.4_v9.5_fail_for_PRE_EXISTING_metadata_version_assert_confirmed_via_git_stash_at_HEAD",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "off_contract_finding_1_T2_trailing_locality_grep_vacuous_in_isolation_backstopped_by_suite_assertion",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "off_contract_finding_2_selftest_signal_gate_pattern_defeated_by_hardcoded_stub_swap_across_T3_T4_T5_framework_wide_not_build_specific",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "version_surfaces_bumped_to_9.7.0_metadata_plus_4_adapter_surfaces",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "release_gate_v9.7_authored_3_discrimination_probes_confirm_non_vacuous",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "SIXTH_coverage_gap_README_and_DESIGN_front_door_version_surfaces_flagged_by_producer_not_by_any_contract",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "README_DESIGN_updated_gate_extended_2_more_discrimination_probes_green",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    },
+    {
+      "event": "RELEASE_V9_7_OK_full_gate_green_all_five_task_commands_still_green_no_surface_claims_9.6.0_as_current",
+      "runtime": "claude-code",
+      "date": "2026-08-04"
+    }
+  ]
+}

@@ -116,8 +116,9 @@ must not also match a fail line), `negative_cases[]` (REQUIRED whenever `risk` i
 `evidence` (freshness: produced_after_change), `integration_seam` (JSON boolean),
 `risk_class` (none | standard | security | destructive), `required_verification_tier`
 (producer | independent | adversarial), `mutation_probes[]` (schema 1.3 entries shaped exactly as
-`{mutation: non-empty string, expected: red}`), `rerunnable` (JSON boolean), `constraints` (optional).
-Tier-1 lever = at least
+`{mutation: non-empty string, expected: red}`), `red_witness` (schema 1.7 object — see below),
+`rerunnable` (JSON boolean), `constraints` (optional). Under schema 1.7 every requirement
+additionally carries `enforced_in` and every task carries `touches` (see below). Tier-1 lever = at least
 one negative/regression assertion the command actually RUNS — a bare smoke import is not Tier-1.
 Non-shell work (docs/research/design): a named mechanical check (grep/link-check/renderer) plus a
 designated independent reviewer; prose-only acceptance is never Tier-1.
@@ -127,9 +128,10 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
 `./tools/validate-plan` — the roundtrip suite runs exactly that check):
 
 ```json agentfw-plan
-{ "version": "1.3", "assurance": "A3", "required_plan_review_tier": "dual",
-  "requirements": [{"id": "R1", "text": "..."}],
-  "tasks": [{ "id": "T1", "title": "...", "deps": [],
+{ "version": "1.7", "assurance": "A3", "required_plan_review_tier": "dual",
+  "requirements": [{"id": "R1", "text": "...", "necessity": "must", "because": "...",
+                     "enforced_in": ["src/example.py"]}],
+  "tasks": [{ "id": "T1", "title": "...", "deps": [], "touches": ["src/example.py"],
               "contract": { "requirement_ids": ["R1"], "criteria": "...",
                             "acceptance_command": "bash -c 'run-task-tests && echo TASK_OK'",
                             "expected_signal": "terminal line exactly TASK_OK with exit 0",
@@ -138,10 +140,13 @@ uses that exact fence, so this SKILL.md itself validates as a single-block input
                             "required_verification_tier": "independent",
                             "failure_surfaces": [],
                             "mutation_probes": [{"mutation": "on a scratch copy, replace the implementation with an unconditional-success stub", "expected": "red"}],
+                            "red_witness": {"tree": "scratch-broken-v1",
+                                             "command_sha256": "a1293e9e7e3ebd66567733a394c53b26ebdc84a945f41c128473fc947fb9deeb",
+                                             "exit_code": 1, "evidence_path": "evidence/T1-red.log"},
                             "risk": "...", "negative_cases": ["..."], "rerunnable": true }}]}
 ```
 
-Schema `"1.6"` is the schema of record; `"1.1"` through `"1.5"` remain valid for older
+Schema `"1.7"` is the schema of record; `"1.1"` through `"1.6"` remain valid for older
 plans. A `"version": "1"` block is rejected by default and accepted only via `validate-plan
 --legacy` for historical provenance; never author a new plan against v1. Schema 1.1 still defines
 the structured verification-tier fields, 1.2 adds plan-review tier and failure surfaces, and 1.3
@@ -150,26 +155,40 @@ contract, each entry exactly a non-empty `mutation` plus `"expected": "red"` —
 rejection of known weak acceptance-command shapes. Schema 1.4 is additive over
 1.3 and adds an OPTIONAL plan-level `overrides` ledger recording human-waived Layer-2 blockers
 under the delivery override (Layer 2 below): entries exactly
-`{blocker, assumption, followup_test, authorized_turn}`, each a non-empty string. The current
-tier, schema 1.5 (D-19), adds necessity tiers: EVERY requirement carries `necessity`
+`{blocker, assumption, followup_test, authorized_turn}`, each a non-empty string. Schema 1.5
+(D-19) adds necessity tiers: EVERY requirement carries `necessity`
 (`must` | `nice-to-have` | `fluff`), and a `must` also carries a plain-language `because`
 naming the concrete failure without it. Coverage becomes tier-aware: an uncovered
 nice-to-have is valid deferred scope (the block doubles as the next-increment ledger), and a
 task serving a fluff requirement is a defect. `validate-plan --digest` emits the machine
-tier counts the operator digest (below) must match. The current tier, schema 1.6, adds the
-**witness pair**: at A2+ every contract carries `witness_pair` — recorded red AND green runs of
-the WHOLE `acceptance_command` (red on a broken scratch, green on a planner-authored witness
-tree), each leg digest-matched to the contract's exact command string with
-`red.exit_code != 0` and `green.exit_code == 0`. A command never shown able to pass is rejected
-at plan time (defect keyword `witness`).
+tier counts the operator digest (below) must match. Schema 1.6 (historical — superseded below)
+added the **witness pair**: at A2+ every contract carried `witness_pair`, recorded red AND green
+runs of the WHOLE `acceptance_command` digest-matched to the contract's exact command string,
+the green leg run on a witness tree authored by the planner at plan time.
+
+**The current tier, schema 1.7 (D-28), demotes that green leg to a verifier duty and retires
+plan-time witness-tree authoring.** A 1.7 contract carries exactly one plan-time witness,
+`red_witness` — the red leg, unchanged: one recorded end-to-end run of the WHOLE
+`acceptance_command` on a deliberately broken or bare scratch, digest-matched
+(`command_sha256`) to the contract's exact command string, with `exit_code != 0`. There is no
+plan-time green leg and nothing to author at plan time: proving the command CAN pass is now the
+verifier's **IMPOSSIBLE-COMMAND duty** (§3 Layer 2 below and `./policy/acceptance-contract.md`) —
+before returning a verified verdict, the verifier must demonstrate the command passing against a
+CORRECT implementation on the real tree; when it cannot, it returns `IMPOSSIBLE-COMMAND`, a
+CONTRACT defect routed to the **re-approach** fork (D-31, in the Layer-2 escalation menu below),
+never a work defect charged to the worker. Schema 1.7 also adds **enforcement locality (D-29)**:
+every requirement carries `enforced_in` (a non-empty array of repo-relative paths naming where it
+is actually enforced) and every task carries `touches` (the repo-relative paths it modifies); for
+every `must` requirement, each `enforced_in` path must exact-string-match the `touches` of at
+least one covering task — catching, at Layer 1, a requirement "enforced" somewhere no task
+actually touches.
 
 **Producer red-path gate (before Layer 2):** the planner, as producer of each contract, executes
 its `acceptance_command` against at least one deliberately broken scratch copy and records the
 non-zero/red output. Producers repeat every contracted 1.3 mutation after implementation; the
-required verifier independently executes every probe on scratch copies. Under schema 1.6 the
-red run is one leg of the witness pair: the producer also records the GREEN witness — the whole
-command exiting 0 on a planner-authored witness tree — before Layer-2 dispatch; the pair extends
-the red-path duty, never replaces it. The command must be
+required verifier independently executes every probe on scratch copies. Under schema 1.7 this red
+run IS the `red_witness` record — the sole plan-time witness; there is no plan-time green leg and
+no witness tree to author at plan time. The command must be
 exit-code gated with no pipe before a gating `&&`; emit an explicit success signal last, only after
 an immediately preceding successful `&&`, so every clause gates the terminal signal.
 
@@ -200,7 +219,12 @@ or at least one is non-C2; **(2)** mutation-gated dispatch — eligible only whe
 are C2-local and each maps one-to-one to a contracted `mutation_probes` entry expected red,
 verifier-executed on a fresh scratch copy;
 **(3)** assumption-gated dispatch (human delivery override);
-**(4)** halt — always eligible and the default. **Override trigger duty:** once
+**(4)** halt — always eligible and the default;
+**(5)** re-approach (D-31) — plan and requirements RETAINED unchanged, only the affected tasks'
+acceptance contracts re-authored, exactly ONE cycle charged, re-entering Layer 1; eligible iff
+every open blocker is `contract-mechanics` class and none cites a requirement id; bounded to at
+most once per objective. An `IMPOSSIBLE-COMMAND` verifier verdict routes here rather than to a
+work-defect retry. **Override trigger duty:** once
 Layer-2 findings exist, a genuine human delivery-intent turn ("implement now", "stop reviewing",
 or equivalent) means the model MUST NOT start a new plan/critique cycle; its only lawful responses
 are the override offer — one turn presenting the safety/assumption split, the assumption ledger

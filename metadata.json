@@ -1,12 +1,12 @@
 {
   "name": "agentfw",
   "display_name": "AgentFW",
-  "version": "9.6.0",
-  "revision": "r9.6",
+  "version": "9.7.0",
+  "revision": "r9.7",
   "description": "Firmware for agent behavior, split into a platform-neutral semantic policy (policy/ — assurance model A0-A4, acceptance contracts, two-layer Plan-Critique Gate, capability contracts, recovery, anti-patterns) and native adapters (adapters/ — compile the policy into each runtime's real controls) plus guided degradation profiles (profiles/).",
   "author": "Brian Taylor",
   "created": "2025-03-01",
-  "updated": "2026-08-01",
+  "updated": "2026-08-04",
   "compatibility": [
     "claude-code",
     "codex"

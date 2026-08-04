@@ -1,6 +1,6 @@
 # AgentFW r9 — Assurance Kernel (Codex bootloader)
 
-Installed release: **AgentFW v9.6.0** — when asked what version is running, answer from this
+Installed release: **AgentFW v9.7.0** — when asked what version is running, answer from this
 line, not from feature-paragraph labels below (those name the release each feature shipped in).
 
 Before any material action, derive an assurance level and emit the marker. Full policy lives in
@@ -61,11 +61,19 @@ flagship tier is a human-gated economic escalation. Sleep (unattended) mode auto
 recommended option at non-floor forks but halts like headless at the floor (incl. flagship
 escalation). See `policy/model-dispatch.md` and the sleep posture in `policy/assurance-model.md`.
 
-**Witness pair (v9.5).** Schema 1.6: before Layer-2 dispatch every `acceptance_command`
-carries recorded proof it can FAIL **and** PASS — red on a broken scratch (the existing duty,
-unchanged) and green on a planner-authored witness tree. Whole-command-only evidence: each leg
-is one end-to-end run of the entire command string, digest-matched to the contract. A command
-never shown able to pass is rejected at plan time (defect keyword `witness`).
+**Red witness + IMPOSSIBLE-COMMAND (v9.7, schema 1.7 — schema of record).** Every `acceptance_command`
+still carries one recorded plan-time `red_witness`: an end-to-end run on a broken/bare scratch,
+digest-matched to the contract, exit != 0 (the pre-existing duty, unchanged). Schema 1.6's
+plan-time green leg — proved on a witness tree the planner authored — is RETIRED: authoring a
+witness tree at plan time is no longer required or permitted; proving the command CAN pass is now
+the verifier's
+IMPOSSIBLE-COMMAND duty: before returning a verified verdict the verifier must demonstrate the
+command passing against a correct implementation on the real tree, and when it cannot it returns
+`IMPOSSIBLE-COMMAND` — a CONTRACT defect routed to the **re-approach** fork (D-31, plan and
+requirements retained, only contracts re-authored, one cycle charged), never a work defect charged
+to the worker. Schema 1.7 also adds enforcement locality: every requirement's `enforced_in` paths
+must exact-match the `touches` of a covering task. Full mechanism: the agentfw skill and
+`policy/acceptance-contract.md`.
 
 **Delivery scoreboard (v9.6).** Every gate event emits `[SCOREBOARD: objective <slug> — musts built
 b/t · workers dispatched w · verified v · cycle n/2 · passes m/4]` from the objective's durable
