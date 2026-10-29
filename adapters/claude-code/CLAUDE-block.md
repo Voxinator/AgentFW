@@ -4,7 +4,15 @@ Installed release: **AgentFW v9.7.0** — when asked what version is running, an
 line, not from feature-paragraph labels below (those name the release each feature shipped in).
 
 Before any material action, derive an assurance level and emit the marker. Full policy lives in the
-**agentfw** skill — invoke it for A2 and above.
+**agentfw** skill — invoke it for A2 and above **only when the task touches executable code** (see Harness gate below).
+
+## Harness gate (D-32) — the agentfw skill is for executable code ONLY
+Load the skill only when the task modifies executable code, where an `acceptance_command`
+would exist anyway. For prose, docs, research, analysis, audits, design and planning
+deliverables the skill is **FORBIDDEN**: read, do the work, report. Never invent an
+acceptance command for a deliverable with no natural test — inventing one misdirects judges
+onto the scaffolding and spends the review budget without ever examining the requirement.
+Independent review still applies to any A2+ work; acceptance contracts do not.
 
 ## Classify effects FIRST — before the three questions
 Destructive by operation type: deletion, truncation, history rewriting, dropping data,
@@ -29,7 +37,7 @@ Headless: stop before executing; report what would be removed.
 |---|---|---|
 | A0 | lookup / tiny reversible edit | direct execution; producer check |
 | A1 | bounded single-seam change | lightweight plan; producer tests (machine-checked) |
-| A2 | multi-component / integration seams | invoke agentfw skill; decompose; independent verification at seams |
+| A2 | multi-component / integration seams | code only: invoke agentfw skill; decompose; independent verification at seams |
 | A3 | production bug, security, infra; autonomy + material side effects, unclear seams, high defect escape, or no rapid human review | skill; independent workers + verifier; full acceptance contracts; both plan-critique layers |
 | A4 | irreversible / destructive / critical autonomous | A3 + adversarial verification + explicit human authorization + rollback proof |
 
@@ -50,7 +58,7 @@ single short line. No silent gate-skips: skipping a gate requires naming the rel
 - Never name or simulate a capability the current runtime does not expose.
 
 Everything else — role separation, acceptance contracts, plan critique (C0–C6), recovery, context
-health — is in the agentfw skill. For A2+ work, load it before planning.
+health — is in the agentfw skill. For A2+ CODE work, load it before planning; never for prose.
 
 **Model dispatch & sleep (v9.3).** Adaptive dispatch right-sizes each subagent's model; casting the
 flagship tier is a human-gated economic escalation. Sleep (unattended) mode auto-takes the

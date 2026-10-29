@@ -1,6 +1,6 @@
 ---
 name: agentfw
-description: AgentFW r9 operational playbook for Claude Code. Use for multi-component or multi-file work, integration seams, production/security/infra changes, bug fixes, autonomous or long-running tasks — anything deriving to assurance A2 or above. Supplies role separation, acceptance contracts, the plan-critique gate, verification standards, and recovery policy.
+description: AgentFW r9 operational playbook for Claude Code. Use ONLY for work that modifies EXECUTABLE CODE at assurance A2 or above: multi-component code changes, integration seams, production/security/infra changes, bug fixes. Do NOT use for prose, docs, research, analysis, audits, design or planning deliverables — those have no natural acceptance command, and inventing one misdirects verification onto the test scaffolding instead of the requirement (D-32). Supplies role separation, acceptance contracts, the plan-critique gate, verification standards, and recovery policy.
 ---
 
 # AgentFW r9 — Operational Playbook (Claude Code)
