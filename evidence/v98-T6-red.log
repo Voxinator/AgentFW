@@ -1,0 +1,2 @@
+SELFTEST_OK (18 probes, non-vacuity verified against a bare root)
+FAIL: required input missing: /Users/briantaylor/Projects/AgentFW/findings/v98-thread1.json
