@@ -1,5 +1,34 @@
 # AgentFW Changelog
 
+## v9.8.0-preview.1 (2026-10-28) — pre-release, not Latest
+
+Harness gate preview. One behavioural change on top of v9.7.0: the `agentfw` skill no longer
+loads for prose work. Field driver: operator report that agents invent test scaffolding above
+the requirement and judges then fail on the scaffolding rather than the requirement, inflating
+go-arounds and token spend until the harness goes unused on judgment-heavy work.
+
+- **D-32 — scaffolding inflation (gate only).** `task touches executable code -> harness
+  available; task touches prose/data only -> harness FORBIDDEN, read-and-report.` Applied to
+  both adapters: a new **Harness gate (D-32)** kernel section plus the code-only condition on
+  the routing line, the A2 table row and the "load it before planning" line (+701 B Claude /
+  +707 B Codex, ~175 est. tokens); and the skill `description` narrowed to executable code with
+  an explicit do-not-use list for prose/docs/research/analysis/audits/design/planning. The
+  description is the routing lever; the kernel section makes the rule legible to an already-
+  loaded session.
+- **Not included: the D-32 fix.** Splitting the judge verdict into work-correctness (gates
+  dispatch) versus machinery-strength (sets evidence tier only), the first-class
+  `reasoned-independent` tier, and a Layer-1 `touches` discriminator are designed but
+  unimplemented. See [D-ITEM-v9.8-scaffolding-inflation.md](D-ITEM-v9.8-scaffolding-inflation.md)
+  and [DECISION-v9.8-keep-cut.md](DECISION-v9.8-keep-cut.md).
+- Evidence: objective `v98-sweep`, halted — a 451-line unrequested acceptance instrument, 4/4
+  Layer-2 passes, 2/2 cycles, 298,729 subagent tokens, **0 workers dispatched, 0 requirements
+  examined**, every blocker about the scaffolding. Ledger: `PLAN-v9.8-sweep.ledger.json`.
+  Evidence tier for the findings is judge-corroborated, not machine-verified.
+- Open question that could invalidate the approach: did the original go-arounds also occur on
+  *code* tasks? If so the code/prose boundary is the wrong cut.
+
+Notes: [RELEASE-NOTES-v9.8.0-preview.1.md](RELEASE-NOTES-v9.8.0-preview.1.md).
+
 ## v9.7.0 (2026-08-04)
 
 Verification placement. Field driver: two sessions, two different repos, 2026-08-02 →

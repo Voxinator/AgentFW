@@ -1,0 +1,82 @@
+{
+  "objective": "v98-sweep",
+  "root_objective": "v98-sweep",
+  "cycles": 2,
+  "layer2_passes": 4,
+  "workers_dispatched": 0,
+  "tasks_verified": 0,
+  "musts_total": 5,
+  "musts_built": 0,
+  "gate_events": [
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "capability-preflight",
+      "detail": "model_selection.configured unresolvable (installer never probes it; active-capabilities.yaml 85d stale; agentfw-install absent from installed skill) -> adaptive dispatch gates absent, objective runs Uniform, declared in plan"
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "producer-red-path",
+      "detail": "7 red witnesses recorded (T0-T6), all exit 1, each digest-matched to its contract command string"
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "layer1-fail",
+      "detail": "8 defects: failure_surfaces prose instead of enum members on T0-T6"
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "layer1-pass",
+      "detail": "7 requirements / 7 tasks / A2; digest must=5 nice-to-have=2 deferred=0 fluff=0; review tier dual; scope notes on T4/T5 confirmed by operator request for the full sweep"
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "layer2-pass-1-verdict",
+      "detail": "BLOCKERS. C2 demonstrated: one junk claim passes all five thread gates and the T6 seam; T0 green on untouched tree; wrong-root absence claims pass; 0==False coercion. Plus C2/C5 blocker citing R2 (pricing verified nowhere)."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "layer2-pass-2-verdict",
+      "detail": "BLOCKERS, independent confirmation of the same C2 vacuity (same stub demonstration, same wrong-root hole). Adds: R1 because inaccurate; degradation-1 posture label contradicts dispatch register; human_review not routed to any task; T4/T5 nice-to-have hard-gate must R7; model-id regex too narrow; harness_term_hits 0 cannot distinguish absent from misspelled."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "contamination-check",
+      "detail": "findings/ empty, FINDINGS doc absent, instrument sha d1ff73f5 unchanged, 18 probes, seam red. Both judges used scratch copies; no evidence contamination."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "safety-floor-assessment",
+      "detail": "Two floor items hit (demonstrated-vacuous acceptance command; C5 goal/proof gap) -> not waivable by any override. Lawful path: local revise, re-run Layer 1, fresh Layer-2 pass. R2 pricing component demoted per C6 scope-correction rule."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "revision-layer1-pass",
+      "detail": "Cycle 2. Instrument hardened against all 8 demonstrated holes (verified: 8/8 now red). T0 repurposed to an independent adversarial suite; R2 narrowed to internal consistency with R8 added nice-to-have for the external pricing fact; R1 because corrected; degradation 1 posture relabelled (per-dispatch model empirically works, the probe is what is missing); degradation 4 added for T3's external primitive list; operator scope confirmation recorded. Layer 1: 8 requirements / 7 tasks / must=5 nice-to-have=3; review tier dual."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "layer2-pass-3-verdict",
+      "detail": "BLOCKERS. New demonstrations: forged _frozen-probes.json turns false claims green (hole introduced by the H8 fix); T0 satisfiable by any script exiting 0, only 3 of 8 holes have mutation probes; model-id scan returns 0 on 5 planted hyphenated ids; selftest cannot detect read-and-discard constants or HOME-reading probes; decoy install root passes the root guard; degradation 4's 'nowhere in the repo' claim false (ToolSearch in 3 transcript files); stale v98-T0-red.sha, missing v98-T6-red.sha."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "layer2-pass-4-verdict",
+      "detail": "BLOCKERS, independent. Confirms passes 1-3. Adds: degradation 1's per-dispatch-model evidence is CONFOUNDED by the sonnet frontmatter pins, so non-discriminating; DEMOTE R2 (both halves already hold live, so it yields no D-item); human_review is prose-only with no gate edge; nested dict type coercion; C4 Complexity Accumulation - a 451-line instrument plus adversarial suite plus 5 transcribing workers for ~20 probe facts and one document."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "planner-verification-of-judge-corrections",
+      "detail": "Independently reproduced: model-id scan returns 0 with 5 planted ids; forged freeze file passes; _strict_eq nested dict coerces 0==False to True; ToolSearch present in 3 repo transcripts; v98-T0-red.sha stale (6a2a41b6 vs contract 7e7bfe18); v98-T6-red.sha absent. All judge corrections upheld."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "liveness-exceeded",
+      "detail": "cycles 2/2, layer2_passes 4/4, workers_dispatched 0. Zero-dispatch tripwire LATCHED (two completed cycles, zero workers). Open blockers include safety-floor item 6 (demonstrated-vacuous acceptance command), which no override may waive. Fork options 1/2/3/5 all ineligible: no extension for reversible A2; blockers are not all C2-local with 1:1 mutation probes; floor item blocks the delivery override; re-approach would charge a cycle that no longer exists. Remaining lawful moves: halt, or operator-authorized rescope."
+    },
+    {
+      "runtime": "claude-code-desktop-2.1.309",
+      "event": "objective-halted-by-operator-decision",
+      "detail": "Operator halted at the exhaustion fork and chose the rescope path. Final state: cycles 2/2, layer2_passes 4/4, workers_dispatched 0, tasks_verified 0, musts_built 0/5. Outputs: D-ITEM-v9.8-scaffolding-inflation.md (D-32, the mechanism) and DECISION-v9.8-keep-cut.md (keep the 6KB kernel, quarantine the 166KB skill behind a code-only gate). Substantive findings were produced by the \u00a70 preflight and corroborated by all four Layer-2 C0 passes; evidence tier is judge-corroborated, NOT machine-verified."
+    }
+  ]
+}
